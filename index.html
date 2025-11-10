@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор ставок в логистике</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Библиотека для работы с Excel файлами -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Калькулятор ставок</h1>
+        </header>
+
+        <main>
+            <!-- Выбор роли -->
+            <section id="role-selection" class="section">
+                <h2>Выберите вашу роль</h2>
+                <div class="role-buttons">
+                    <button class="role-btn" onclick="selectRole('purchaser')">
+                        <h3>Закупщик</h3>
+                        <p>Загрузка базы данных из Excel</p>
+                    </button>
+                    <button class="role-btn" onclick="selectRole('sales')">
+                        <h3>Менеджер по продажам</h3>
+                        <p>Расчет ставок для клиентов</p>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Выбор типа базы данных -->
+            <section id="database-selection" class="section hidden">
+                <div class="section-header">
+                    <h2>Выберите тип базы данных</h2>
+                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                </div>
+                <div class="database-buttons">
+                    <button class="db-btn" onclick="selectDatabase('sea')">
+                        <h3>Море</h3>
+                        <p>Морские перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('rail')">
+                        <h3>ЖД</h3>
+                        <p>Железнодорожные перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('direct_rail')">
+                        <h3>Прямое ЖД</h3>
+                        <p>Прямые железнодорожные перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('direct_sea')">
+                        <h3>Прямое море</h3>
+                        <p>Прямые морские перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('sea_rail')">
+                        <h3>Море + ЖД</h3>
+                        <p>Комбинированные перевозки</p>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Интерфейс закупщика -->
+            <section id="purchaser-interface" class="section hidden">
+                <div class="section-header">
+                    <h2>Загрузка базы данных</h2>
+                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                </div>
+                <div class="upload-section">
+                    <div class="template-info">
+                        <h3>Формат файла для загрузки</h3>
+                        <p>Используйте следующий формат столбцов в Excel файле:</p>
+                        <div class="columns-list">
+                            <strong>Обязательные заголовки:</strong> "станция отправления", "станция прибытия"
+                            <br><strong>Опциональные данные:</strong> Все данные могут быть неполными
+                            <br><strong>Примечание:</strong> Система гибко обрабатывает данные - заголовки обязательны, но значения могут быть пустыми
+                        </div>
+                        <p>
+                            <a href="template-sea.xlsx" download="template-sea.xlsx" class="download-link">📥 Скачать шаблон Excel файла для морских перевозок</a>
+                            <br>
+                            <a href="template-direct-rail.xlsx" download="template-direct-rail.xlsx" class="download-link">📥 Скачать шаблон Excel файла для прямого ЖД</a>
+                            <br>
+                            <a href="template-direct-sea.xlsx" download="template-direct-sea.xlsx" class="download-link">📥 Скачать шаблон Excel файла для прямого моря</a>
+                        </p>
+                    </div>
+                    
+                    <div class="file-upload">
+                        <input type="file" id="excel-file" accept=".xlsx, .xls" class="file-input">
+                        <label for="excel-file" class="file-label">
+                            <span>Выберите Excel файл (.xlsx или .xls)</span>
+                        </label>
+                    </div>
+                    <div id="status" class="status"></div>
+                    <button id="process-file" class="btn-primary" onclick="processExcelFile()" disabled>
+                        Обработать файл
+                    </button>
+                </div>
+                
+                <div id="data-preview" class="data-preview hidden">
+                    <h3>Предпросмотр данных</h3>
+                    <div id="preview-table" class="preview-table"></div>
+                    <button id="save-data" class="btn-success" onclick="saveData()">
+                        Сохранить в базу
+                    </button>
+                </div>
+            </section>
+
+            <!-- Интерфейс менеджера по продажам -->
+            <section id="sales-interface" class="section hidden">
+                <div class="section-header">
+                    <h2>Калькулятор ставок</h2>
+                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                </div>
+                <div class="calculator-header">
+                    <div id="last-update" class="last-update"></div>
+                </div>
+                <div class="calculator-form">
+                    <!-- Поля для морских перевозок -->
+                    <div id="sea-fields">
+                        <div class="form-group">
+                            <label for="pol">POL (Port of Loading):</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="pol" class="form-input custom-select-input" placeholder="Начните вводить название порта" autocomplete="off">
+                                <div class="custom-dropdown" id="pol-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="pod">POD (Port of Discharge):</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="pod" class="form-input custom-select-input" placeholder="Начните вводить название порта" autocomplete="off">
+                                <div class="custom-dropdown" id="pod-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group" id="drop-off-area-container">
+                            <label for="drop-off-area">DROP OFF AREA VIA VVO:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="drop-off-area" class="form-input custom-select-input" placeholder="Выберите зону выгрузки" autocomplete="off">
+                                <div class="custom-dropdown" id="drop-off-area-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="container-type">Тип контейнера:</label>
+                            <select id="container-type" class="form-select">
+                                <option value="">Выберите тип</option>
+                                <option value="soc_20">SOC 20'</option>
+                                <option value="soc_40">SOC 40'</option>
+                                <option value="dc_20">20'DC FILO</option>
+                                <option value="hc_40">40'HC FILO</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Поля для прямого ЖД -->
+                    <div id="direct-rail-fields" class="hidden">
+                        <div class="form-group">
+                            <label for="fob">FOB:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="fob" class="form-input custom-select-input" placeholder="Начните вводить FOB" autocomplete="off">
+                                <div class="custom-dropdown" id="fob-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="arrival-city">Город прибытия:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="arrival-city" class="form-input custom-select-input" placeholder="Начните вводить название города" autocomplete="off">
+                                <div class="custom-dropdown" id="arrival-city-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="border-crossing">Погран переход (необязательно):</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="border-crossing" class="form-input custom-select-input" placeholder="Выберите погран переход" autocomplete="off">
+                                <div class="custom-dropdown" id="border-crossing-dropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                <div id="results" class="results-section hidden">
+                    <h3>Результаты расчета</h3>
+                    <div id="rates-table" class="rates-table"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Загружаем модули в правильном порядке -->
+    <script src="utils.js"></script>
+    <script src="direct-rail.js"></script>
+    <script src="direct-sea.js"></script>
+    <script src="sea.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

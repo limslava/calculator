@@ -1,0 +1,6 @@
+Date of validity	Agent	Carrier	POL	POD	20'DC	40'HC	Конвертация	ETD	Remarks
+01.12.2024	Agent A	Carrier A	Shanghai	Vladivostok	1500	2500	USD	15.12.2024	Срочная доставка
+01.12.2024	Agent B	Carrier B	Shanghai	Vladivostok	1450	2400	USD	16.12.2024	Стандартная доставка
+01.12.2024	Agent C	Carrier C	Ningbo	Vladivostok	1550	2600	USD	17.12.2024	Экспресс сервис
+01.12.2024	Agent A	Carrier A	Qingdao	Vladivostok	1600	2700	USD	18.12.2024	Дополнительные услуги
+01.12.2024	Agent B	Carrier B	Shanghai	Nakhodka	1400	2300	USD	19.12.2024	Специальные условия
