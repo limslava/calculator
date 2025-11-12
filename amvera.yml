@@ -1,18 +1,12 @@
+version: null
 meta:
-  environment: node
+  environment: docker
   toolchain:
-    name: browser
-    version: "18"
+    name: docker
+    version: latest
 build:
   skip: false
-  additionalCommands: null
-  artifacts:
-    "*": /
 run:
-  scriptName: server.js
-  scriptArguments: null
-  nodeArguments: null
   command: npm run start
   persistenceMount: /data
-  containerPort: "3000"
-  servicePort: "80"
+  containerPort: 80

@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 
 // Middleware для безопасности
 app.use(helmet({
@@ -34,7 +34,17 @@ app.use(express.static(path.join(__dirname)));
 app.get('/api/exchange-rate', async (req, res) => {
     try {
         console.log('🔄 Получение курса ЦБ РФ через прокси...');
-        const response = await fetch('https://www.cbr.ru/currency_base/daily/');
+        
+        // Добавляем таймаут для запроса
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
+        
+        const response = await fetch('https://www.cbr.ru/currency_base/daily/', {
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -48,11 +58,24 @@ app.get('/api/exchange-rate', async (req, res) => {
             console.log('✅ Курс ЦБ РФ получен:', rate);
             res.json({ success: true, rate: rate });
         } else {
-            throw new Error('Не удалось найти курс USD в HTML');
+            // Альтернативный парсинг на случай изменения структуры HTML
+            const alternativeMatch = html.match(/USD.*?(\d+,\d+)/);
+            if (alternativeMatch && alternativeMatch[1]) {
+                const rate = parseFloat(alternativeMatch[1].replace(',', '.'));
+                console.log('✅ Курс ЦБ РФ получен (альтернативный метод):', rate);
+                res.json({ success: true, rate: rate });
+            } else {
+                throw new Error('Не удалось найти курс USD в HTML');
+            }
         }
     } catch (error) {
         console.error('❌ Ошибка получения курса:', error);
-        res.json({ success: false, error: error.message });
+        // Возвращаем фиксированный курс в случае ошибки
+        res.json({
+            success: false,
+            error: error.message,
+            fallbackRate: 90.0 // Фиксированный курс на случай недоступности ЦБ
+        });
     }
 });
 
