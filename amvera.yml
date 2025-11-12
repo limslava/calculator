@@ -1,12 +1,18 @@
-version: null
-meta:
-  environment: docker
-  toolchain:
-    name: docker
-    version: latest
-build:
-  skip: false
-run:
-  command: npm run start
-  persistenceMount: /data
-  containerPort: 80
+name: logistics-calculator
+services:
+  web:
+    build: .
+    ports:
+      - 80:80
+    environment:
+      - NODE_ENV=production
+      - PORT=80
+    resources:
+      memory: 512Mi
+      cpu: 500m
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
