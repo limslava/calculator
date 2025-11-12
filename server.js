@@ -2,9 +2,14 @@ const express = require('express');
 const compression = require('compression');
 const helmet = require('helmet');
 const path = require('path');
+const DataStorage = require('./server-data');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const dataStorage = new DataStorage();
+
+// Middleware для парсинга JSON
+app.use(express.json({ limit: '10mb' }));
 
 // Middleware для безопасности
 app.use(helmet({
@@ -76,6 +81,49 @@ app.get('/api/exchange-rate', async (req, res) => {
             error: error.message,
             fallbackRate: 90.0 // Фиксированный курс на случай недоступности ЦБ
         });
+    }
+});
+
+// API для работы с данными
+app.get('/api/data/:dbType', (req, res) => {
+    try {
+        const { dbType } = req.params;
+        const data = dataStorage.loadData(dbType);
+        res.json(data);
+    } catch (error) {
+        console.error('❌ Ошибка получения данных:', error);
+        res.status(500).json({ error: 'Ошибка получения данных' });
+    }
+});
+
+app.post('/api/data/:dbType', (req, res) => {
+    try {
+        const { dbType } = req.params;
+        const { data } = req.body;
+        
+        if (!data) {
+            return res.status(400).json({ error: 'Данные не предоставлены' });
+        }
+        
+        const success = dataStorage.saveData(dbType, data);
+        if (success) {
+            res.json({ success: true, message: 'Данные сохранены', count: data.length });
+        } else {
+            res.status(500).json({ error: 'Ошибка сохранения данных' });
+        }
+    } catch (error) {
+        console.error('❌ Ошибка сохранения данных:', error);
+        res.status(500).json({ error: 'Ошибка сохранения данных' });
+    }
+});
+
+app.get('/api/data', (req, res) => {
+    try {
+        const allData = dataStorage.getAllData();
+        res.json(allData);
+    } catch (error) {
+        console.error('❌ Ошибка получения всех данных:', error);
+        res.status(500).json({ error: 'Ошибка получения данных' });
     }
 });
 

@@ -339,36 +339,58 @@ function showDataPreview(data) {
     previewSection.classList.remove('hidden');
 }
 
-function saveData() {
+async function saveData() {
     if (!uploadedData) {
         Utils.showStatus('Нет данных для сохранения', 'error');
         return;
     }
     
-    database[currentDatabase] = uploadedData;
-    localStorage.setItem(`logistics_db_${currentDatabase}`, JSON.stringify(uploadedData));
-    
-    const currentDate = new Date();
-    const updateDate = {
-        date: currentDate.toISOString(),
-        formatted: currentDate.toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        })
-    };
-    localStorage.setItem(`last_update_${currentDatabase}`, JSON.stringify(updateDate));
-    
-    Utils.showStatus(`Данные успешно сохранены в базу "${Utils.getDatabaseName(currentDatabase)}"`, 'success');
-    
-    setTimeout(() => {
-        document.getElementById('excel-file').value = '';
-        document.getElementById('process-file').disabled = true;
-        document.getElementById('data-preview').classList.add('hidden');
-        uploadedData = null;
-    }, 2000);
+    try {
+        const response = await fetch(`/api/data/${currentDatabase}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ data: uploadedData })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            database[currentDatabase] = uploadedData;
+            
+            const currentDate = new Date();
+            const updateDate = {
+                date: currentDate.toISOString(),
+                formatted: currentDate.toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            };
+            localStorage.setItem(`last_update_${currentDatabase}`, JSON.stringify(updateDate));
+            
+            Utils.showStatus(`Данные успешно сохранены в базу "${Utils.getDatabaseName(currentDatabase)}"`, 'success');
+            
+            setTimeout(() => {
+                document.getElementById('excel-file').value = '';
+                document.getElementById('process-file').disabled = true;
+                document.getElementById('data-preview').classList.add('hidden');
+                uploadedData = null;
+            }, 2000);
+        } else {
+            throw new Error(result.error || 'Ошибка сохранения данных');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка сохранения данных на сервере:', error);
+        Utils.showStatus(`Ошибка сохранения данных: ${error.message}`, 'error');
+    }
 }
 
 // Функции для менеджера по продажам
@@ -544,25 +566,40 @@ function setupComplexAutocomplete() {
     containerTypeSelect.addEventListener('change', calculateComplexRates);
 }
 
-function loadDatabaseData() {
-    // 🔧 ЗАГРУЗКА ДАННЫХ ИЗ LOCALSTORAGE ДЛЯ ВСЕХ ТИПОВ БАЗ
+async function loadDatabaseData() {
+    // 🔧 ЗАГРУЗКА ДАННЫХ ИЗ СЕРВЕРА ДЛЯ ВСЕХ ТИПОВ БАЗ
     const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea'];
     
-    dbTypes.forEach(dbType => {
-        const savedData = localStorage.getItem(`logistics_db_${dbType}`);
-        if (savedData) {
-            try {
-                database[dbType] = JSON.parse(savedData);
-                console.log(`✅ Загружены данные для ${dbType}: ${database[dbType].length} записей`);
-            } catch (error) {
-                console.error(`❌ Ошибка загрузки данных для ${dbType}:`, error);
+    for (const dbType of dbTypes) {
+        try {
+            const response = await fetch(`/api/data/${dbType}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const serverData = await response.json();
+            database[dbType] = serverData.data || [];
+            console.log(`✅ Загружены данные с сервера для ${dbType}: ${database[dbType].length} записей`);
+            
+        } catch (error) {
+            console.error(`❌ Ошибка загрузки данных с сервера для ${dbType}:`, error);
+            
+            // 🔧 РЕЗЕРВНАЯ ЗАГРУЗКА ИЗ LOCALSTORAGE
+            const savedData = localStorage.getItem(`logistics_db_${dbType}`);
+            if (savedData) {
+                try {
+                    database[dbType] = JSON.parse(savedData);
+                    console.log(`✅ Загружены резервные данные из localStorage для ${dbType}: ${database[dbType].length} записей`);
+                } catch (localError) {
+                    console.error(`❌ Ошибка загрузки резервных данных для ${dbType}:`, localError);
+                    database[dbType] = [];
+                }
+            } else {
+                console.warn(`⚠️ Нет сохраненных данных для ${dbType}`);
                 database[dbType] = [];
             }
-        } else {
-            console.warn(`⚠️ Нет сохраненных данных для ${dbType}`);
-            database[dbType] = [];
         }
-    });
+    }
     
     // 🔧 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ДЛЯ МОРЯ
     console.log('📊 Проверка данных моря:', {
