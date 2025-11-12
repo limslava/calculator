@@ -604,6 +604,10 @@ async function loadDatabaseData() {
         }
     }
     
+    // 🔧 ЭКСПОРТИРУЕМ ДАННЫЕ В ГЛОБАЛЬНУЮ ОБЛАСТЬ ДЛЯ МОДУЛЕЙ
+    window.database = database;
+    console.log('🌐 Данные экспортированы в window.database для модулей');
+    
     // 🔧 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ДЛЯ МОРЯ
     console.log('📊 Проверка данных моря:', {
         hasSeaData: database.sea && database.sea.length > 0,
