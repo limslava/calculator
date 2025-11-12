@@ -60,10 +60,13 @@ function selectSalesRole() {
     document.getElementById('calculation-type-selection').classList.remove('hidden');
 }
 
-function selectDatabase(dbType) {
+async function selectDatabase(dbType) {
     currentDatabase = dbType;
     console.log('🎯 Выбран тип базы данных:', dbType);
     document.getElementById('database-selection').classList.add('hidden');
+    
+    // Синхронизируем данные с сервером при каждом входе
+    await loadDatabaseData();
     
     if (currentRole === 'purchaser') {
         document.getElementById('purchaser-interface').classList.remove('hidden');
@@ -1084,6 +1087,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Загружаем курс ЦБ РФ
     await loadExchangeRate();
+    
+    // Автоматически загружаем данные с сервера при запуске
+    await loadDatabaseData();
+    console.log('✅ Данные загружены с сервера при инициализации');
     
     // Проверяем наличие библиотеки XLSX
     if (typeof XLSX === 'undefined') {
