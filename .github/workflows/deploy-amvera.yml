@@ -32,18 +32,20 @@ jobs:
         
     - name: Test Docker container
       run: |
-        docker run -d --name test-app -p 3001:3001 logistics-calculator
+        docker run -d --name test-app -p 3000:3000 logistics-calculator
         sleep 10
-        curl -f http://localhost:3001 || exit 1
+        curl -f http://localhost:3000 || exit 1
         docker stop test-app
         docker rm test-app
         
     - name: Deploy to Amvera
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       run: |
-        echo "Для развертывания на Amvera выполните следующие шаги:"
+        echo "✅ Приложение готово к развертыванию на Amvera!"
+        echo "📋 Инструкции по развертыванию:"
         echo "1. Перейдите на https://cloud.amvera.ru"
-        echo "2. Создайте новый проект"
+        echo "2. Создайте новый проект 'logistics-calculator'"
         echo "3. Выберите 'Из Git репозитория'"
-        echo "4. Укажите URL: https://github.com/limslava/calculator"
+        echo "4. Укажите URL вашего репозитория"
         echo "5. Amvera автоматически обнаружит amvera.yml и развернет приложение"
+        echo "6. После развертывания приложение будет доступно по адресу: https://logistics-calculator.amvera.io"

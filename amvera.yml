@@ -3,10 +3,10 @@ services:
   web:
     build: .
     ports:
-      - 3000:3001
+      - 3000:3000
     environment:
       - NODE_ENV=production
-      - PORT=3001
+      - PORT=3000
     resources:
       memory: 512Mi
       cpu: 500m
