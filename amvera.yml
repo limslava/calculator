@@ -1,18 +1,12 @@
-name: logistics-calculator
-services:
-  web:
-    build: .
-    ports:
-      - 3000:3000
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-    resources:
-      memory: 512Mi
-      cpu: 500m
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+version: null
+meta:
+  environment: docker
+  toolchain:
+    name: docker
+    version: latest
+build:
+  skip: false
+run:
+  command: npm run start
+  persistenceMount: /data
+  containerPort: 3000
