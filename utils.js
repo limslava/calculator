@@ -230,8 +230,7 @@ function getDatabaseName(dbType) {
         'sea': 'Море',
         'rail': 'Железная дорога',
         'direct_rail': 'Прямой жд',
-        'direct_sea': 'Прямое море',
-        'sea_rail': 'Море+ЖД'
+        'direct_sea': 'Прямое море'
     };
     return dbNames[dbType] || dbType;
 }
@@ -290,8 +289,26 @@ function convertExcelDate(value) {
     return value.toString();
 }
 
+// 🔧 ФУНКЦИЯ ДЛЯ НОРМАЛИЗАЦИИ АГЕНТА И ПЕРЕВОЗЧИКА
+function normalizeAgentAndCarrier(value) {
+    if (!value) return value;
+    
+    const normalizedValue = value.toString().trim();
+    
+    // Заменяем "Sollers" на "Pacific Logistic"
+    if (normalizedValue.toLowerCase().includes('sollers')) {
+        console.log(`🔄 Нормализация: "${normalizedValue}" → "Pacific Logistic"`);
+        return 'Pacific Logistic';
+    }
+    
+    return normalizedValue;
+}
+
 // Функция для парсинга данных моря
 function parseSeaData(excelData) {
+    console.log('🔍 Начало парсинга данных моря...');
+    console.log('📊 Заголовки файла:', excelData[0]);
+    
     const headers = excelData[0];
     const dataRows = excelData.slice(1);
     const parsedData = [];
@@ -313,6 +330,8 @@ function parseSeaData(excelData) {
         etd: findColumnIndex(headers, ['ETD', 'Дата отгрузки']),
         remarks: findColumnIndex(headers, ['Remarks', 'Примечания'])
     };
+    
+    console.log('🗺️ Найденные колонки:', headerMap);
     
     const criticalFields = ['pol', 'pod'];
     const missingCriticalFields = criticalFields.filter(field => headerMap[field] === -1);
@@ -347,6 +366,15 @@ function parseSeaData(excelData) {
                     value = convertExcelDate(value);
                 }
                 
+                // 🔧 НОРМАЛИЗУЕМ АГЕНТА И ПЕРЕВОЗЧИКА (заменяем Sollers на Pacific Logistic)
+                if (['agent', 'carrier'].includes(key)) {
+                    const originalValue = value;
+                    value = normalizeAgentAndCarrier(value);
+                    if (originalValue !== value) {
+                        console.log(`🔄 Строка ${index}: ${key} "${originalValue}" → "${value}"`);
+                    }
+                }
+                
                 if (typeof value === 'string') {
                     value = value.trim();
                 }
@@ -360,8 +388,16 @@ function parseSeaData(excelData) {
         }
     });
     
-    console.log(`Всего строк в файле: ${dataRows.length}`);
-    console.log(`Успешно обработано: ${parsedData.length}`);
+    console.log(`📊 Всего строк в файле: ${dataRows.length}`);
+    console.log(`✅ Успешно обработано: ${parsedData.length}`);
+    
+    // Логируем примеры обработанных данных
+    if (parsedData.length > 0) {
+        console.log('📋 Примеры обработанных данных:');
+        parsedData.slice(0, 3).forEach((item, i) => {
+            console.log(`  ${i+1}. POL: "${item.pol}", POD: "${item.pod}", Agent: "${item.agent}", Carrier: "${item.carrier}"`);
+        });
+    }
     
     if (parsedData.length === 0) {
         throw new Error('Не найдено корректных данных для обработки. Проверьте наличие колонок POL и POD.');
@@ -427,6 +463,11 @@ function parseDirectRailData(excelData) {
                 // 🔧 КОНВЕРТИРУЕМ ДАТЫ ИЗ EXCEL ФОРМАТА
                 if (['quoteDate', 'etd'].includes(key)) {
                     value = convertExcelDate(value);
+                }
+                
+                // 🔧 НОРМАЛИЗУЕМ АГЕНТА (заменяем Sollers на Pacific Logistic)
+                if (key === 'agent') {
+                    value = normalizeAgentAndCarrier(value);
                 }
                 
                 if (typeof value === 'string') {
@@ -507,6 +548,11 @@ function parseDirectSeaData(excelData) {
                     value = convertExcelDate(value);
                 }
                 
+                // 🔧 НОРМАЛИЗУЕМ АГЕНТА И ПЕРЕВОЗЧИКА (заменяем Sollers на Pacific Logistic)
+                if (['agent', 'carrier'].includes(key)) {
+                    value = normalizeAgentAndCarrier(value);
+                }
+                
                 if (typeof value === 'string') {
                     value = value.trim();
                 }
@@ -532,6 +578,113 @@ function parseDirectSeaData(excelData) {
     return parsedData;
 }
 
+// Функция для парсинга данных железнодорожных перевозок (не прямых)
+function parseRailData(excelData) {
+    console.log('🔍 Начало парсинга данных железной дороги...');
+    console.log('📊 Заголовки файла:', excelData[0]);
+    
+    const headers = excelData[0];
+    const dataRows = excelData.slice(1);
+    const parsedData = [];
+    
+    const headerMap = {
+        city: findColumnIndex(headers, ['City', 'Город']),
+        agent: findColumnIndex(headers, ['Agent', 'Агент']),
+        destination: findColumnIndex(headers, ['Пункт назначения', 'Destination']),
+        autovivoz: findColumnIndex(headers, ['Автовывоз', 'Auto pickup', 'Autovivoz']),
+        prr: findColumnIndex(headers, ['ПРР', 'PRR']),
+        container20Under24: findColumnIndex(headers, ['20фут ктк ( до 24 тонн)', '20ft container under 24t']),
+        container20Over24: findColumnIndex(headers, ['20фут ктк (от 24 тонн до 28 тонн)', '20ft container 24-28t']),
+        container40: findColumnIndex(headers, ['40фут ктк', '40ft container']),
+        nds: findColumnIndex(headers, ['НДС', 'VAT', 'NDS']),
+        vochr20: findColumnIndex(headers, ['ВОХР 20', 'VOCHR 20']),
+        vochr40: findColumnIndex(headers, ['ВОХР 40', 'VOCHR 40']),
+        fitting: findColumnIndex(headers, ['Фитинг/ПВ', 'Fitting/PV']),
+        conditions: findColumnIndex(headers, ['Условия', 'Conditions']),
+        validity: findColumnIndex(headers, ['Валидность', 'Validity'])
+    };
+    
+    console.log('🗺️ Найденные колонки ЖД:', headerMap);
+    
+    const requiredHeaders = ['City', 'Пункт назначения'];
+    const foundHeaders = requiredHeaders.filter(header =>
+        headers.some(h => h && h.toString().toLowerCase().includes(header.toLowerCase()))
+    );
+
+    if (foundHeaders.length === 0) {
+        throw new Error(`Отсутствуют обязательные заголовки: ${requiredHeaders.join(', ')}`);
+    }
+    
+    dataRows.forEach((row, index) => {
+        if (!row || row.length === 0 || !row.some(cell => cell !== null && cell !== undefined && cell !== '')) {
+            return;
+        }
+        
+        const item = {};
+        
+        Object.keys(headerMap).forEach(key => {
+            const colIndex = headerMap[key];
+            let value = '';
+            
+            if (colIndex !== -1 && row[colIndex] !== undefined && row[colIndex] !== null && row[colIndex] !== '') {
+                value = row[colIndex];
+                
+                // Обработка числовых полей
+                if (['container20Under24', 'container20Over24', 'container40', 'nds', 'vochr20', 'vochr40', 'fitting'].includes(key)) {
+                    if (typeof value === 'string') {
+                        value = value.toString().replace(/\s+/g, '').replace(',', '.');
+                        value = value.replace(/[^\d.-]/g, '');
+                    }
+                    value = parseFloat(value) || 0;
+                }
+                
+                // 🔧 КОНВЕРТИРУЕМ ДАТЫ ИЗ EXCEL ФОРМАТА
+                if (key === 'validity') {
+                    value = convertExcelDate(value);
+                }
+                
+                // 🔧 НОРМАЛИЗУЕМ АГЕНТА (заменяем Sollers на Pacific Logistic)
+                if (key === 'agent') {
+                    const originalValue = value;
+                    value = normalizeAgentAndCarrier(value);
+                    if (originalValue !== value) {
+                        console.log(`🔄 Строка ${index}: agent "${originalValue}" → "${value}"`);
+                    }
+                }
+                
+                if (typeof value === 'string') {
+                    value = value.trim();
+                }
+            }
+            
+            item[key] = value;
+        });
+        
+        if (item.city && item.destination) {
+            parsedData.push(item);
+        }
+    });
+    
+    console.log(`📊 Всего строк в файле ЖД: ${dataRows.length}`);
+    console.log(`✅ Успешно обработано ЖД: ${parsedData.length}`);
+    
+    // Логируем примеры обработанных данных
+    if (parsedData.length > 0) {
+        console.log('📋 Примеры обработанных данных ЖД:');
+        parsedData.slice(0, 3).forEach((item, i) => {
+            console.log(`  ${i+1}. City: "${item.city}", Destination: "${item.destination}", Agent: "${item.agent}"`);
+        });
+    }
+    
+    if (parsedData.length === 0) {
+        throw new Error('Не найдено корректных данных для обработки. Проверьте наличие колонок City и Пункт назначения.');
+    }
+    
+    showStatus(`Успешно обработано ${parsedData.length} из ${dataRows.length} записей ЖД`, 'success');
+    
+    return parsedData;
+}
+
 // 🔧 ФУНКЦИЯ ДЛЯ ПРОВЕРКИ ДОСТУПНОСТИ МОДУЛЕЙ
 function checkModulesAvailability() {
     const modules = {
@@ -553,11 +706,13 @@ window.Utils = {
     showLastUpdate,
     findColumnIndex,
     parseSeaData,
+    parseRailData,
     parseDirectRailData,
     parseDirectSeaData,
     checkModulesAvailability,
     getTransportTypeByField,
-    convertExcelDate
+    convertExcelDate,
+    normalizeAgentAndCarrier
 };
 
 console.log('✅ Утилиты загружены с интеграцией всех модулей');

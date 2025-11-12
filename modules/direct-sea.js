@@ -124,10 +124,78 @@ function setupEnhancedDirectSeaChainUpdate(data) {
     const podInput = document.getElementById('pod');
     const containerTypeSelect = document.getElementById('container-type');
     
-    console.log('🔧 Инициализация улучшенного цепного обновления для прямого моря с фильтрацией ненулевых ставок');
+    console.log('🔧 Инициализация улучшенного цепного обновления для прямого моря с фильтрацией ненулевых ставок и автопоиском');
+    
+    // 🔧 ПРОВЕРЯЕМ ДАННЫЕ
+    if (!data || data.length === 0) {
+        console.error('❌ Нет данных для прямого моря в setupEnhancedDirectSeaChainUpdate');
+        console.log('🔍 Пробуем найти данные в других источниках...');
+        
+        // Пробуем найти данные в window.database
+        if (window.database && window.database.direct_sea) {
+            data = window.database.direct_sea;
+            console.log('✅ Данные найдены в window.database.direct_sea:', data.length);
+        }
+        // Пробуем найти данные в localStorage
+        else {
+            const savedData = localStorage.getItem('logistics_db_direct_sea');
+            if (savedData) {
+                try {
+                    data = JSON.parse(savedData);
+                    console.log('✅ Данные найдены в localStorage:', data.length);
+                } catch (error) {
+                    console.error('❌ Ошибка парсинга данных из localStorage:', error);
+                }
+            }
+        }
+        
+        if (!data || data.length === 0) {
+            console.error('❌ Данные для прямого моря не найдены ни в одном источнике');
+            return;
+        }
+    }
+    
+    console.log('📊 Данные для прямого моря:', data.length, 'записей');
     
     // Инициализируем улучшенный поисковый движок
     const enhancedDirectSeaSearchEngine = new EnhancedDirectSeaSearchEngine(data);
+    
+    // 🔧 ФУНКЦИЯ ДЛЯ АВТОМАТИЧЕСКОГО ПОИСКА СТАВОК
+    function autoSearchRates() {
+        const selectedPOL = polInput.value.trim();
+        const selectedPOD = podInput.value.trim();
+        const selectedContainerType = containerTypeSelect.value;
+        
+        console.log('🔍 Автопоиск ставок прямого моря:', {
+            POL: selectedPOL,
+            POD: selectedPOD,
+            ContainerType: selectedContainerType
+        });
+        
+        // Проверяем, что заполнены все обязательные поля
+        if (selectedPOL && selectedPOD && selectedContainerType) {
+            console.log('✅ Все обязательные поля заполнены, запускаем поиск...');
+            
+            const rates = enhancedDirectSeaSearchEngine.getRatesForRoute(selectedPOL, selectedPOD, selectedContainerType);
+            
+            console.log(`📈 Найдено ставок прямого моря: ${rates.length}`, rates);
+            
+            if (rates.length === 0) {
+                console.warn('⚠️ Ставки не найдены для выбранного маршрута');
+                // Скрываем результаты если ничего не найдено
+                document.getElementById('results').classList.add('hidden');
+                showStatus('Ставки не найдены для выбранного маршрута', 'warning');
+            } else {
+                console.log(`✅ Найдено ${rates.length} ставок, отображаем результаты`);
+                displayDirectSeaRates(rates, selectedContainerType);
+                showStatus(`Найдено ${rates.length} ставок`, 'success');
+            }
+        } else {
+            // Скрываем результаты если не все обязательные поля заполнены
+            document.getElementById('results').classList.add('hidden');
+            console.log('⏳ Ожидание заполнения обязательных полей...');
+        }
+    }
     
     // Функция для обновления интерфейса
     function updateInterface() {
@@ -139,7 +207,11 @@ function setupEnhancedDirectSeaChainUpdate(data) {
         // 1. Обновляем POL - только с ненулевыми ставки
         const availablePOL = enhancedDirectSeaSearchEngine.getPOLWithRates();
         console.log('📋 Доступные POL с ненулевыми ставками:', availablePOL);
-        setupCustomDropdown('pol', availablePOL);
+        if (window.Utils && window.Utils.setupCustomDropdown) {
+            window.Utils.setupCustomDropdown('pol', availablePOL);
+        } else {
+            console.error('❌ Utils.setupCustomDropdown не доступен в прямом море');
+        }
         
         // 2. Обновляем POD на основе выбранного POL - только с ненулевыми ставками
         let availablePOD = [];
@@ -147,7 +219,11 @@ function setupEnhancedDirectSeaChainUpdate(data) {
             availablePOD = enhancedDirectSeaSearchEngine.getPODWithRatesForPOL(selectedPOL);
             console.log(`🎯 Доступные POD с ненулевыми ставками для "${selectedPOL}":`, availablePOD);
         }
-        setupCustomDropdown('pod', availablePOD);
+        if (window.Utils && window.Utils.setupCustomDropdown) {
+            window.Utils.setupCustomDropdown('pod', availablePOD);
+        } else {
+            console.error('❌ Utils.setupCustomDropdown не доступен в прямом море для POD');
+        }
         
         // 3. Обновляем типы контейнеров на основе выбранного POL и POD - только с ненулевыми ставками
         if (selectedPOL && selectedPOD) {
@@ -163,6 +239,9 @@ function setupEnhancedDirectSeaChainUpdate(data) {
         
         // Очищаем зависимые поля если значения стали недоступны
         cleanupDependentFields(selectedPOL, selectedPOD, availablePOL, availablePOD, containerTypeSelect);
+        
+        // 🔧 ЗАПУСКАЕМ АВТОМАТИЧЕСКИЙ ПОИСК ПРИ ИЗМЕНЕНИИ ДАННЫХ
+        autoSearchRates();
     }
     
     // Функция для обновления dropdown типов контейнеров
@@ -255,9 +334,36 @@ function setupEnhancedDirectSeaChainUpdate(data) {
         updateInterface();
     });
     
-    // Обработчик для контейнера
+    // Обработчик для контейнера - автоматический поиск при изменении
     containerTypeSelect.addEventListener('change', function() {
         console.log('✅ Изменение типа контейнера:', this.value);
+        
+        if (this.value) {
+            const selectedPOL = polInput.value.trim();
+            const selectedPOD = podInput.value.trim();
+            const selectedContainerType = this.value;
+            
+            console.log('🎯 Автоматический поиск ставок прямого моря для:', {
+                POL: selectedPOL,
+                POD: selectedPOD,
+                ContainerType: selectedContainerType
+            });
+            
+            // Автоматический поиск ставок
+            autoSearchRates();
+        }
+    });
+    
+    // 🔧 ДОБАВЛЯЕМ ОБРАБОТЧИК ДЛЯ КЛАВИШИ ENTER
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const activeElement = document.activeElement;
+            if ([polInput, podInput, containerTypeSelect].includes(activeElement)) {
+                e.preventDefault();
+                console.log('🔍 Запуск поиска по Enter');
+                autoSearchRates();
+            }
+        }
     });
     
     // Инициализируем интерфейс
