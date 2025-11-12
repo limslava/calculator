@@ -56,6 +56,11 @@ app.get('/api/exchange-rate', async (req, res) => {
     }
 });
 
+// Healthcheck endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 // Маршрут для главной страницы
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
