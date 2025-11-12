@@ -78,6 +78,10 @@ app.use((err, req, res, next) => {
 });
 
 // Запуск сервера
+console.log('=== DEBUG INFO ===');
+console.log(`🔧 Переменная окружения PORT: ${process.env.PORT}`);
+console.log(`🔧 Используемый порт: ${PORT}`);
+console.log('==================');
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
   console.log(`📁 Обслуживание статических файлов из: ${__dirname}`);
