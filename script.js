@@ -803,9 +803,17 @@ function calculateAllRates(departure, destination, containerType) {
     
     console.log('🔧 Всего результатов комплексного расчета:', allResults.length);
     
-    // Сортируем результаты по ставке (от меньшей к большей)
-    allResults.sort((a, b) => a.rate - b.rate);
-    
+    // Сортируем результаты по общей ставке (от меньшей к большей)
+    allResults.sort((a, b) => {
+        // Безопасная сортировка с проверкой на undefined и null
+        const rateA = a.rate || 0;
+        const rateB = b.rate || 0;
+        return rateA - rateB;
+    });
+
+    console.log('📊 Отсортированные результаты комплексного расчета:',
+        allResults.map(r => ({ type: r.transportType, rate: r.rate })));
+
     // Отображаем результаты
     displayComplexResults(allResults, departure, destination, containerType);
 }
@@ -827,6 +835,9 @@ function displayComplexResults(results, departure, destination, containerType) {
     let tableHTML = `
         <div class="complex-results-section">
             <h4>Результаты для: ${normalizeCityName(departure)} → ${normalizeCityName(destination)}</h4>
+            <div class="sorting-info" style="margin-bottom: 10px; font-style: italic; color: #666;">
+                📊 Результаты отсортированы по возрастанию общей ставки
+            </div>
             ${usdToRubRate ? `<div class="exchange-rate-info"><small>Курс ЦБ РФ: 1 USD = ${usdToRubRate} RUB</small></div>` : ''}
             <table>
                 <thead>
@@ -841,8 +852,12 @@ function displayComplexResults(results, departure, destination, containerType) {
                 <tbody>
     `;
     
-    results.forEach(result => {
+    results.forEach((result, index) => {
         const transportTypeClass = `transport-type-${result.transportType}`;
+        
+        // Определяем, является ли это самой выгодной ставкой (первая в отсортированном списке)
+        const isBestRate = index === 0;
+        const bestRateClass = isBestRate ? 'best-rate-row' : '';
         
         let seaRate = '';
         let railRate = '';
@@ -888,10 +903,11 @@ function displayComplexResults(results, departure, destination, containerType) {
         }
         
         tableHTML += `
-            <tr>
+            <tr class="${bestRateClass}">
                 <td>
                     <span class="transport-type-badge ${transportTypeClass}">
                         ${result.transportName}
+                        ${isBestRate ? ' 🏆' : ''}
                     </span>
                 </td>
                 <td>${seaRate}</td>
