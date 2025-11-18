@@ -273,13 +273,19 @@ const RailModule = {
                 <thead>
                     <tr>
                         <th>Город</th>
+                        <th>Доп.информация</th>
                         <th>Агент</th>
                         <th>Пункт назначения</th>
-                        <th>Ставка (руб)</th>
                         <th>Автовывоз</th>
                         <th>ПРР</th>
+                        <th>20фут ктк ( до 24 тонн)</th>
+                        <th>20фут ктк (от 24 тонн до 28 тонн)</th>
+                        <th>40фут ктк</th>
                         <th>НДС</th>
-                        <th>Вохр</th>
+                        <th>ВОХР 20</th>
+                        <th>ВОХР 40</th>
+                        <th>Фитинг/ПВ</th>
+                        <th>Условия</th>
                         <th>Валидность</th>
                     </tr>
                 </thead>
@@ -287,39 +293,36 @@ const RailModule = {
         `;
         
         sortedData.forEach(item => {
-            let rate = '';
-            let vochr = '';
-            
-            switch (containerType) {
-                case 'container20Under24':
-                    rate = `${item.container20Under24} руб`;
-                    vochr = item.vochr20 || 'Вохр 20';
-                    break;
-                case 'container20Over24':
-                    rate = `${item.container20Over24} руб`;
-                    vochr = item.vochr20 || 'Вохр 20';
-                    break;
-                case 'container40':
-                    rate = `${item.container40} руб`;
-                    vochr = item.vochr40 || 'Вохр 40';
-                    break;
-            }
-            
+            const additionalInfo = (item.additionalInfo !== undefined && item.additionalInfo !== null && item.additionalInfo !== '') ? item.additionalInfo : '-';
             const autovivoz = (item.autovivoz !== undefined && item.autovivoz !== null && item.autovivoz !== '') ? item.autovivoz : '-';
             const prr = (item.prr !== undefined && item.prr !== null && item.prr !== '') ? item.prr : '-';
+            const container20Under24 = (item.container20Under24 !== undefined && item.container20Under24 !== null && item.container20Under24 !== '') ? `${item.container20Under24} руб` : '-';
+            const container20Over24 = (item.container20Over24 !== undefined && item.container20Over24 !== null && item.container20Over24 !== '') ? `${item.container20Over24} руб` : '-';
+            const container40 = (item.container40 !== undefined && item.container40 !== null && item.container40 !== '') ? `${item.container40} руб` : '-';
             const nds = (item.nds !== undefined && item.nds !== null && item.nds !== '') ? item.nds : '-';
+            const vochr20 = (item.vochr20 !== undefined && item.vochr20 !== null && item.vochr20 !== '') ? item.vochr20 : '-';
+            const vochr40 = (item.vochr40 !== undefined && item.vochr40 !== null && item.vochr40 !== '') ? item.vochr40 : '-';
+            const fitting = (item.fitting !== undefined && item.fitting !== null && item.fitting !== '') ? item.fitting : '-';
+            const conditions = (item.conditions !== undefined && item.conditions !== null && item.conditions !== '') ? item.conditions : '-';
+            const validity = (item.validity !== undefined && item.validity !== null && item.validity !== '') ? item.validity : '-';
             
             tableHTML += `
                 <tr>
                     <td>${item.city}</td>
+                    <td>${additionalInfo}</td>
                     <td>${item.agent}</td>
                     <td>${item.destination}</td>
-                    <td>${rate}</td>
                     <td>${autovivoz}</td>
                     <td>${prr}</td>
+                    <td>${container20Under24}</td>
+                    <td>${container20Over24}</td>
+                    <td>${container40}</td>
                     <td>${nds}</td>
-                    <td>${vochr}</td>
-                    <td>${item.validity}</td>
+                    <td>${vochr20}</td>
+                    <td>${vochr40}</td>
+                    <td>${fitting}</td>
+                    <td>${conditions}</td>
+                    <td>${validity}</td>
                 </tr>
             `;
         });

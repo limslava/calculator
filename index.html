@@ -71,6 +71,10 @@
                             <br><strong>Опциональные данные:</strong> Все данные могут быть неполными
                             <br><strong>Примечание:</strong> Система гибко обрабатывает данные - заголовки обязательны, но значения могут быть пустыми
                         </div>
+                        <p><strong>Для железнодорожных перевозок доступны следующие столбцы:</strong></p>
+                        <div class="columns-list" style="font-size: 14px; margin-top: 10px;">
+                            City, Доп.информация, Агент, Пункт назначения, Автовывоз, ПРР, 20фут ктк ( до 24 тонн), 20фут ктк (от 24 тонн до 28 тонн), 40фут ктк, НДС, ВОХР 20, ВОХР 40, Фитинг/ПВ, Условия, Валидность
+                        </div>
                         <p>
                             <a href="templates/template-sea.xlsx" download="template-sea.xlsx" class="download-link">📥 Скачать шаблон Excel файла для морских перевозок</a>
                             <br>
@@ -269,6 +273,47 @@
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- Модальное окно для расчета маржинальности -->
+    <div id="margin-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Расчет маржинальности</h2>
+                <button class="modal-close" onclick="closeMarginModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="margin-container">
+                    <!-- Левая часть: себестоимость -->
+                    <div class="cost-section">
+                        <h3>Себестоимость</h3>
+                        <div id="cost-details" class="cost-details">
+                            <!-- Здесь будет отображаться информация о себестоимости -->
+                        </div>
+                    </div>
+                    
+                    <!-- Правая часть: накрутка и результат -->
+                    <div class="margin-section">
+                        <div class="margin-inputs">
+                            <h3>Накрутка</h3>
+                            <div id="margin-inputs-container">
+                                <!-- Здесь будут поля для ввода маржинальности -->
+                            </div>
+                        </div>
+                        
+                        <div class="margin-result">
+                            <h3>Результат с накруткой</h3>
+                            <div id="margin-result-container" class="result-container">
+                                <!-- Здесь будет отображаться результат с накруткой -->
+                            </div>
+                            <button id="copy-result" class="btn-primary" onclick="copyMarginResult()">
+                                📋 Копировать результат
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Загружаем модули в правильном порядке -->

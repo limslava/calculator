@@ -601,7 +601,8 @@ function parseRailData(excelData) {
         vochr40: findColumnIndex(headers, ['ВОХР 40', 'VOCHR 40']),
         fitting: findColumnIndex(headers, ['Фитинг/ПВ', 'Fitting/PV']),
         conditions: findColumnIndex(headers, ['Условия', 'Conditions']),
-        validity: findColumnIndex(headers, ['Валидность', 'Validity'])
+        validity: findColumnIndex(headers, ['Валидность', 'Validity']),
+        additionalInfo: findColumnIndex(headers, ['Доп.информация', 'Additional info', 'Additional information'])
     };
     
     console.log('🗺️ Найденные колонки ЖД:', headerMap);

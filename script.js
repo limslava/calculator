@@ -276,11 +276,19 @@ function showDataPreview(data) {
                 <thead>
                     <tr>
                         <th>Город</th>
+                        <th>Доп.информация</th>
                         <th>Агент</th>
                         <th>Пункт назначения</th>
+                        <th>Автовывоз</th>
+                        <th>ПРР</th>
                         <th>20фут ктк (до 24т)</th>
                         <th>20фут ктк (24-28т)</th>
                         <th>40фут ктк</th>
+                        <th>НДС</th>
+                        <th>ВОХР 20</th>
+                        <th>ВОХР 40</th>
+                        <th>Фитинг/ПВ</th>
+                        <th>Условия</th>
                         <th>Валидность</th>
                     </tr>
                 </thead>
@@ -288,14 +296,31 @@ function showDataPreview(data) {
         `;
         
         data.slice(0, 5).forEach(item => {
+            const additionalInfo = (item.additionalInfo !== undefined && item.additionalInfo !== null && item.additionalInfo !== '') ? item.additionalInfo : '-';
+            const autovivoz = (item.autovivoz !== undefined && item.autovivoz !== null && item.autovivoz !== '') ? item.autovivoz : '-';
+            const prr = (item.prr !== undefined && item.prr !== null && item.prr !== '') ? item.prr : '-';
+            const nds = (item.nds !== undefined && item.nds !== null && item.nds !== '') ? item.nds : '-';
+            const vochr20 = (item.vochr20 !== undefined && item.vochr20 !== null && item.vochr20 !== '') ? item.vochr20 : '-';
+            const vochr40 = (item.vochr40 !== undefined && item.vochr40 !== null && item.vochr40 !== '') ? item.vochr40 : '-';
+            const fitting = (item.fitting !== undefined && item.fitting !== null && item.fitting !== '') ? item.fitting : '-';
+            const conditions = (item.conditions !== undefined && item.conditions !== null && item.conditions !== '') ? item.conditions : '-';
+            
             tableHTML += `
                 <tr>
                     <td>${item.city}</td>
+                    <td>${additionalInfo}</td>
                     <td>${item.agent}</td>
                     <td>${item.destination}</td>
+                    <td>${autovivoz}</td>
+                    <td>${prr}</td>
                     <td>$${item.container20Under24}</td>
                     <td>$${item.container20Over24}</td>
                     <td>$${item.container40}</td>
+                    <td>${nds}</td>
+                    <td>${vochr20}</td>
+                    <td>${vochr40}</td>
+                    <td>${fitting}</td>
+                    <td>${conditions}</td>
                     <td>${item.validity}</td>
                 </tr>
             `;
@@ -734,10 +759,11 @@ function calculateAllRates(departure, destination, containerType) {
                     railItem.destination && normalizeCityName(railItem.destination) === normalizeCityName(destination) && // Пункт назначения должен совпадать с выбранным пользователем
                     (railItem.container20Under24 > 0 || railItem.container20Over24 > 0 || railItem.container40 > 0);
                 
-                // Если включен триггер ВТТ, добавляем дополнительное правило: море POD = жд агент
+                // Если включен триггер ВТТ, добавляем дополнительные правила:
                 if (isVTTTrigger) {
                     return baseRules &&
-                           seaItem.pod && railItem.agent && normalizeCityName(seaItem.pod) === normalizeCityName(railItem.agent); // Правило 5: море POD = жд агент
+                           seaItem.pod && railItem.agent && normalizeCityName(seaItem.pod) === normalizeCityName(railItem.agent) && // Правило 5: море POD = жд агент
+                           (!railItem.additionalInfo || !railItem.additionalInfo.toLowerCase().includes('тыловой терминал')); // Правило 6: Доп.информация в жд не должна быть = тыловой терминал
                 }
                 
                 return baseRules;
@@ -779,13 +805,25 @@ function calculateAllRates(departure, destination, containerType) {
                 
                 // Складываем ставки только если обе ненулевые
                 if (seaRate > 0 && railRate > 0) {
-                    const totalRate = seaRate + railRate;
+                    // Для сортировки используем конвертированную сумму в RUB
+                    let totalRateForSorting = 0;
+                    let currencyForSorting = '$';
+                    
+                    if (usdToRubRate) {
+                        // Конвертируем морскую ставку в RUB и складываем с ЖД ставкой
+                        totalRateForSorting = Math.round(seaRate * usdToRubRate) + railRate;
+                        currencyForSorting = 'RUB';
+                    } else {
+                        // Если курс не загружен, используем USD для сортировки (только морская часть)
+                        totalRateForSorting = seaRate;
+                        currencyForSorting = '$';
+                    }
                     
                     allResults.push({
                         transportType: 'sea_rail',
                         transportName: 'Море + ЖД',
-                        rate: totalRate,
-                        currency: '$',
+                        rate: totalRateForSorting,
+                        currency: currencyForSorting,
                         data: {
                             sea: seaItem,
                             rail: railItem,
@@ -795,7 +833,7 @@ function calculateAllRates(departure, destination, containerType) {
                         }
                     });
                     
-                    console.log(`✅ Комплексная ставка: ${seaRate} (море) + ${railRate} (жд) = ${totalRate}`);
+                    console.log(`✅ Комплексная ставка: ${seaRate} (море) + ${railRate} (жд) = ${totalRateForSorting} ${currencyForSorting}`);
                 }
             });
         });
@@ -814,6 +852,9 @@ function calculateAllRates(departure, destination, containerType) {
     console.log('📊 Отсортированные результаты комплексного расчета:',
         allResults.map(r => ({ type: r.transportType, rate: r.rate })));
 
+    // Сохраняем результаты в глобальную переменную для доступа из модального окна
+    window.allResults = allResults;
+    
     // Отображаем результаты
     displayComplexResults(allResults, departure, destination, containerType);
 }
@@ -885,25 +926,27 @@ function displayComplexResults(results, departure, destination, containerType) {
             totalRate = `${result.rate} RUB`;
             additionalInfo = `Агент: ${result.data.agent || 'Не указан'}`;
         } else if (result.transportType === 'sea_rail') {
-            // Комплексная ставка: море в USD, ЖД в RUB, общая в RUB
+            // Комплексная ставка: море в USD, ЖД в RUB
             const seaRateUSD = result.data.seaRate || 0;
             const railRateRUB = result.data.railRate || 0;
             
             seaRate = `$${seaRateUSD}`;
             railRate = `${railRateRUB} RUB`;
             
-            if (usdToRubRate) {
-                const totalRateRUB = Math.round(seaRateUSD * usdToRubRate) + railRateRUB;
-                totalRate = `${totalRateRUB} RUB`;
+            // Отображаем общую ставку в зависимости от валюты сортировки
+            if (result.currency === 'RUB') {
+                // Уже конвертировано в RUB
+                totalRate = `${result.rate} RUB`;
             } else {
-                totalRate = `$${seaRateUSD} + ${railRateRUB} RUB`;
+                // Используем USD для сортировки (только морская часть)
+                totalRate = `$${result.rate}`;
             }
             
             additionalInfo = result.data.connection || 'Комплексная перевозка Море+ЖД';
         }
         
         tableHTML += `
-            <tr class="${bestRateClass}">
+            <tr class="${bestRateClass}" ondblclick="openMarginModal(${index})" style="cursor: pointer;">
                 <td>
                     <span class="transport-type-badge ${transportTypeClass}">
                         ${result.transportName}
@@ -1105,6 +1148,14 @@ function addExchangeRateDisplay() {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Приложение логистики инициализировано');
     
+    // СРОЧНО: Принудительно скрываем модальное окно при загрузке
+    const modal = document.getElementById('margin-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        console.log('✅ Модальное окно принудительно скрыто');
+    }
+    
     // Загружаем курс ЦБ РФ
     await loadExchangeRate();
     
@@ -1121,3 +1172,278 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Добавляем отображение текущего курса
     addExchangeRateDisplay();
 });
+
+// Глобальные переменные для модального окна маржинальности
+let currentResultForMargin = null;
+let currentResultsArray = [];
+
+// Функция открытия модального окна маржинальности
+function openMarginModal(resultIndex) {
+    if (!window.allResults || !window.allResults[resultIndex]) {
+        console.error('Результат не найден');
+        return;
+    }
+    
+    currentResultForMargin = window.allResults[resultIndex];
+    currentResultsArray = window.allResults;
+    
+    const modal = document.getElementById('margin-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        
+        // Заполняем информацию о себестоимости
+        populateCostDetails(currentResultForMargin);
+        
+        // Создаем поля для ввода маржинальности
+        createMarginInputs(currentResultForMargin);
+        
+        // Рассчитываем и отображаем результат
+        calculateAndDisplayMargin();
+        
+        // Добавляем обработчик для закрытия при клике вне модального окна
+        document.addEventListener('click', handleModalOutsideClick);
+    }
+}
+
+// Обработчик клика вне модального окна
+function handleModalOutsideClick(event) {
+    const modal = document.getElementById('margin-modal');
+    const modalContent = document.querySelector('.modal-content');
+    
+    // Если клик был вне содержимого модального окна, закрываем его
+    if (modal && modalContent && !modalContent.contains(event.target)) {
+        closeMarginModal();
+    }
+}
+
+// Функция закрытия модального окна
+function closeMarginModal() {
+    const modal = document.getElementById('margin-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        // Удаляем обработчик клика вне модального окна
+        document.removeEventListener('click', handleModalOutsideClick);
+    }
+    currentResultForMargin = null;
+    currentResultsArray = [];
+}
+
+// Заполнение информации о себестоимости
+function populateCostDetails(result) {
+    const costDetails = document.getElementById('cost-details');
+    
+    let costHTML = '';
+    
+    // Добавляем маршрут для всех типов перевозок
+    let routeInfo = '';
+    if (result.transportType === 'direct_rail') {
+        routeInfo = `${result.data.fob || 'Не указан'} → ${result.data.arrivalCity || 'Не указан'}`;
+    } else if (result.transportType === 'direct_sea') {
+        routeInfo = `${result.data.pol || 'Не указан'} → ${result.data.pod || 'Не указан'}`;
+    } else if (result.transportType === 'sea') {
+        routeInfo = `${result.data.pol || 'Не указан'} → ${result.data.pod || 'Не указан'}`;
+    } else if (result.transportType === 'rail') {
+        routeInfo = `${result.data.city || 'Не указан'} → ${result.data.destination || 'Не указан'}`;
+    } else if (result.transportType === 'sea_rail') {
+        routeInfo = result.data.connection || 'Комплексный маршрут';
+    }
+    
+    costHTML += `
+        <div class="cost-item">
+            <span class="cost-label">Маршрут:</span>
+            <span>${routeInfo}</span>
+        </div>
+    `;
+    
+    if (result.transportType === 'direct_rail') {
+        costHTML += `
+            <div class="cost-item">
+                <span class="cost-label">Стоимость ЖД перевозки:</span>
+                <span class="cost-value">$${result.rate}</span>
+            </div>
+        `;
+    } else if (result.transportType === 'direct_sea') {
+        costHTML += `
+            <div class="cost-item">
+                <span class="cost-label">Стоимость фрахта:</span>
+                <span class="cost-value">$${result.rate}</span>
+            </div>
+        `;
+    } else if (result.transportType === 'sea') {
+        costHTML += `
+            <div class="cost-item">
+                <span class="cost-label">Стоимость фрахта:</span>
+                <span class="cost-value">$${result.rate}</span>
+            </div>
+        `;
+    } else if (result.transportType === 'rail') {
+        costHTML += `
+            <div class="cost-item">
+                <span class="cost-label">Стоимость ЖД перевозки:</span>
+                <span class="cost-value">${result.rate} RUB</span>
+            </div>
+        `;
+    } else if (result.transportType === 'sea_rail') {
+        costHTML += `
+            <div class="cost-item">
+                <span class="cost-label">Стоимость фрахта:</span>
+                <span class="cost-value">$${result.data.seaRate}</span>
+            </div>
+            <div class="cost-item">
+                <span class="cost-label">Стоимость ЖД перевозки:</span>
+                <span class="cost-value">${result.data.railRate} RUB</span>
+            </div>
+            <div class="cost-item">
+                <span class="cost-label">Общая стоимость:</span>
+                <span class="cost-value">${result.rate} ${result.currency}</span>
+            </div>
+        `;
+    }
+    
+    costDetails.innerHTML = costHTML;
+}
+
+// Создание полей для ввода маржинальности
+function createMarginInputs(result) {
+    const marginInputsContainer = document.getElementById('margin-inputs-container');
+    
+    let marginHTML = '';
+    
+    if (result.transportType === 'direct_rail' || result.transportType === 'rail') {
+        marginHTML = `
+            <div class="margin-input-group">
+                <label for="rail-margin">Накрутка на ЖД (${result.transportType === 'rail' ? 'RUB' : '$'}):</label>
+                <input type="number" id="rail-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
+            </div>
+        `;
+    } else if (result.transportType === 'direct_sea' || result.transportType === 'sea') {
+        marginHTML = `
+            <div class="margin-input-group">
+                <label for="sea-margin">Накрутка на фрахт ($):</label>
+                <input type="number" id="sea-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
+            </div>
+        `;
+    } else if (result.transportType === 'sea_rail') {
+        marginHTML = `
+            <div class="margin-input-group">
+                <label for="sea-margin">Накрутка на море ($):</label>
+                <input type="number" id="sea-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
+            </div>
+            <div class="margin-input-group">
+                <label for="rail-margin">Накрутка на ЖД (RUB):</label>
+                <input type="number" id="rail-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
+            </div>
+        `;
+    }
+    
+    marginInputsContainer.innerHTML = marginHTML;
+}
+
+// Расчет и отображение результата с накруткой
+function calculateAndDisplayMargin() {
+    if (!currentResultForMargin) return;
+    
+    const resultContainer = document.getElementById('margin-result-container');
+    let resultHTML = '';
+    
+    // Добавляем маршрут для всех типов перевозок
+    let routeInfo = '';
+    if (currentResultForMargin.transportType === 'direct_rail') {
+        routeInfo = `${currentResultForMargin.data.fob || 'Не указан'} → ${currentResultForMargin.data.arrivalCity || 'Не указан'}`;
+    } else if (currentResultForMargin.transportType === 'direct_sea') {
+        routeInfo = `${currentResultForMargin.data.pol || 'Не указан'} → ${currentResultForMargin.data.pod || 'Не указан'}`;
+    } else if (currentResultForMargin.transportType === 'sea') {
+        routeInfo = `${currentResultForMargin.data.pol || 'Не указан'} → ${currentResultForMargin.data.pod || 'Не указан'}`;
+    } else if (currentResultForMargin.transportType === 'rail') {
+        routeInfo = `${currentResultForMargin.data.city || 'Не указан'} → ${currentResultForMargin.data.destination || 'Не указан'}`;
+    } else if (currentResultForMargin.transportType === 'sea_rail') {
+        routeInfo = currentResultForMargin.data.connection || 'Комплексный маршрут';
+    }
+    
+    resultHTML += `
+        <div class="result-section">
+            <h4>Маршрут:</h4>
+            <div class="cost-item">
+                <span>${routeInfo}</span>
+            </div>
+        </div>
+    `;
+    
+    if (currentResultForMargin.transportType === 'direct_rail' || currentResultForMargin.transportType === 'rail') {
+        const margin = parseFloat(document.getElementById('rail-margin').value) || 0;
+        const baseRate = currentResultForMargin.rate;
+        const finalRate = baseRate + margin;
+        
+        resultHTML += `
+            <div class="result-section">
+                <h4>Стоимость ЖД перевозки:</h4>
+                <div class="final-rate">${finalRate} ${currentResultForMargin.transportType === 'rail' ? 'RUB' : '$'}</div>
+            </div>
+        `;
+    } else if (currentResultForMargin.transportType === 'direct_sea' || currentResultForMargin.transportType === 'sea') {
+        const margin = parseFloat(document.getElementById('sea-margin').value) || 0;
+        const baseRate = currentResultForMargin.rate;
+        const finalRate = baseRate + margin;
+        
+        resultHTML += `
+            <div class="result-section">
+                <h4>Стоимость фрахта:</h4>
+                <div class="final-rate">$${finalRate}</div>
+            </div>
+        `;
+    } else if (currentResultForMargin.transportType === 'sea_rail') {
+        const seaMargin = parseFloat(document.getElementById('sea-margin').value) || 0;
+        const railMargin = parseFloat(document.getElementById('rail-margin').value) || 0;
+        
+        const seaBaseRate = currentResultForMargin.data.seaRate;
+        const railBaseRate = currentResultForMargin.data.railRate;
+        
+        const seaFinalRate = seaBaseRate + seaMargin;
+        const railFinalRate = railBaseRate + railMargin;
+        
+        // Конвертируем морскую ставку в RUB для сложения
+        const seaFinalRateRUB = usdToRubRate ? Math.round(seaFinalRate * usdToRubRate) : seaFinalRate;
+        const totalFinalRate = seaFinalRateRUB + railFinalRate;
+        
+        resultHTML += `
+            <div class="result-section">
+                <h4>Стоимость фрахта:</h4>
+                <div class="final-rate">$${seaFinalRate}</div>
+            </div>
+            <div class="result-section">
+                <h4>Стоимость ЖД перевозки:</h4>
+                <div class="final-rate">${railFinalRate} RUB</div>
+            </div>
+            <div class="result-section">
+                <h4>Общая стоимость:</h4>
+                <div class="final-rate">${totalFinalRate} RUB</div>
+            </div>
+        `;
+    }
+    
+    resultContainer.innerHTML = resultHTML;
+}
+
+// Функция копирования результата
+function copyMarginResult() {
+    const resultContainer = document.getElementById('margin-result-container');
+    const textToCopy = resultContainer.innerText;
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        const copyButton = document.getElementById('copy-result');
+        const originalText = copyButton.textContent;
+        copyButton.textContent = '✅ Скопировано!';
+        
+        setTimeout(() => {
+            copyButton.textContent = originalText;
+        }, 2000);
+    }).catch(err => {
+        console.error('Ошибка копирования:', err);
+        alert('Не удалось скопировать текст');
+    });
+}
+
+// Сохраняем результаты в глобальную переменную для доступа из модального окна
+window.allResults = [];
