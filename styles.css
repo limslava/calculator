@@ -903,3 +903,110 @@ datalist option:hover {
     margin-bottom: 10px;
     font-size: 1.1rem;
 }
+
+/* Стили для интерфейса тарифов */
+.tariff-section {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.tariff-info {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.tariff-info h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.tariff-info p {
+    color: #666;
+    margin-bottom: 0;
+}
+
+.tariff-inputs {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.tariff-inputs .form-group {
+    margin-bottom: 15px;
+}
+
+.tariff-inputs .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.tariff-inputs label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.tariff-inputs .form-input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+
+.tariff-inputs .form-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* Стили для предпросмотра тарифов */
+#tariff-preview {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+#tariff-preview h3 {
+    color: #333;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 8px;
+}
+
+#tariff-preview table {
+    background: white;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#tariff-preview th {
+    background-color: #667eea;
+    color: white;
+    font-weight: 600;
+    padding: 12px;
+    text-align: left;
+}
+
+#tariff-preview td {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#tariff-preview tr:hover {
+    background-color: #f8f9fa;
+}
+
+#tariff-preview p {
+    margin-top: 15px;
+    font-style: italic;
+    color: #666;
+    text-align: center;
+}

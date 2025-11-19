@@ -9,7 +9,8 @@ let database = {
     sea: [],
     rail: [],
     direct_rail: [],
-    direct_sea: []
+    direct_sea: [],
+    tariff: []
 };
 
 // Курс ЦБ РФ
@@ -52,12 +53,14 @@ function selectRole(role) {
     currentRole = role;
     document.getElementById('role-selection').classList.add('hidden');
     document.getElementById('database-selection').classList.remove('hidden');
+    updateDatabaseButtonsVisibility();
 }
 
 function selectSalesRole() {
     currentRole = 'sales';
     document.getElementById('role-selection').classList.add('hidden');
     document.getElementById('calculation-type-selection').classList.remove('hidden');
+    updateDatabaseButtonsVisibility();
 }
 
 async function selectDatabase(dbType) {
@@ -69,13 +72,34 @@ async function selectDatabase(dbType) {
     await loadDatabaseData();
     
     if (currentRole === 'purchaser') {
-        document.getElementById('purchaser-interface').classList.remove('hidden');
-        setupFileUpload();
+        if (dbType === 'tariff') {
+            document.getElementById('tariff-interface').classList.remove('hidden');
+            loadTariffData();
+        } else {
+            document.getElementById('purchaser-interface').classList.remove('hidden');
+            setupFileUpload();
+        }
     } else if (currentRole === 'sales') {
         document.getElementById('sales-interface').classList.remove('hidden');
         resetCalculatorForm();
         setupCalculator();
         Utils.showLastUpdate();
+    }
+}
+
+// Функция для обновления отображения кнопок в зависимости от роли
+function updateDatabaseButtonsVisibility() {
+    const databaseSelection = document.getElementById('database-selection');
+    if (!databaseSelection) return;
+    
+    const tariffButton = databaseSelection.querySelector('button[onclick="selectDatabase(\'tariff\')"]');
+    if (tariffButton) {
+        // Показываем кнопку "Тариф" только для закупщика
+        if (currentRole === 'purchaser') {
+            tariffButton.style.display = 'block';
+        } else {
+            tariffButton.style.display = 'none';
+        }
     }
 }
 
@@ -86,32 +110,44 @@ function goBack() {
         currentDatabase = '';
         document.getElementById('database-selection').classList.remove('hidden');
         document.getElementById('sales-interface').classList.add('hidden');
+        updateDatabaseButtonsVisibility();
     } else if (currentRole === 'sales' && currentCalculationType === 'complex') {
         // Возврат из комплексного расчета к выбору типа расчета
         resetCalculatorForm();
         currentCalculationType = '';
         document.getElementById('calculation-type-selection').classList.remove('hidden');
         document.getElementById('sales-interface').classList.add('hidden');
+        updateDatabaseButtonsVisibility();
     } else if (currentRole === 'sales' && document.getElementById('database-selection').classList.contains('hidden') === false) {
         // Возврат из выбора типа базы данных к выбору типа расчета
         document.getElementById('database-selection').classList.add('hidden');
         document.getElementById('calculation-type-selection').classList.remove('hidden');
+        updateDatabaseButtonsVisibility();
     } else if (currentRole === 'sales') {
         // Возврат из выбора типа расчета к выбору роли
         currentRole = '';
         currentCalculationType = '';
         document.getElementById('role-selection').classList.remove('hidden');
         document.getElementById('calculation-type-selection').classList.add('hidden');
+        updateDatabaseButtonsVisibility();
+    } else if (currentRole === 'purchaser' && currentDatabase === 'tariff') {
+        // Возврат из интерфейса тарифов к выбору типа базы данных
+        currentDatabase = '';
+        document.getElementById('database-selection').classList.remove('hidden');
+        document.getElementById('tariff-interface').classList.add('hidden');
+        updateDatabaseButtonsVisibility();
     } else if (currentRole && currentDatabase) {
-        // Возврат для закупщика
+        // Возврат для закупщика из других интерфейсов
         currentDatabase = '';
         document.getElementById('database-selection').classList.remove('hidden');
         document.getElementById('purchaser-interface').classList.add('hidden');
+        updateDatabaseButtonsVisibility();
     } else if (currentRole) {
         // Возврат к выбору роли
         currentRole = '';
         document.getElementById('role-selection').classList.remove('hidden');
         document.getElementById('database-selection').classList.add('hidden');
+        updateDatabaseButtonsVisibility();
     }
 }
 
@@ -276,8 +312,8 @@ function showDataPreview(data) {
                 <thead>
                     <tr>
                         <th>Город</th>
-                        <th>Доп.информация</th>
                         <th>Агент</th>
+                        <th>Тыловой Терминал</th>
                         <th>Пункт назначения</th>
                         <th>Автовывоз</th>
                         <th>ПРР</th>
@@ -296,7 +332,7 @@ function showDataPreview(data) {
         `;
         
         data.slice(0, 5).forEach(item => {
-            const additionalInfo = (item.additionalInfo !== undefined && item.additionalInfo !== null && item.additionalInfo !== '') ? item.additionalInfo : '-';
+            const тыловойТерминал = (item.тыловойТерминал !== undefined && item.тыловойТерминал !== null && item.тыловойТерминал !== '') ? item.тыловойТерминал : '-';
             const autovivoz = (item.autovivoz !== undefined && item.autovivoz !== null && item.autovivoz !== '') ? item.autovivoz : '-';
             const prr = (item.prr !== undefined && item.prr !== null && item.prr !== '') ? item.prr : '-';
             const nds = (item.nds !== undefined && item.nds !== null && item.nds !== '') ? item.nds : '-';
@@ -308,8 +344,8 @@ function showDataPreview(data) {
             tableHTML += `
                 <tr>
                     <td>${item.city}</td>
-                    <td>${additionalInfo}</td>
                     <td>${item.agent}</td>
+                    <td>${тыловойТерминал}</td>
                     <td>${item.destination}</td>
                     <td>${autovivoz}</td>
                     <td>${prr}</td>
@@ -419,6 +455,145 @@ async function saveData() {
         console.error('❌ Ошибка сохранения данных на сервере:', error);
         Utils.showStatus(`Ошибка сохранения данных: ${error.message}`, 'error');
     }
+}
+
+// Функции для работы с тарифами
+function loadTariffData() {
+    // Загружаем сохраненные тарифы из базы данных
+    if (database.tariff && database.tariff.length > 0) {
+        const tariffData = database.tariff[0]; // Берем первый (и единственный) набор тарифов
+        document.getElementById('vtt-rate').value = tariffData.vtt || '';
+        document.getElementById('prr20-rate').value = tariffData.prr20 || '';
+        document.getElementById('prr40-rate').value = tariffData.prr40 || '';
+        document.getElementById('auto20-rate').value = tariffData.auto20 || '';
+        document.getElementById('auto40-rate').value = tariffData.auto40 || '';
+        
+        // Показываем предпросмотр сохраненных тарифов
+        showTariffPreview(tariffData);
+    }
+}
+
+function saveTariffData() {
+    const vttRate = parseFloat(document.getElementById('vtt-rate').value) || 0;
+    const prr20Rate = parseFloat(document.getElementById('prr20-rate').value) || 0;
+    const prr40Rate = parseFloat(document.getElementById('prr40-rate').value) || 0;
+    const auto20Rate = parseFloat(document.getElementById('auto20-rate').value) || 0;
+    const auto40Rate = parseFloat(document.getElementById('auto40-rate').value) || 0;
+    
+    // Проверяем, что все поля заполнены
+    if (vttRate === 0 && prr20Rate === 0 && prr40Rate === 0 && auto20Rate === 0 && auto40Rate === 0) {
+        Utils.showStatus('Пожалуйста, заполните хотя бы одно поле', 'error', 'tariff-status');
+        return;
+    }
+    
+    const tariffData = {
+        vtt: vttRate,
+        prr20: prr20Rate,
+        prr40: prr40Rate,
+        auto20: auto20Rate,
+        auto40: auto40Rate,
+        timestamp: new Date().toISOString()
+    };
+    
+    // Сохраняем в базу данных
+    database.tariff = [tariffData];
+    
+    // Сохраняем на сервер
+    saveTariffToServer(tariffData);
+    
+    // Показываем предпросмотр
+    showTariffPreview(tariffData);
+    
+    Utils.showStatus('Тарифы успешно сохранены', 'success', 'tariff-status');
+}
+
+async function saveTariffToServer(tariffData) {
+    try {
+        const response = await fetch('/api/data/tariff', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ data: [tariffData] })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('✅ Тарифы сохранены на сервере');
+            
+            // Сохраняем в localStorage как резервную копию
+            localStorage.setItem('logistics_db_tariff', JSON.stringify([tariffData]));
+            
+            // Сохраняем дату обновления
+            const currentDate = new Date();
+            const updateDate = {
+                date: currentDate.toISOString(),
+                formatted: currentDate.toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            };
+            localStorage.setItem('last_update_tariff', JSON.stringify(updateDate));
+            
+        } else {
+            throw new Error(result.error || 'Ошибка сохранения тарифов');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка сохранения тарифов на сервере:', error);
+        // Сохраняем в localStorage как резервную копию
+        localStorage.setItem('logistics_db_tariff', JSON.stringify([tariffData]));
+        Utils.showStatus('Тарифы сохранены локально (ошибка связи с сервером)', 'warning', 'tariff-status');
+    }
+}
+
+function showTariffPreview(tariffData) {
+    const previewSection = document.getElementById('tariff-preview');
+    const previewTable = document.getElementById('tariff-preview-table');
+    
+    const tableHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Услуга</th>
+                    <th>Стоимость (руб)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>ВТТ</td>
+                    <td>${tariffData.vtt}</td>
+                </tr>
+                <tr>
+                    <td>ПРР 20</td>
+                    <td>${tariffData.prr20}</td>
+                </tr>
+                <tr>
+                    <td>ПРР 40</td>
+                    <td>${tariffData.prr40}</td>
+                </tr>
+                <tr>
+                    <td>Автовывоз 20</td>
+                    <td>${tariffData.auto20}</td>
+                </tr>
+                <tr>
+                    <td>Автовывоз 40</td>
+                    <td>${tariffData.auto40}</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Тарифы сохранены: ${new Date(tariffData.timestamp).toLocaleString('ru-RU')}</p>
+    `;
+    
+    previewTable.innerHTML = tableHTML;
+    previewSection.classList.remove('hidden');
 }
 
 // Функции для менеджера по продажам
@@ -596,7 +771,7 @@ function setupComplexAutocomplete() {
 
 async function loadDatabaseData() {
     // 🔧 ЗАГРУЗКА ДАННЫХ ИЗ СЕРВЕРА ДЛЯ ВСЕХ ТИПОВ БАЗ
-    const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea'];
+    const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff'];
     
     for (const dbType of dbTypes) {
         try {
@@ -763,7 +938,7 @@ function calculateAllRates(departure, destination, containerType) {
                 if (isVTTTrigger) {
                     return baseRules &&
                            seaItem.pod && railItem.agent && normalizeCityName(seaItem.pod) === normalizeCityName(railItem.agent) && // Правило 5: море POD = жд агент
-                           (!railItem.additionalInfo || !railItem.additionalInfo.toLowerCase().includes('тыловой терминал')); // Правило 6: Доп.информация в жд не должна быть = тыловой терминал
+                           (railItem.тыловойТерминал && railItem.тыловойТерминал.toString().toLowerCase().trim() === 'нет'); // Правило 6: Тыловой Терминал должен быть равен "нет" (нечувствительно к регистру)
                 }
                 
                 return baseRules;
@@ -805,6 +980,9 @@ function calculateAllRates(departure, destination, containerType) {
                 
                 // Складываем ставки только если обе ненулевые
                 if (seaRate > 0 && railRate > 0) {
+                    // Получаем стоимость ВТТ из тарифов (если есть)
+                    const vttRate = database.tariff && database.tariff.length > 0 ? database.tariff[0].vtt || 0 : 0;
+                    
                     // Для сортировки используем конвертированную сумму в RUB
                     let totalRateForSorting = 0;
                     let currencyForSorting = '$';
@@ -819,6 +997,11 @@ function calculateAllRates(departure, destination, containerType) {
                         currencyForSorting = '$';
                     }
                     
+                    // Добавляем ВТТ к ставке только для комплексных ставок Море+ЖД
+                    if (isVTTTrigger && vttRate > 0) {
+                        totalRateForSorting += vttRate;
+                    }
+                    
                     allResults.push({
                         transportType: 'sea_rail',
                         transportName: 'Море + ЖД',
@@ -829,11 +1012,13 @@ function calculateAllRates(departure, destination, containerType) {
                             rail: railItem,
                             seaRate: seaRate,
                             railRate: railRate,
-                            connection: `Море: ${normalizeCityName(seaItem.pol)} → ${normalizeCityName(seaItem.pod)} (${normalizeCityName(seaItem.city)}) → ЖД: ${normalizeCityName(railItem.city)} → ${normalizeCityName(railItem.destination)}`
+                            connection: `Море: ${normalizeCityName(seaItem.pol)} → ${normalizeCityName(seaItem.pod)} (${normalizeCityName(seaItem.city)}) → ЖД: ${normalizeCityName(railItem.city)} → ${normalizeCityName(railItem.destination)}`,
+                            vttIncluded: isVTTTrigger && vttRate > 0,
+                            vttRate: vttRate
                         }
                     });
                     
-                    console.log(`✅ Комплексная ставка: ${seaRate} (море) + ${railRate} (жд) = ${totalRateForSorting} ${currencyForSorting}`);
+                    console.log(`✅ Комплексная ставка: ${seaRate} (море) + ${railRate} (жд) ${isVTTTrigger && vttRate > 0 ? `+ ${vttRate} (ВТТ)` : ''} = ${totalRateForSorting} ${currencyForSorting}`);
                 }
             });
         });
@@ -943,6 +1128,10 @@ function displayComplexResults(results, departure, destination, containerType) {
             }
             
             additionalInfo = result.data.connection || 'Комплексная перевозка Море+ЖД';
+            // Добавляем информацию о ВТТ, если он включен
+            if (result.data.vttIncluded) {
+                additionalInfo += ` + ВТТ: ${result.data.vttRate} RUB`;
+            }
         }
         
         tableHTML += `
@@ -1156,6 +1345,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('✅ Модальное окно принудительно скрыто');
     }
     
+    // Обновляем видимость кнопок базы данных при загрузке
+    updateDatabaseButtonsVisibility();
+    
     // Загружаем курс ЦБ РФ
     await loadExchangeRate();
     
@@ -1295,6 +1487,19 @@ function populateCostDetails(result) {
                 <span class="cost-label">Стоимость ЖД перевозки:</span>
                 <span class="cost-value">${result.data.railRate} RUB</span>
             </div>
+        `;
+        
+        // Добавляем информацию о ВТТ, если он включен
+        if (result.data.vttIncluded) {
+            costHTML += `
+                <div class="cost-item">
+                    <span class="cost-label">Стоимость ВТТ:</span>
+                    <span class="cost-value">${result.data.vttRate} RUB</span>
+                </div>
+            `;
+        }
+        
+        costHTML += `
             <div class="cost-item">
                 <span class="cost-label">Общая стоимость:</span>
                 <span class="cost-value">${result.rate} ${result.currency}</span>
@@ -1416,6 +1621,19 @@ function calculateAndDisplayMargin() {
                 <h4>Стоимость ЖД перевозки:</h4>
                 <div class="final-rate">${railFinalRate} RUB</div>
             </div>
+        `;
+        
+        // Добавляем информацию о ВТТ, если он включен
+        if (currentResultForMargin.data.vttIncluded) {
+            resultHTML += `
+                <div class="result-section">
+                    <h4>Стоимость ВТТ:</h4>
+                    <div class="final-rate">${currentResultForMargin.data.vttRate} RUB</div>
+                </div>
+            `;
+        }
+        
+        resultHTML += `
             <div class="result-section">
                 <h4>Общая стоимость:</h4>
                 <div class="final-rate">${totalFinalRate} RUB</div>

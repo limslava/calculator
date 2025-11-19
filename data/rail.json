@@ -15,7 +15,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -32,7 +33,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -49,7 +51,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Nakhodka",
@@ -66,7 +69,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -83,7 +87,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -100,7 +105,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -117,7 +123,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -134,7 +141,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -151,7 +159,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -168,7 +177,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -185,7 +195,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -202,58 +213,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
-    },
-    {
-      "city": "Vladivostok",
-      "agent": "GLL",
-      "destination": "Moscow",
-      "autovivoz": "Включено",
-      "prr": "Включено",
-      "container20Under24": 0,
-      "container20Over24": 0,
-      "container40": 235000,
-      "nds": 0,
-      "vochr20": "",
-      "vochr40": "",
-      "fitting": "",
-      "conditions": "",
-      "validity": "",
-      "additionalInfo": "тыловой терминал"
-    },
-    {
-      "city": "Vladivostok",
-      "agent": "GLL",
-      "destination": "Yekaterinburg",
-      "autovivoz": "Включено",
-      "prr": "Включено",
-      "container20Under24": 0,
-      "container20Over24": 0,
-      "container40": 215000,
-      "nds": 0,
-      "vochr20": "",
-      "vochr40": "",
-      "fitting": "",
-      "conditions": "",
-      "validity": "",
-      "additionalInfo": "тыловой терминал"
-    },
-    {
-      "city": "Vladivostok",
-      "agent": "GLL",
-      "destination": "Novosibirsk",
-      "autovivoz": "Включено",
-      "prr": "Включено",
-      "container20Under24": 0,
-      "container20Over24": 0,
-      "container40": 200000,
-      "nds": 0,
-      "vochr20": "",
-      "vochr40": "",
-      "fitting": "",
-      "conditions": "",
-      "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Nakhodka",
@@ -270,7 +231,8 @@
       "fitting": "",
       "conditions": "вкл ПРР, авто + наши 5тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -287,7 +249,8 @@
       "fitting": "",
       "conditions": "вкл ПРР, авто + наши 5тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -304,7 +267,8 @@
       "fitting": "",
       "conditions": "вкл ПРР, авто + наши 5тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -321,7 +285,8 @@
       "fitting": "",
       "conditions": "вкл ПРР, авто + наши 5тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -338,7 +303,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -355,7 +321,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -372,7 +339,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -389,7 +357,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -406,7 +375,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -423,7 +393,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -440,7 +411,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -457,7 +429,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -474,7 +447,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -491,7 +465,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -508,7 +483,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -525,7 +501,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -542,7 +519,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -559,7 +537,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -576,7 +555,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -593,7 +573,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -610,7 +591,8 @@
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "да",
+      "тыловойТерминал": "да"
     },
     {
       "city": "Vladivostok",
@@ -627,7 +609,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -644,7 +627,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -661,7 +645,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -678,7 +663,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -695,7 +681,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -712,7 +699,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -729,7 +717,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -746,7 +735,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -763,7 +753,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -780,7 +771,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -797,7 +789,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР + наши 5 тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -814,7 +807,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР, авто + наши 5тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -831,7 +825,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР, авто + наши 5тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -848,7 +843,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР, авто + наши 5тыс",
       "validity": "по след уведомление",
-      "additionalInfo": "нет"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -856,16 +852,17 @@
       "destination": "Moscow",
       "autovivoz": "Астафьева/ Пасифик",
       "prr": "Включено",
-      "container20Under24": 158000,
-      "container20Over24": 178000,
-      "container40": 230000,
+      "container20Under24": 167000,
+      "container20Over24": 189000,
+      "container40": 270000,
       "nds": 0,
       "vochr20": "",
       "vochr40": "",
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "до 14.09 по дате коносамента",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -873,16 +870,17 @@
       "destination": "Yekaterinburg",
       "autovivoz": "Астафьева/ Пасифик",
       "prr": "Включено",
-      "container20Under24": 150000,
-      "container20Over24": 170000,
-      "container40": 215000,
+      "container20Under24": 160000,
+      "container20Over24": 180000,
+      "container40": 229000,
       "nds": 0,
       "vochr20": "",
       "vochr40": "",
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "до 14.09 по дате коносамента",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -890,16 +888,17 @@
       "destination": "Novosibirsk",
       "autovivoz": "Астафьева/ Пасифик",
       "prr": "Включено",
-      "container20Under24": 150000,
-      "container20Over24": 168000,
-      "container40": 175000,
+      "container20Under24": 155000,
+      "container20Over24": 175000,
+      "container40": 192000,
       "nds": 0,
       "vochr20": "",
       "vochr40": "",
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "до 14.09 по дате коносамента",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -907,16 +906,17 @@
       "destination": "STP",
       "autovivoz": "Астафьева/ Пасифик",
       "prr": "Включено",
-      "container20Under24": 170000,
-      "container20Over24": 193000,
-      "container40": 220000,
+      "container20Under24": 178000,
+      "container20Over24": 203000,
+      "container40": 270000,
       "nds": 0,
       "vochr20": "",
       "vochr40": "",
       "fitting": 0,
       "conditions": "не вкл ПРР, авто",
       "validity": "до 14.09 по дате коносамента",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -933,7 +933,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -950,7 +951,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -967,7 +969,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -984,7 +987,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -992,16 +996,17 @@
       "destination": "Moscow",
       "autovivoz": "сквозной",
       "prr": "Включено",
-      "container20Under24": 166300,
-      "container20Over24": 201300,
-      "container40": 251300,
+      "container20Under24": 152300,
+      "container20Over24": 180300,
+      "container40": 239300,
       "nds": 0,
       "vochr20": 5081,
       "vochr40": 10190,
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "04.10.2025 (в зависимости от даты выдачи коносамента)",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1009,16 +1014,17 @@
       "destination": "Yekaterinburg",
       "autovivoz": "сквозной",
       "prr": "Включено",
-      "container20Under24": 176300,
-      "container20Over24": 201300,
-      "container40": 256300,
+      "container20Under24": 158300,
+      "container20Over24": 183300,
+      "container40": 255300,
       "nds": 0,
       "vochr20": 21388,
       "vochr40": 39425,
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "04.10.2025 (в зависимости от даты выдачи коносамента)",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1026,16 +1032,17 @@
       "destination": "Novosibirsk",
       "autovivoz": "сквозной",
       "prr": "Включено",
-      "container20Under24": 146300,
-      "container20Over24": 166300,
-      "container40": 201300,
+      "container20Under24": 121300,
+      "container20Over24": 143300,
+      "container40": 197300,
       "nds": 0,
       "vochr20": 19711,
       "vochr40": 33198,
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "04.10.2025 (в зависимости от даты выдачи коносамента)",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1043,16 +1050,17 @@
       "destination": "STP",
       "autovivoz": "сквозной",
       "prr": "Включено",
-      "container20Under24": 181300,
-      "container20Over24": 216300,
-      "container40": 301300,
+      "container20Under24": 159300,
+      "container20Over24": 188300,
+      "container40": 285300,
       "nds": 0,
       "vochr20": 28131,
       "vochr40": 47221,
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "04.10.2025 (в зависимости от даты выдачи коносамента)",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1069,7 +1077,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "04.10.2025 (в зависимости от даты выдачи коносамента)",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1077,7 +1086,7 @@
       "destination": "Krasnoyarsk",
       "autovivoz": "сквозной",
       "prr": "Включено",
-      "container20Under24": 161500,
+      "container20Under24": 161300,
       "container20Over24": 186300,
       "container40": 241300,
       "nds": 0,
@@ -1086,24 +1095,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР, авто",
       "validity": "04.10.2025 (в зависимости от даты выдачи коносамента)",
-      "additionalInfo": "тыловой терминал"
-    },
-    {
-      "city": "Vladivostok",
-      "agent": "СН-Навигатор",
-      "destination": "Moscow",
-      "autovivoz": "сквозной",
-      "prr": "Включено",
-      "container20Under24": 135000,
-      "container20Over24": 165000,
-      "container40": 215000,
-      "nds": 0,
-      "vochr20": 5700,
-      "vochr40": 11300,
-      "fitting": 0,
-      "conditions": "вкл ПРР, авто",
-      "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1120,7 +1113,8 @@
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1137,7 +1131,8 @@
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1154,7 +1149,8 @@
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1171,7 +1167,8 @@
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1188,7 +1185,8 @@
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1205,7 +1203,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 15.10 до 15.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1222,7 +1221,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 15.10 до 15.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1239,7 +1239,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 15.10 до 15.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1256,7 +1257,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 15.10 до 15.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1273,7 +1275,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 15.10 до 15.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1290,7 +1293,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1307,7 +1311,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1324,7 +1329,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1341,7 +1347,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1358,7 +1365,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1375,7 +1383,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1392,7 +1401,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1409,7 +1419,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1426,7 +1437,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1443,7 +1455,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1460,7 +1473,8 @@
       "fitting": 0,
       "conditions": "вкл ПРР",
       "validity": "с 16.11 до 30.11",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1470,14 +1484,15 @@
       "prr": "Включено",
       "container20Under24": 150085,
       "container20Over24": 175085,
-      "container40": 218750,
+      "container40": 230750,
       "nds": 0,
       "vochr20": 5700,
       "vochr40": 11300,
       "fitting": "",
       "conditions": "вкл ПРР",
-      "validity": "с 01.11 по 15.11",
-      "additionalInfo": "тыловой терминал"
+      "validity": "с 16.11 до 30.11",
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1485,16 +1500,17 @@
       "destination": "Yekaterinburg",
       "autovivoz": "напрямую из порта",
       "prr": "Включено",
-      "container20Under24": 165420,
-      "container20Over24": 182085,
-      "container40": 242670,
+      "container20Under24": 180420,
+      "container20Over24": 197085,
+      "container40": 286670,
       "nds": 0,
       "vochr20": 4500,
       "vochr40": 8500,
       "fitting": "",
       "conditions": "вкл ПРР",
-      "validity": "с 01.11 по 15.11",
-      "additionalInfo": "тыловой терминал"
+      "validity": "с 16.11 до 30.11",
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1502,16 +1518,17 @@
       "destination": "Novosibirsk",
       "autovivoz": "напрямую из порта",
       "prr": "Включено",
-      "container20Under24": 132000,
-      "container20Over24": 140000,
-      "container40": 186670,
+      "container20Under24": 147000,
+      "container20Over24": 155000,
+      "container40": 226670,
       "nds": 0,
       "vochr20": 3500,
       "vochr40": 7000,
       "fitting": "",
       "conditions": "вкл ПРР",
-      "validity": "с 01.11 по 15.11",
-      "additionalInfo": "тыловой терминал"
+      "validity": "с 16.11 до 30.11",
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1519,16 +1536,17 @@
       "destination": "STP",
       "autovivoz": "напрямую из порта",
       "prr": "Включено",
-      "container20Under24": 160500,
-      "container20Over24": 186500,
-      "container40": 259500,
+      "container20Under24": 175500,
+      "container20Over24": 201500,
+      "container40": 299500,
       "nds": 0,
       "vochr20": 5700,
       "vochr40": 11300,
       "fitting": "",
       "conditions": "вкл ПРР",
-      "validity": "с 01.11 по 15.11",
-      "additionalInfo": "тыловой терминал"
+      "validity": "с 16.11 до 30.11",
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1536,16 +1554,17 @@
       "destination": "Moscow",
       "autovivoz": "напрямую из порта(ВСК)",
       "prr": "Включено",
-      "container20Under24": 151000,
-      "container20Over24": 176000,
-      "container40": 230000,
+      "container20Under24": 160000,
+      "container20Over24": 188000,
+      "container40": 220000,
       "nds": 0,
       "vochr20": "",
       "vochr40": "",
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1553,8 +1572,8 @@
       "destination": "Yekaterinburg",
       "autovivoz": "напрямую из порта(ВСК)",
       "prr": "Включено",
-      "container20Under24": 158000,
-      "container20Over24": 181000,
+      "container20Under24": 165000,
+      "container20Over24": 190000,
       "container40": 240000,
       "nds": 0,
       "vochr20": "",
@@ -1562,7 +1581,8 @@
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1570,8 +1590,8 @@
       "destination": "Novosibirsk",
       "autovivoz": "напрямую из порта(ВСК)",
       "prr": "Включено",
-      "container20Under24": 122000,
-      "container20Over24": 142000,
+      "container20Under24": 128000,
+      "container20Over24": 150000,
       "container40": 180000,
       "nds": 0,
       "vochr20": "",
@@ -1579,7 +1599,8 @@
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1587,16 +1608,17 @@
       "destination": "STP",
       "autovivoz": "напрямую из порта(ВСК)",
       "prr": "Включено",
-      "container20Under24": 157000,
-      "container20Over24": 183000,
-      "container40": 275000,
+      "container20Under24": 167000,
+      "container20Over24": 195000,
+      "container40": 293000,
       "nds": 0,
       "vochr20": "",
       "vochr40": "",
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1604,16 +1626,17 @@
       "destination": "Tolyatti",
       "autovivoz": "напрямую из порта(ВСК)",
       "prr": "Включено",
-      "container20Under24": 169000,
-      "container20Over24": 194000,
-      "container40": 267000,
+      "container20Under24": 177000,
+      "container20Over24": 205000,
+      "container40": 282000,
       "nds": 0,
       "vochr20": "",
       "vochr40": "",
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Nakhodka",
@@ -1621,16 +1644,17 @@
       "destination": "Rostov-on-don",
       "autovivoz": "напрямую из порта(ВСК)",
       "prr": "Включено",
-      "container20Under24": 188000,
-      "container20Over24": 215000,
-      "container40": 333000,
+      "container20Under24": 196000,
+      "container20Over24": 226000,
+      "container40": 351000,
       "nds": 0,
       "vochr20": "",
       "vochr40": "",
       "fitting": "",
       "conditions": "вкл ПРР",
       "validity": "по след уведомление",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1638,8 +1662,8 @@
       "destination": "Moscow",
       "autovivoz": "напрямую из порта (ВМПП)",
       "prr": "Включено",
-      "container20Under24": 151000,
-      "container20Over24": 176000,
+      "container20Under24": 160000,
+      "container20Over24": 184000,
       "container40": 230000,
       "nds": 0,
       "vochr20": "",
@@ -1647,7 +1671,8 @@
       "fitting": "",
       "conditions": "",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1656,15 +1681,16 @@
       "autovivoz": "напрямую из порта (ВМПП)",
       "prr": "Включено",
       "container20Under24": 158000,
-      "container20Over24": 181000,
-      "container40": 245000,
+      "container20Over24": 185000,
+      "container40": 248000,
       "nds": 0,
       "vochr20": "",
       "vochr40": "",
       "fitting": "",
       "conditions": "",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     },
     {
       "city": "Vladivostok",
@@ -1681,9 +1707,28 @@
       "fitting": "",
       "conditions": "",
       "validity": "",
-      "additionalInfo": "тыловой терминал"
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
+    },
+    {
+      "city": "Vladivostok",
+      "agent": "Грин Си",
+      "destination": "Novosibirsk",
+      "autovivoz": "напрямую из порта (ВМПП)",
+      "prr": "Включено",
+      "container20Under24": 106000,
+      "container20Over24": 128000,
+      "container40": 188000,
+      "nds": 0,
+      "vochr20": "",
+      "vochr40": "",
+      "fitting": "",
+      "conditions": "",
+      "validity": "",
+      "additionalInfo": "нет",
+      "тыловойТерминал": "нет"
     }
   ],
-  "lastUpdate": "2025-11-18T07:35:18.880Z",
-  "count": 99
+  "lastUpdate": "2025-11-19T08:59:52.910Z",
+  "count": 96
 }

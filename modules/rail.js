@@ -273,8 +273,8 @@ const RailModule = {
                 <thead>
                     <tr>
                         <th>Город</th>
-                        <th>Доп.информация</th>
                         <th>Агент</th>
+                        <th>Тыловой Терминал</th>
                         <th>Пункт назначения</th>
                         <th>Автовывоз</th>
                         <th>ПРР</th>
@@ -293,7 +293,7 @@ const RailModule = {
         `;
         
         sortedData.forEach(item => {
-            const additionalInfo = (item.additionalInfo !== undefined && item.additionalInfo !== null && item.additionalInfo !== '') ? item.additionalInfo : '-';
+            const тыловойТерминал = (item.тыловойТерминал !== undefined && item.тыловойТерминал !== null && item.тыловойТерминал !== '') ? item.тыловойТерминал : '-';
             const autovivoz = (item.autovivoz !== undefined && item.autovivoz !== null && item.autovivoz !== '') ? item.autovivoz : '-';
             const prr = (item.prr !== undefined && item.prr !== null && item.prr !== '') ? item.prr : '-';
             const container20Under24 = (item.container20Under24 !== undefined && item.container20Under24 !== null && item.container20Under24 !== '') ? `${item.container20Under24} руб` : '-';
@@ -309,8 +309,8 @@ const RailModule = {
             tableHTML += `
                 <tr>
                     <td>${item.city}</td>
-                    <td>${additionalInfo}</td>
                     <td>${item.agent}</td>
+                    <td>${тыловойТерминал}</td>
                     <td>${item.destination}</td>
                     <td>${autovivoz}</td>
                     <td>${prr}</td>

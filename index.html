@@ -53,6 +53,10 @@
                         <h3>Прямое море</h3>
                         <p>Прямые морские перевозки</p>
                     </button>
+                    <button class="db-btn" onclick="selectDatabase('tariff')">
+                        <h3>Тариф</h3>
+                        <p>Ввод тарифных ставок</p>
+                    </button>
                 </div>
             </section>
 
@@ -73,7 +77,7 @@
                         </div>
                         <p><strong>Для железнодорожных перевозок доступны следующие столбцы:</strong></p>
                         <div class="columns-list" style="font-size: 14px; margin-top: 10px;">
-                            City, Доп.информация, Агент, Пункт назначения, Автовывоз, ПРР, 20фут ктк ( до 24 тонн), 20фут ктк (от 24 тонн до 28 тонн), 40фут ктк, НДС, ВОХР 20, ВОХР 40, Фитинг/ПВ, Условия, Валидность
+                            City, Агент, Тыловой Терминал, Пункт назначения, Автовывоз, ПРР, 20фут ктк ( до 24 тонн), 20фут ктк (от 24 тонн до 28 тонн), 40фут ктк, НДС, ВОХР 20, ВОХР 40, Фитинг/ПВ, Условия, Валидность
                         </div>
                         <p>
                             <a href="templates/template-sea.xlsx" download="template-sea.xlsx" class="download-link">📥 Скачать шаблон Excel файла для морских перевозок</a>
@@ -104,6 +108,53 @@
                     <button id="save-data" class="btn-success" onclick="saveData()">
                         Сохранить в базу
                     </button>
+                </div>
+            </section>
+
+            <!-- Интерфейс тарифов -->
+            <section id="tariff-interface" class="section hidden">
+                <div class="section-header">
+                    <h2>Ввод тарифных ставок</h2>
+                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                </div>
+                <div class="tariff-section">
+                    <div class="tariff-info">
+                        <h3>Введите тарифные ставки (финансовые, руб)</h3>
+                        <p>Укажите стоимость услуг в российских рублях:</p>
+                    </div>
+                    
+                    <div class="tariff-inputs">
+                        <div class="form-group">
+                            <label for="vtt-rate">ВТТ (руб):</label>
+                            <input type="number" id="vtt-rate" class="form-input" placeholder="Введите стоимость ВТТ" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="prr20-rate">ПРР 20 (руб):</label>
+                            <input type="number" id="prr20-rate" class="form-input" placeholder="Введите стоимость ПРР 20" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="prr40-rate">ПРР 40 (руб):</label>
+                            <input type="number" id="prr40-rate" class="form-input" placeholder="Введите стоимость ПРР 40" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="auto20-rate">Автовывоз 20 (руб):</label>
+                            <input type="number" id="auto20-rate" class="form-input" placeholder="Введите стоимость автовывоза 20" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="auto40-rate">Автовывоз 40 (руб):</label>
+                            <input type="number" id="auto40-rate" class="form-input" placeholder="Введите стоимость автовывоза 40" min="0" step="1">
+                        </div>
+                    </div>
+                    
+                    <div id="tariff-status" class="status"></div>
+                    <button id="save-tariff" class="btn-success" onclick="saveTariffData()">
+                        Сохранить тарифы
+                    </button>
+                </div>
+                
+                <div id="tariff-preview" class="data-preview hidden">
+                    <h3>Предпросмотр тарифов</h3>
+                    <div id="tariff-preview-table" class="preview-table"></div>
                 </div>
             </section>
 

@@ -602,7 +602,7 @@ function parseRailData(excelData) {
         fitting: findColumnIndex(headers, ['Фитинг/ПВ', 'Fitting/PV']),
         conditions: findColumnIndex(headers, ['Условия', 'Conditions']),
         validity: findColumnIndex(headers, ['Валидность', 'Validity']),
-        additionalInfo: findColumnIndex(headers, ['Доп.информация', 'Additional info', 'Additional information'])
+        тыловойТерминал: findColumnIndex(headers, ['Тыловой Терминал', 'Тыловой терминал', 'Доп.информация', 'Additional info', 'Additional information'])
     };
     
     console.log('🗺️ Найденные колонки ЖД:', headerMap);
@@ -651,6 +651,11 @@ function parseRailData(excelData) {
                     if (originalValue !== value) {
                         console.log(`🔄 Строка ${index}: agent "${originalValue}" → "${value}"`);
                     }
+                }
+                
+                // 🔧 Сохраняем старое название для обратной совместимости
+                if (key === 'тыловойТерминал') {
+                    item.additionalInfo = value; // Для обратной совместимости
                 }
                 
                 if (typeof value === 'string') {
