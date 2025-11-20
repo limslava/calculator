@@ -1,7 +1,7 @@
 // 🎯 ОСНОВНОЙ ФАЙЛ ПРИЛОЖЕНИЯ - ТЕПЕРЬ ИСПОЛЬЗУЕТ МОДУЛИ
 
 // Глобальные переменные
-let currentRole = '';
+let currentRole = window.currentRole || '';
 let currentDatabase = '';
 let currentCalculationType = 'separate'; // 'separate' или 'complex'
 let uploadedData = null;
@@ -50,40 +50,92 @@ function normalizeCityName(city) {
 
 // Функции для управления интерфейсом
 function selectRole(role) {
+    const currentUser = Auth.getCurrentUser();
+    
+    if (!currentUser) {
+        Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
+        return;
+    }
+    
+    // Обновляем роль пользователя в системе
+    Auth.updateUserRole(currentUser.id, role);
+    
     currentRole = role;
     document.getElementById('role-selection').classList.add('hidden');
     document.getElementById('database-selection').classList.remove('hidden');
     updateDatabaseButtonsVisibility();
+    
+    Utils.showStatus(`Выбран режим: ${role === 'purchaser' ? 'Менеджер по закупу' : 'Менеджер по продажам'}`, 'success');
 }
 
 function selectSalesRole() {
+    const currentUser = Auth.getCurrentUser();
+    
+    if (!currentUser) {
+        Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
+        return;
+    }
+    
+    // Обновляем роль пользователя в системе
+    Auth.updateUserRole(currentUser.id, 'sales');
+    
     currentRole = 'sales';
     document.getElementById('role-selection').classList.add('hidden');
     document.getElementById('calculation-type-selection').classList.remove('hidden');
     updateDatabaseButtonsVisibility();
+    
+    Utils.showStatus('Выбран режим: Менеджер по продажам', 'success');
 }
 
 async function selectDatabase(dbType) {
+    const currentUser = Auth.getCurrentUser();
+    
+    if (!currentUser) {
+        Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
+        return;
+    }
+    
+    // Используем глобальную переменную window.currentRole
+    const role = window.currentRole || currentRole;
+    
+    // Проверяем права доступа для тарифов
+    if (dbType === 'tariff' && currentUser.role !== 'purchaser') {
+        Utils.showStatus('Доступ запрещен. Только менеджеры по закупу могут управлять тарифами.', 'error');
+        return;
+    }
+    
     currentDatabase = dbType;
-    console.log('🎯 Выбран тип базы данных:', dbType);
+    console.log('🎯 Выбран тип базы данных:', dbType, 'для роли:', role);
     document.getElementById('database-selection').classList.add('hidden');
     
     // Синхронизируем данные с сервером при каждом входе
     await loadDatabaseData();
     
-    if (currentRole === 'purchaser') {
+    if (role === 'purchaser') {
         if (dbType === 'tariff') {
+            console.log('🔧 Открываем интерфейс тарифов для закупщика');
             document.getElementById('tariff-interface').classList.remove('hidden');
             loadTariffData();
         } else {
+            console.log('🔧 Открываем интерфейс загрузки файлов для закупщика:', dbType);
             document.getElementById('purchaser-interface').classList.remove('hidden');
+            // Очищаем предыдущие данные
+            document.getElementById('excel-file').value = '';
+            document.getElementById('process-file').disabled = true;
+            document.getElementById('data-preview').classList.add('hidden');
+            uploadedData = null;
+            // Инициализируем загрузку файлов
             setupFileUpload();
         }
-    } else if (currentRole === 'sales') {
+    } else if (role === 'sales') {
+        console.log('🔧 Открываем интерфейс продаж для менеджера');
         document.getElementById('sales-interface').classList.remove('hidden');
         resetCalculatorForm();
         setupCalculator();
         Utils.showLastUpdate();
+        
+        // Обновляем отображение кнопок в заголовке
+        updateSalesHeaderButtons();
     }
 }
 
@@ -92,63 +144,177 @@ function updateDatabaseButtonsVisibility() {
     const databaseSelection = document.getElementById('database-selection');
     if (!databaseSelection) return;
     
-    const tariffButton = databaseSelection.querySelector('button[onclick="selectDatabase(\'tariff\')"]');
-    if (tariffButton) {
-        // Показываем кнопку "Тариф" только для закупщика
-        if (currentRole === 'purchaser') {
-            tariffButton.style.display = 'block';
-        } else {
-            tariffButton.style.display = 'none';
+    // Используем глобальную переменную window.currentRole
+    const role = window.currentRole || currentRole;
+    console.log('🔧 Обновление видимости кнопок для роли:', role);
+    
+    // Находим все кнопки базы данных
+    const dbButtons = databaseSelection.querySelectorAll('.db-btn');
+    console.log('🔧 Найдено кнопок базы данных:', dbButtons.length);
+    
+    dbButtons.forEach((button, index) => {
+        // Проверяем, является ли это кнопкой "Тариф" по тексту
+        const buttonText = button.textContent.toLowerCase();
+        const isTariffButton = buttonText.includes('тариф');
+        
+        console.log(`🔧 Кнопка ${index}: "${button.textContent.trim()}" - тариф: ${isTariffButton}`);
+        
+        if (isTariffButton) {
+            // Показываем кнопку "Тариф" только для закупщика
+            if (role === 'purchaser') {
+                button.style.display = 'block';
+                console.log('✅ Кнопка "Тариф" показана для закупщика');
+            } else {
+                button.style.display = 'none';
+                console.log('❌ Кнопка "Тариф" скрыта для роли:', role);
+            }
         }
-    }
+    });
+    
+    console.log('🔧 Обновлена видимость кнопок базы данных для роли:', role);
 }
 
 function goBack() {
-    if (currentRole === 'sales' && currentDatabase) {
+    // Используем глобальную переменную для синхронизации с auth-ui.js
+    const role = window.currentRole || currentRole;
+    console.log('🔙 Нажата кнопка "Назад":', { role, currentDatabase, currentCalculationType });
+    
+    if (role === 'sales' && currentDatabase) {
         // Возврат из отдельных ставок к выбору типа базы данных
+        console.log('🔙 Возврат из отдельных ставок к выбору типа базы данных');
         resetCalculatorForm();
         currentDatabase = '';
-        document.getElementById('database-selection').classList.remove('hidden');
         document.getElementById('sales-interface').classList.add('hidden');
+        document.getElementById('database-selection').classList.remove('hidden');
         updateDatabaseButtonsVisibility();
-    } else if (currentRole === 'sales' && currentCalculationType === 'complex') {
+    } else if (role === 'sales' && currentCalculationType === 'complex') {
         // Возврат из комплексного расчета к выбору типа расчета
+        console.log('🔙 Возврат из комплексного расчета к выбору типа расчета');
         resetCalculatorForm();
         currentCalculationType = '';
-        document.getElementById('calculation-type-selection').classList.remove('hidden');
         document.getElementById('sales-interface').classList.add('hidden');
+        document.getElementById('calculation-type-selection').classList.remove('hidden');
         updateDatabaseButtonsVisibility();
-    } else if (currentRole === 'sales' && document.getElementById('database-selection').classList.contains('hidden') === false) {
+    } else if (role === 'sales' && document.getElementById('database-selection').classList.contains('hidden') === false) {
         // Возврат из выбора типа базы данных к выбору типа расчета
+        console.log('🔙 Возврат из выбора типа базы данных к выбору типа расчета');
         document.getElementById('database-selection').classList.add('hidden');
         document.getElementById('calculation-type-selection').classList.remove('hidden');
         updateDatabaseButtonsVisibility();
-    } else if (currentRole === 'sales') {
+    } else if (role === 'sales') {
         // Возврат из выбора типа расчета к выбору роли
+        console.log('🔙 Возврат из выбора типа расчета к выбору роли');
         currentRole = '';
         currentCalculationType = '';
-        document.getElementById('role-selection').classList.remove('hidden');
         document.getElementById('calculation-type-selection').classList.add('hidden');
-        updateDatabaseButtonsVisibility();
-    } else if (currentRole === 'purchaser' && currentDatabase === 'tariff') {
-        // Возврат из интерфейса тарифов к выбору типа базы данных
-        currentDatabase = '';
-        document.getElementById('database-selection').classList.remove('hidden');
-        document.getElementById('tariff-interface').classList.add('hidden');
-        updateDatabaseButtonsVisibility();
-    } else if (currentRole && currentDatabase) {
-        // Возврат для закупщика из других интерфейсов
-        currentDatabase = '';
-        document.getElementById('database-selection').classList.remove('hidden');
-        document.getElementById('purchaser-interface').classList.add('hidden');
-        updateDatabaseButtonsVisibility();
-    } else if (currentRole) {
-        // Возврат к выбору роли
-        currentRole = '';
         document.getElementById('role-selection').classList.remove('hidden');
+        updateDatabaseButtonsVisibility();
+    } else if (role === 'purchaser' && currentDatabase === 'tariff') {
+        // Возврат из интерфейса тарифов к выбору типа базы данных
+        console.log('🔙 Возврат из интерфейса тарифов для закупщика');
+        currentDatabase = '';
+        document.getElementById('tariff-interface').classList.add('hidden');
+        document.getElementById('database-selection').classList.remove('hidden');
+        updateDatabaseButtonsVisibility();
+    } else if (role === 'purchaser' && currentDatabase) {
+        // Возврат для закупщика из интерфейса загрузки файлов
+        console.log('🔙 Возврат из интерфейса загрузки файлов для закупщика');
+        currentDatabase = '';
+        document.getElementById('purchaser-interface').classList.add('hidden');
+        document.getElementById('database-selection').classList.remove('hidden');
+        updateDatabaseButtonsVisibility();
+    } else if (role === 'purchaser') {
+        // Возврат к выбору типа базы данных
+        console.log('🔙 Возврат к выбору типа базы данных для закупщика');
+        currentDatabase = '';
+        document.getElementById('purchaser-interface').classList.add('hidden');
+        document.getElementById('tariff-interface').classList.add('hidden');
+        document.getElementById('database-selection').classList.remove('hidden');
+        updateDatabaseButtonsVisibility();
+    } else {
+        // Общий возврат к выбору роли
+        console.log('🔙 Общий возврат к выбору роли');
+        currentRole = '';
+        currentDatabase = '';
+        currentCalculationType = '';
         document.getElementById('database-selection').classList.add('hidden');
+        document.getElementById('calculation-type-selection').classList.add('hidden');
+        document.getElementById('purchaser-interface').classList.add('hidden');
+        document.getElementById('tariff-interface').classList.add('hidden');
+        document.getElementById('sales-interface').classList.add('hidden');
+        document.getElementById('role-selection').classList.remove('hidden');
         updateDatabaseButtonsVisibility();
     }
+    
+    console.log('✅ После нажатия "Назад":', { role, currentDatabase, currentCalculationType });
+    
+    // Обновляем кнопки в заголовке после навигации
+    if (role === 'sales') {
+        updateSalesHeaderButtons();
+    }
+}
+
+// Функция перенаправления менеджера по продажам на отдельный интерфейс
+function redirectToSalesInterface() {
+    const currentUser = Auth.getCurrentUser();
+    
+    if (!currentUser) {
+        Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
+        return;
+    }
+    
+    // Обновляем роль пользователя в системе
+    Auth.updateUserRole(currentUser.id, 'sales');
+    
+    // Перенаправляем на отдельный интерфейс менеджера по продажам
+    window.location.href = 'sales-interface.html';
+}
+
+// Функция перенаправления менеджера по закупкам на отдельный интерфейс
+function redirectToPurchaserInterface() {
+    const currentUser = Auth.getCurrentUser();
+    
+    if (!currentUser) {
+        Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
+        return;
+    }
+    
+    // Обновляем роль пользователя в системе
+    Auth.updateUserRole(currentUser.id, 'purchaser');
+    
+    // Перенаправляем на отдельный интерфейс менеджера по закупкам
+    window.location.href = 'purchaser-interface.html';
+}
+
+// Функция для обновления отображения кнопок в заголовке менеджера по продажам
+// ТОЛЬКО ДЛЯ ОСНОВНОГО ИНТЕРФЕЙСА - НЕ ИСПОЛЬЗУЕТСЯ В ОТДЕЛЬНЫХ ИНТЕРФЕЙСАХ
+function updateSalesHeaderButtons() {
+    const salesInterface = document.getElementById('sales-interface');
+    if (!salesInterface) return;
+    
+    const headerButtons = salesInterface.querySelector('.sales-header-buttons');
+    if (!headerButtons) return;
+    
+    // Для комплексных ставок показываем только кнопку "Назад"
+    // Для отдельных ставок тоже показываем только кнопку "Назад"
+    if (currentCalculationType === 'complex' || currentDatabase) {
+        headerButtons.innerHTML = `
+            <button class="btn-back" onclick="goBack()">← Назад</button>
+        `;
+    } else {
+        // В выборе типа расчета показываем обе кнопки
+        headerButtons.innerHTML = `
+            <button class="btn-back" onclick="goBack()">← Назад</button>
+            <button class="btn-logout" onclick="logoutUser()">
+                <i class="fas fa-sign-out-alt"></i> Выйти
+            </button>
+        `;
+    }
+    
+    console.log('🔧 Обновлены кнопки в заголовке менеджера по продажам:', {
+        currentCalculationType,
+        currentDatabase
+    });
 }
 
 function resetCalculatorForm() {
@@ -181,12 +347,25 @@ function setupFileUpload() {
     const fileInput = document.getElementById('excel-file');
     const processButton = document.getElementById('process-file');
     
+    console.log('🔧 Настройка загрузки файлов для базы:', currentDatabase);
+    
+    if (!fileInput || !processButton) {
+        console.error('❌ Не найдены элементы для загрузки файлов');
+        return;
+    }
+    
+    // Сбрасываем состояние
+    fileInput.value = '';
+    processButton.disabled = true;
+    
     fileInput.addEventListener('change', function(e) {
         if (e.target.files.length > 0) {
             processButton.disabled = false;
             Utils.showStatus('Файл выбран. Нажмите "Обработать файл"', 'success');
         }
     });
+    
+    console.log('✅ Настройка загрузки файлов завершена');
 }
 
 function processExcelFile() {
@@ -639,6 +818,9 @@ function selectCalculationType(type) {
         resetCalculatorForm();
         setupCalculator();
         Utils.showLastUpdate();
+        
+        // Обновляем кнопки в заголовке для комплексных ставок
+        updateSalesHeaderButtons();
     }
 }
 
@@ -808,11 +990,15 @@ async function loadDatabaseData() {
     window.database = database;
     console.log('🌐 Данные экспортированы в window.database для модулей');
     
-    // 🔧 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ДЛЯ МОРЯ
-    console.log('📊 Проверка данных моря:', {
-        hasSeaData: database.sea && database.sea.length > 0,
-        seaRecords: database.sea ? database.sea.length : 0,
-        currentDatabase: currentDatabase
+    // 🔧 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ВСЕХ ДАННЫХ
+    console.log('📊 Проверка всех данных:', {
+        sea: database.sea ? database.sea.length : 0,
+        rail: database.rail ? database.rail.length : 0,
+        direct_rail: database.direct_rail ? database.direct_rail.length : 0,
+        direct_sea: database.direct_sea ? database.direct_sea.length : 0,
+        tariff: database.tariff ? database.tariff.length : 0,
+        currentDatabase: currentDatabase,
+        currentRole: currentRole
     });
 }
 
@@ -1336,6 +1522,15 @@ function addExchangeRateDisplay() {
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Приложение логистики инициализировано');
+    
+    // Инициализация системы аутентификации
+    Auth.initialize();
+    
+    // Небольшая задержка для гарантии загрузки всех модулей
+    setTimeout(() => {
+        // Проверяем авторизацию при загрузке
+        AuthUI.checkAuthOnLoad();
+    }, 100);
     
     // СРОЧНО: Принудительно скрываем модальное окно при загрузке
     const modal = document.getElementById('margin-modal');

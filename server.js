@@ -3,6 +3,7 @@ const compression = require('compression');
 const helmet = require('helmet');
 const path = require('path');
 const DataStorage = require('./server-data');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,10 +19,11 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
       scriptSrcAttr: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      styleSrcElem: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"]
@@ -124,6 +126,49 @@ app.get('/api/data', (req, res) => {
     } catch (error) {
         console.error('❌ Ошибка получения всех данных:', error);
         res.status(500).json({ error: 'Ошибка получения данных' });
+    }
+});
+
+// Маршрут для отправки email
+app.post('/api/send-email', async (req, res) => {
+    try {
+        const { to, subject, message, config } = req.body;
+        
+        console.log('📧 Отправка email через сервер:', { to, subject });
+        
+        if (!to || !subject || !message || !config) {
+            return res.status(400).json({
+                success: false,
+                error: 'Не все обязательные поля заполнены'
+            });
+        }
+        
+        // Создаем транспортер для отправки email
+        const transporter = nodemailer.createTransport(config);
+        
+        const mailOptions = {
+            from: config.auth.user,
+            to: to,
+            subject: subject,
+            text: message,
+            html: message.replace(/\n/g, '<br>')
+        };
+        
+        const result = await transporter.sendMail(mailOptions);
+        console.log('✅ Email успешно отправлен через сервер:', result.messageId);
+        
+        res.json({
+            success: true,
+            message: 'Email отправлен',
+            messageId: result.messageId
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка отправки email через сервер:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
 

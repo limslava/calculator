@@ -344,3 +344,6 @@ const RailModule = {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = RailModule;
 }
+
+// Экспортируем в глобальную область для использования в sales-script.js
+window.RailModule = RailModule;

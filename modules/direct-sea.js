@@ -120,9 +120,14 @@ class EnhancedDirectSeaSearchEngine {
 
 // 🚀 ФУНКЦИЯ ДЛЯ НАСТРОЙКИ ЦЕПНОГО ОБНОВЛЕНИЯ ДЛЯ ПРЯМОГО МОРЯ
 function setupEnhancedDirectSeaChainUpdate(data) {
-    const polInput = document.getElementById('pol');
-    const podInput = document.getElementById('pod');
-    const containerTypeSelect = document.getElementById('container-type');
+    const polInput = document.getElementById('direct-sea-pol');
+    const podInput = document.getElementById('direct-sea-pod');
+    const containerTypeSelect = document.getElementById('direct-sea-container-type');
+    
+    if (!polInput || !podInput || !containerTypeSelect) {
+        console.error('❌ Не найдены необходимые элементы DOM для прямого моря');
+        return;
+    }
     
     console.log('🔧 Инициализация улучшенного цепного обновления для прямого моря с фильтрацией ненулевых ставок и автопоиском');
     
@@ -183,7 +188,8 @@ function setupEnhancedDirectSeaChainUpdate(data) {
             if (rates.length === 0) {
                 console.warn('⚠️ Ставки не найдены для выбранного маршрута');
                 // Скрываем результаты если ничего не найдено
-                document.getElementById('results').classList.add('hidden');
+                const resultsSection = document.getElementById('results');
+                if (resultsSection) resultsSection.classList.add('hidden');
                 showStatus('Ставки не найдены для выбранного маршрута', 'warning');
             } else {
                 console.log(`✅ Найдено ${rates.length} ставок, отображаем результаты`);
@@ -192,7 +198,8 @@ function setupEnhancedDirectSeaChainUpdate(data) {
             }
         } else {
             // Скрываем результаты если не все обязательные поля заполнены
-            document.getElementById('results').classList.add('hidden');
+            const resultsSection = document.getElementById('results');
+            if (resultsSection) resultsSection.classList.add('hidden');
             console.log('⏳ Ожидание заполнения обязательных полей...');
         }
     }
@@ -208,7 +215,7 @@ function setupEnhancedDirectSeaChainUpdate(data) {
         const availablePOL = enhancedDirectSeaSearchEngine.getPOLWithRates();
         console.log('📋 Доступные POL с ненулевыми ставками:', availablePOL);
         if (window.Utils && window.Utils.setupCustomDropdown) {
-            window.Utils.setupCustomDropdown('pol', availablePOL);
+            window.Utils.setupCustomDropdown('direct-sea-pol', availablePOL);
         } else {
             console.error('❌ Utils.setupCustomDropdown не доступен в прямом море');
         }
@@ -220,7 +227,7 @@ function setupEnhancedDirectSeaChainUpdate(data) {
             console.log(`🎯 Доступные POD с ненулевыми ставками для "${selectedPOL}":`, availablePOD);
         }
         if (window.Utils && window.Utils.setupCustomDropdown) {
-            window.Utils.setupCustomDropdown('pod', availablePOD);
+            window.Utils.setupCustomDropdown('direct-sea-pod', availablePOD);
         } else {
             console.error('❌ Utils.setupCustomDropdown не доступен в прямом море для POD');
         }
@@ -372,9 +379,9 @@ function setupEnhancedDirectSeaChainUpdate(data) {
 
 // 🎯 ФУНКЦИЯ ДЛЯ ПОИСКА СТАВОК ДЛЯ ПРЯМОГО МОРЯ
 function searchDirectSeaRates() {
-    const pol = document.getElementById('pol').value.trim();
-    const pod = document.getElementById('pod').value.trim();
-    const containerType = document.getElementById('container-type').value;
+    const pol = document.getElementById('direct-sea-pol').value.trim();
+    const pod = document.getElementById('direct-sea-pod').value.trim();
+    const containerType = document.getElementById('direct-sea-container-type').value;
     
     if (!pol || !pod || !containerType) {
         showStatus('Пожалуйста, заполните все обязательные поля', 'error');

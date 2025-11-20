@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор ставок - Менеджер по закупкам</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Библиотека для работы с Excel файлами -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Библиотека для работы с иконками -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Калькулятор ставок</h1>
+        </header>
+
+        <main>
+            <!-- Выбор типа базы данных -->
+            <section id="database-selection" class="section">
+                <div class="section-header">
+                    <h2>Выберите тип базы данных</h2>
+                    <button class="btn-secondary" onclick="logoutUser()">
+                        <i class="fas fa-sign-out-alt"></i> Выйти
+                    </button>
+                </div>
+                <div class="database-buttons">
+                    <button class="db-btn" onclick="selectDatabase('sea')">
+                        <h3>Море</h3>
+                        <p>Морские перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('rail')">
+                        <h3>ЖД</h3>
+                        <p>Железнодорожные перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('direct_rail')">
+                        <h3>Прямое ЖД</h3>
+                        <p>Прямые железнодорожные перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('direct_sea')">
+                        <h3>Прямое море</h3>
+                        <p>Прямые морские перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('tariff')">
+                        <h3>Тариф</h3>
+                        <p>Ввод тарифных ставок</p>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Интерфейс закупщика -->
+            <section id="purchaser-interface" class="section hidden">
+                <div class="section-header">
+                    <h2>Загрузка базы данных</h2>
+                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                </div>
+                <div class="upload-section">
+                    <div class="template-info">
+                        <h3>Формат файла для загрузки</h3>
+                        <p>Используйте следующий формат столбцов в Excel файле:</p>
+                        <div class="columns-list">
+                            <strong>Обязательные заголовки:</strong> "станция отправления", "станция прибытия"
+                            <br><strong>Опциональные данные:</strong> Все данные могут быть неполными
+                            <br><strong>Примечание:</strong> Система гибко обрабатывает данные - заголовки обязательны, но значения могут быть пустыми
+                        </div>
+                        <p><strong>Для железнодорожных перевозок доступны следующие столбцы:</strong></p>
+                        <div class="columns-list" style="font-size: 14px; margin-top: 10px;">
+                            City, Агент, Тыловой Терминал, Пункт назначения, Автовывоз, ПРР, 20фут ктк ( до 24 тонн), 20фут ктк (от 24 тонн до 28 тонн), 40фут ктк, НДС, ВОХР 20, ВОХР 40, Фитинг/ПВ, Условия, Валидность
+                        </div>
+                        <p>
+                            <a href="templates/template-sea.xlsx" download="template-sea.xlsx" class="download-link">📥 Скачать шаблон Excel файла для морских перевозок</a>
+                            <br>
+                            <a href="templates/template-direct-rail.xlsx" download="template-direct-rail.xlsx" class="download-link">📥 Скачать шаблон Excel файла для прямого ЖД</a>
+                            <br>
+                            <a href="templates/template-direct-sea.xlsx" download="template-direct-sea.xlsx" class="download-link">📥 Скачать шаблон Excel файла для прямого моря</a>
+                            <br>
+                            <a href="templates/template-rail.xlsx" download="template-rail.xlsx" class="download-link">📥 Скачать шаблон Excel файла для железнодорожных перевозок</a>
+                        </p>
+                    </div>
+                    
+                    <div class="file-upload">
+                        <input type="file" id="excel-file" accept=".xlsx, .xls" class="file-input">
+                        <label for="excel-file" class="file-label">
+                            <span>Выберите Excel файл (.xlsx или .xls)</span>
+                        </label>
+                    </div>
+                    <div id="status" class="status"></div>
+                    <button id="process-file" class="btn-primary" onclick="processExcelFile()" disabled>
+                        Обработать файл
+                    </button>
+                </div>
+                
+                <div id="data-preview" class="data-preview hidden">
+                    <h3>Предпросмотр данных</h3>
+                    <div id="preview-table" class="preview-table"></div>
+                    <button id="upload-data" class="btn-success" onclick="uploadDataToDatabase()">
+                        Загрузить в базу
+                    </button>
+                </div>
+            </section>
+
+            <!-- Интерфейс тарифов -->
+            <section id="tariff-interface" class="section hidden">
+                <div class="section-header">
+                    <h2>Ввод тарифных ставок</h2>
+                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                </div>
+                <div class="tariff-section">
+                    <div class="tariff-info">
+                        <h3>Введите тарифные ставки (финансовые, руб)</h3>
+                        <p>Укажите стоимость услуг в российских рублях:</p>
+                    </div>
+                    
+                    <div class="tariff-inputs">
+                        <div class="form-group">
+                            <label for="vtt-rate">ВТТ (руб):</label>
+                            <input type="number" id="vtt-rate" class="form-input" placeholder="Введите стоимость ВТТ" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="prr20-rate">ПРР 20 (руб):</label>
+                            <input type="number" id="prr20-rate" class="form-input" placeholder="Введите стоимость ПРР 20" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="prr40-rate">ПРР 40 (руб):</label>
+                            <input type="number" id="prr40-rate" class="form-input" placeholder="Введите стоимость ПРР 40" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="auto20-rate">Автовывоз 20 (руб):</label>
+                            <input type="number" id="auto20-rate" class="form-input" placeholder="Введите стоимость автовывоза 20" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="auto40-rate">Автовывоз 40 (руб):</label>
+                            <input type="number" id="auto40-rate" class="form-input" placeholder="Введите стоимость автовывоза 40" min="0" step="1">
+                        </div>
+                    </div>
+                    
+                    <div id="tariff-status" class="status"></div>
+                    <button id="save-tariff" class="btn-success" onclick="saveTariffData()">
+                        Сохранить тарифы
+                    </button>
+                </div>
+                
+                <div id="tariff-preview" class="data-preview hidden">
+                    <h3>Предпросмотр тарифов</h3>
+                    <div id="tariff-preview-table" class="preview-table"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Загружаем модули в правильном порядке -->
+    <script src="utils.js"></script>
+    <script src="purchaser-script.js"></script>
+</body>
+</html>

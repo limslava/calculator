@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор ставок - Менеджер по продажам</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Библиотека для работы с иконками -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Калькулятор ставок</h1>
+        </header>
+
+        <main>
+            <!-- Выбор типа расчета для менеджера -->
+            <section id="calculation-type-selection" class="section">
+                <div class="section-header">
+                    <h2>Выберите тип расчета</h2>
+                    <button class="btn-secondary" onclick="logoutUser()">
+                        <i class="fas fa-sign-out-alt"></i> Выйти
+                    </button>
+                </div>
+                <div class="calculation-type-buttons">
+                    <button class="calculation-type-btn" onclick="selectCalculationType('separate')">
+                        <h3>Отдельные ставки</h3>
+                        <p>Расчет ставок по отдельным типам перевозок</p>
+                    </button>
+                    <button class="calculation-type-btn" onclick="selectCalculationType('complex')">
+                        <h3>Комплексный расчет</h3>
+                        <p>Расчет всех доступных ставок по маршруту</p>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Выбор типа базы данных для отдельных ставок -->
+            <section id="database-selection" class="section hidden">
+                <div class="section-header">
+                    <h2>Выберите тип базы данных</h2>
+                    <div class="header-buttons">
+                        <button class="btn-back" onclick="goBack()">← Назад</button>
+                    </div>
+                </div>
+                <div class="database-buttons">
+                    <button class="db-btn" onclick="selectDatabase('sea')">
+                        <h3>Море</h3>
+                        <p>Морские перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('rail')">
+                        <h3>ЖД</h3>
+                        <p>Железнодорожные перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('direct_rail')">
+                        <h3>Прямое ЖД</h3>
+                        <p>Прямые железнодорожные перевозки</p>
+                    </button>
+                    <button class="db-btn" onclick="selectDatabase('direct_sea')">
+                        <h3>Прямое море</h3>
+                        <p>Прямые морские перевозки</p>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Интерфейс менеджера по продажам (комплексные ставки) -->
+            <section id="sales-interface" class="section hidden">
+                <div class="section-header">
+                    <h2>Калькулятор ставок</h2>
+                    <div class="sales-header-buttons">
+                        <button class="btn-back" onclick="goBack()">← Назад</button>
+                    </div>
+                </div>
+                <div class="calculator-header">
+                    <div id="last-update" class="last-update"></div>
+                    <div class="exchange-rate-display">
+                        <label>Курс ЦБ РФ: <span id="exchange-rate-value">-</span> руб/$</label>
+                    </div>
+                </div>
+                <div class="calculator-form">
+                
+                    <!-- Поля для комплексного расчета -->
+                    <div id="complex-fields">
+                        <div class="form-group">
+                            <label for="complex-departure">Пункт отправления:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="complex-departure" class="form-input custom-select-input" placeholder="Начните вводить пункт отправления" autocomplete="off">
+                                <div class="custom-dropdown" id="complex-departure-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="complex-destination">Пункт назначения:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="complex-destination" class="form-input custom-select-input" placeholder="Начните вводить пункт назначения" autocomplete="off">
+                                <div class="custom-dropdown" id="complex-destination-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="complex-container-type">Тип контейнера:</label>
+                            <select id="complex-container-type" class="form-select">
+                                <option value="">Выберите тип</option>
+                                <option value="dc_20">20'DC</option>
+                                <option value="hc_40">40'HC</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="weight-over-24" class="checkbox-input">
+                                <label for="weight-over-24" class="checkbox-label">
+                                    20фут ктк (от 24 тонн до 28 тонн)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="vtt-trigger" class="checkbox-input">
+                                <label for="vtt-trigger" class="checkbox-label">
+                                    ВТТ (море POD = жд агент)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="results" class="results-section hidden">
+                    <h3>Результаты расчета</h3>
+                    <div id="rates-table" class="rates-table"></div>
+                </div>
+            </section>
+
+            <!-- Интерфейс менеджера по продажам (отдельные ставки) -->
+            <section id="sales-separate-interface" class="section hidden">
+                <div class="section-header">
+                    <h2>Калькулятор ставок</h2>
+                    <div class="sales-header-buttons">
+                        <button class="btn-back" onclick="goBack()">← Назад</button>
+                    </div>
+                </div>
+                <div class="calculator-header">
+                    <div id="last-update-separate" class="last-update"></div>
+                    <div class="exchange-rate-display">
+                        <label>Курс ЦБ РФ: <span id="exchange-rate-value-separate">-</span> руб/$</label>
+                    </div>
+                </div>
+                <div class="calculator-form">
+                    <!-- Поля для морских перевозок -->
+                    <div id="sea-fields">
+                        <div class="form-group">
+                            <label for="sea-pol">POL (Port of Loading):</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="sea-pol" class="form-input custom-select-input" placeholder="Начните вводить название порта" autocomplete="off">
+                                <div class="custom-dropdown" id="sea-pol-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="sea-pod">POD (Port of Discharge):</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="sea-pod" class="form-input custom-select-input" placeholder="Начните вводить название порта" autocomplete="off">
+                                <div class="custom-dropdown" id="sea-pod-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group" id="drop-off-area-container">
+                            <label for="sea-drop-off-area">DROP OFF AREA VIA VVO:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="sea-drop-off-area" class="form-input custom-select-input" placeholder="Выберите зону выгрузки" autocomplete="off">
+                                <div class="custom-dropdown" id="sea-drop-off-area-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="sea-container-type">Тип контейнера:</label>
+                            <select id="sea-container-type" class="form-select">
+                                <option value="">Выберите тип</option>
+                                <option value="soc_20">SOC 20'</option>
+                                <option value="soc_40">SOC 40'</option>
+                                <option value="dc_20">20'DC FILO</option>
+                                <option value="hc_40">40'HC FILO</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Поля для прямого ЖД -->
+                    <div id="direct-rail-fields" class="hidden">
+                        <div class="form-group">
+                            <label for="direct-rail-fob">FOB:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="direct-rail-fob" class="form-input custom-select-input" placeholder="Начните вводить FOB" autocomplete="off">
+                                <div class="custom-dropdown" id="direct-rail-fob-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="direct-rail-arrival-city">Город прибытия:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="direct-rail-arrival-city" class="form-input custom-select-input" placeholder="Начните вводить название города" autocomplete="off">
+                                <div class="custom-dropdown" id="direct-rail-arrival-city-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="direct-rail-border-crossing">Погран переход (необязательно):</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="direct-rail-border-crossing" class="form-input custom-select-input" placeholder="Выберите погран переход" autocomplete="off">
+                                <div class="custom-dropdown" id="direct-rail-border-crossing-dropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Поля для прямого моря -->
+                    <div id="direct-sea-fields" class="hidden">
+                        <div class="form-group">
+                            <label for="direct-sea-pol">POL (Port of Loading):</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="direct-sea-pol" class="form-input custom-select-input" placeholder="Начните вводить название порта" autocomplete="off">
+                                <div class="custom-dropdown" id="direct-sea-pol-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="direct-sea-pod">POD (Port of Discharge):</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="direct-sea-pod" class="form-input custom-select-input" placeholder="Начните вводить название порта" autocomplete="off">
+                                <div class="custom-dropdown" id="direct-sea-pod-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="direct-sea-container-type">Тип контейнера:</label>
+                            <select id="direct-sea-container-type" class="form-select">
+                                <option value="">Выберите тип</option>
+                                <option value="dc_20">20'DC</option>
+                                <option value="hc_40">40'HC</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Поля для обычных железнодорожных перевозок -->
+                    <div id="rail-fields" class="hidden">
+                        <div class="form-group">
+                            <label for="rail-city">Город:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="rail-city" class="form-input custom-select-input" placeholder="Начните вводить название города" autocomplete="off">
+                                <div class="custom-dropdown" id="rail-city-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="rail-destination">Пункт назначения:</label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" id="rail-destination" class="form-input custom-select-input" placeholder="Начните вводить пункт назначения" autocomplete="off">
+                                <div class="custom-dropdown" id="rail-destination-dropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="rail-container-type">Тип контейнера:</label>
+                            <select id="rail-container-type" class="form-select">
+                                <option value="">Выберите тип</option>
+                                <option value="container20Under24">20фут ктк (до 24 тонн)</option>
+                                <option value="container20Over24">20фут ктк (24-28 тонн)</option>
+                                <option value="container40">40фут ктк</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="results-separate" class="results-section hidden">
+                    <h3>Результаты расчета</h3>
+                    <div id="rates-table-separate" class="rates-table"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модальное окно для расчета маржинальности -->
+    <div id="margin-modal" class="modal hidden" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Расчет маржинальности</h2>
+                <button class="modal-close" onclick="closeMarginModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="margin-container">
+                    <!-- Левая часть: себестоимость -->
+                    <div class="cost-section">
+                        <h3>Себестоимость</h3>
+                        <div id="cost-details" class="cost-details">
+                            <!-- Здесь будет отображаться информация о себестоимости -->
+                        </div>
+                    </div>
+                    
+                    <!-- Правая часть: накрутка и результат -->
+                    <div class="margin-section">
+                        <div class="margin-inputs">
+                            <h3>Накрутка</h3>
+                            <div id="margin-inputs-container">
+                                <!-- Здесь будут поля для ввода маржинальности -->
+                            </div>
+                        </div>
+                        
+                        <div class="margin-result">
+                            <h3>Результат с накруткой</h3>
+                            <div id="margin-result-container" class="result-container">
+                                <!-- Здесь будет отображаться результат с накруткой -->
+                            </div>
+                            <button id="copy-result" class="btn-primary" onclick="copyMarginResult()">
+                                📋 Копировать результат
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Загружаем модули в правильном порядке -->
+    <script src="utils.js"></script>
+    <script src="modules/direct-rail.js"></script>
+    <script src="modules/direct-sea.js"></script>
+    <script src="modules/sea.js"></script>
+    <script src="modules/rail.js"></script>
+    <script src="sales-script.js"></script>
+</body>
+</html>

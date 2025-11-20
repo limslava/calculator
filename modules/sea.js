@@ -218,10 +218,10 @@ class EnhancedSeaSearchEngine {
 
 // 🚀 ФУНКЦИЯ ДЛЯ НАСТРОЙКИ ЦЕПНОГО ОБНОВЛЕНИЯ ДЛЯ МОРЯ
 function setupEnhancedSeaChainUpdate(data) {
-    const polInput = document.getElementById('pol');
-    const podInput = document.getElementById('pod');
-    const dropOffAreaInput = document.getElementById('drop-off-area');
-    const containerTypeSelect = document.getElementById('container-type');
+    const polInput = document.getElementById('sea-pol');
+    const podInput = document.getElementById('sea-pod');
+    const dropOffAreaInput = document.getElementById('sea-drop-off-area');
+    const containerTypeSelect = document.getElementById('sea-container-type');
     
     if (!polInput || !podInput || !dropOffAreaInput || !containerTypeSelect) {
         console.error('❌ Не найдены необходимые элементы DOM для морского модуля');
@@ -281,7 +281,7 @@ function setupEnhancedSeaChainUpdate(data) {
             
             // 🔧 ОБНОВЛЯЕМ POL ТОЛЬКО ЕСЛИ НЕ В SKIP FIELDS
             if (!skipFields.includes('pol')) {
-                setupCustomDropdown('pol', availablePOL, currentFocusedElement === polInput);
+                setupCustomDropdown('sea-pol', availablePOL, currentFocusedElement === polInput);
             }
             
             // 2. POD - динамически фильтруется на основе выбранного POL
@@ -292,7 +292,7 @@ function setupEnhancedSeaChainUpdate(data) {
             
             // 🔧 ОБНОВЛЯЕМ POD ТОЛЬКО ЕСЛИ НЕ В SKIP FIELDS
             if (!skipFields.includes('pod')) {
-                setupCustomDropdown('pod', availablePOD, currentFocusedElement === podInput);
+                setupCustomDropdown('sea-pod', availablePOD, currentFocusedElement === podInput);
             }
             
             // 3. DROP OFF AREA - динамически фильтруется на основе POL и POD
@@ -303,7 +303,7 @@ function setupEnhancedSeaChainUpdate(data) {
             
             // 🔧 ОБНОВЛЯЕМ DROP OFF AREA ТОЛЬКО ЕСЛИ НЕ В SKIP FIELDS
             if (!skipFields.includes('drop-off-area')) {
-                setupCustomDropdown('drop-off-area', availableDropOffAreas, currentFocusedElement === dropOffAreaInput);
+                setupCustomDropdown('sea-drop-off-area', availableDropOffAreas, currentFocusedElement === dropOffAreaInput);
             }
             
             // 4. ТИП КОНТЕЙНЕРА - показывается ТОЛЬКО после выбора POL + POD + DROP OFF AREA

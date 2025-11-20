@@ -71,6 +71,47 @@ header h1 {
     gap: 15px;
 }
 
+.sales-header-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.sales-header-buttons .btn-back {
+    margin: 0;
+}
+
+.sales-header-buttons .btn-logout {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.sales-header-buttons .btn-logout:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+    .sales-header-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .sales-header-buttons .btn-back,
+    .sales-header-buttons .btn-logout {
+        width: 100%;
+        text-align: center;
+    }
+}
+
 .calculator-header {
     display: flex;
     justify-content: space-between;
@@ -1009,4 +1050,70 @@ datalist option:hover {
     font-style: italic;
     color: #666;
     text-align: center;
+}
+
+/* Стили для отображения отправленных email */
+.sent-emails-list {
+    margin-top: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    background: #f9f9f9;
+}
+
+.email-item {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.email-item:last-child {
+    margin-bottom: 0;
+}
+
+.email-header {
+    font-weight: bold;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+}
+
+.email-content {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.email-content div {
+    margin-bottom: 5px;
+}
+
+.password-display {
+    background: #fff3cd;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-weight: bold;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.email-item .status-success {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.email-item .status-warning {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.email-item .status-error {
+    color: #dc3545;
+    font-weight: bold;
 }

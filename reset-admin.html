@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сброс администратора</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Сброс администратора</h1>
+        
+        <div class="info">
+            <strong>Проблема:</strong> Администраторская учетная запись была изменена на роль менеджера по продажам.
+        </div>
+        
+        <div class="warning">
+            <strong>Внимание:</strong> Этот скрипт очистит всех существующих пользователей и восстановит администратора с правильной ролью.
+        </div>
+        
+        <p>После сброса используйте следующие данные для входа:</p>
+        <ul>
+            <li><strong>Логин:</strong> admin@logistics.com</li>
+            <li><strong>Пароль:</strong> admin123</li>
+            <li><strong>Роль:</strong> Администратор</li>
+        </ul>
+        
+        <button onclick="resetAdmin()">Сбросить администратора</button>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        function resetAdmin() {
+            console.log('🔄 Сброс данных пользователей и восстановление администратора...');
+
+            // Очищаем localStorage
+            localStorage.removeItem('logistics_users');
+            localStorage.removeItem('current_user');
+            localStorage.removeItem('sent_emails');
+
+            console.log('✅ localStorage очищен');
+
+            // Создаем нового администратора с правильной ролью
+            const adminUser = {
+                id: Date.now().toString(),
+                email: 'admin@logistics.com',
+                role: 'admin', // Правильная роль администратора
+                password: btoa('admin123'), // Пароль в base64
+                isActive: true,
+                createdAt: new Date().toISOString(),
+                lastLogin: null
+            };
+
+            // Сохраняем пользователей в localStorage
+            const users = [adminUser];
+            localStorage.setItem('logistics_users', JSON.stringify(users));
+
+            console.log('✅ Администратор восстановлен:');
+            console.log('   Логин: admin@logistics.com');
+            console.log('   Пароль: admin123');
+            console.log('   Роль: admin');
+
+            // Проверяем сохранение
+            const savedUsers = JSON.parse(localStorage.getItem('logistics_users') || '[]');
+            console.log('📊 Проверка сохраненных пользователей:', savedUsers);
+
+            // Показываем результат
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="success">
+                    <strong>✅ Администратор восстановлен!</strong><br><br>
+                    <strong>Логин:</strong> admin@logistics.com<br>
+                    <strong>Пароль:</strong> admin123<br>
+                    <strong>Роль:</strong> Администратор<br><br>
+                    Теперь вы можете <a href="index.html">перейти к приложению</a> и войти с этими данными.
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+        }
+
+        // Проверяем протокол и показываем предупреждение
+        document.addEventListener('DOMContentLoaded', function() {
+            const isFileProtocol = window.location.protocol === 'file:';
+            if (isFileProtocol) {
+                const container = document.querySelector('.container');
+                const warning = document.createElement('div');
+                warning.className = 'warning';
+                warning.innerHTML = `
+                    <strong>⚠️ Локальный режим:</strong> Вы работаете через файловый протокол.<br>
+                    Для полной функциональности (отправка email и т.д.) запустите приложение через HTTP-сервер:<br>
+                    <code>npm start</code> или <code>node server.js</code>
+                `;
+                container.insertBefore(warning, container.firstChild);
+            }
+        });
+    </script>
+</body>
+</html>

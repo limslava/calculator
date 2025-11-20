@@ -156,9 +156,9 @@ class EnhancedDirectRailSearchEngine {
 
 // 🚀 ФУНКЦИЯ ДЛЯ НАСТРОЙКИ ЦЕПНОГО ОБНОВЛЕНИЯ ДЛЯ ПРЯМОГО ЖД
 function setupEnhancedDirectRailChainUpdate(data) {
-    const fobInput = document.getElementById('fob');
-    const arrivalCityInput = document.getElementById('arrival-city');
-    const borderCrossingInput = document.getElementById('border-crossing');
+    const fobInput = document.getElementById('direct-rail-fob');
+    const arrivalCityInput = document.getElementById('direct-rail-arrival-city');
+    const borderCrossingInput = document.getElementById('direct-rail-border-crossing');
     
     if (!fobInput || !arrivalCityInput) {
         console.error('❌ Не найдены необходимые элементы DOM для модуля прямого жд');
@@ -285,21 +285,21 @@ function setupEnhancedDirectRailChainUpdate(data) {
         try {
             // 1. FOB - всегда показываем где есть ненулевые ставки
             const availableFOB = enhancedDirectRailSearchEngine.getFOBWithRates();
-            setupCustomDropdown('fob', availableFOB);
+            setupCustomDropdown('direct-rail-fob', availableFOB);
             
             // 2. Город прибытия - динамически фильтруется на основе выбранного FOB
             let availableCities = [];
             if (selectedFOB) {
                 availableCities = enhancedDirectRailSearchEngine.getArrivalCitiesWithRatesForFOB(selectedFOB);
             }
-            setupCustomDropdown('arrival-city', availableCities);
+            setupCustomDropdown('direct-rail-arrival-city', availableCities);
             
             // 3. Погран переход - динамически фильтруется на основе FOB и Города прибытия (не обязательно)
             let availableBorders = [];
             if (selectedFOB && selectedArrivalCity) {
                 availableBorders = enhancedDirectRailSearchEngine.getBorderCrossingsWithRates(selectedFOB, selectedArrivalCity);
             }
-            setupCustomDropdown('border-crossing', availableBorders);
+            setupCustomDropdown('direct-rail-border-crossing', availableBorders);
             
             // Очищаем зависимые поля если значения стали недоступны
             cleanupDependentFields(selectedFOB, selectedArrivalCity, availableFOB, availableCities);
@@ -410,9 +410,9 @@ function setupEnhancedDirectRailChainUpdate(data) {
 
 // 🎯 ФУНКЦИЯ ДЛЯ ПОИСКА СТАВОК ДЛЯ ПРЯМОГО ЖД (ручной поиск)
 function searchDirectRailRates() {
-    const fob = document.getElementById('fob').value.trim();
-    const arrivalCity = document.getElementById('arrival-city').value.trim();
-    const borderCrossing = document.getElementById('border-crossing') ? document.getElementById('border-crossing').value.trim() : '';
+    const fob = document.getElementById('direct-rail-fob').value.trim();
+    const arrivalCity = document.getElementById('direct-rail-arrival-city').value.trim();
+    const borderCrossing = document.getElementById('direct-rail-border-crossing') ? document.getElementById('direct-rail-border-crossing').value.trim() : '';
     
     console.log('🔍 Ручной поиск ставок прямого жд с параметрами:', { fob, arrivalCity, borderCrossing });
     

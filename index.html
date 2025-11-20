@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="styles.css">
     <!-- Библиотека для работы с Excel файлами -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Библиотека для работы с иконками -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
@@ -15,16 +17,123 @@
         </header>
 
         <main>
-            <!-- Выбор роли -->
-            <section id="role-selection" class="section">
-                <h2>Выберите вашу роль</h2>
+            <!-- Вход в систему -->
+            <section id="login-section" class="section">
+                <div class="login-container">
+                    <h2>Вход в систему</h2>
+                    <form class="login-form" onsubmit="loginUser(); return false;">
+                        <!-- Скрытое поле username для доступности -->
+                        <input type="hidden" name="username" autocomplete="username">
+                        <div class="form-group">
+                            <label for="login-email">Email:</label>
+                            <input type="email" id="login-email" class="form-input" placeholder="Введите ваш email" autocomplete="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Пароль:</label>
+                            <input type="password" id="login-password" class="form-input" placeholder="Введите пароль" autocomplete="current-password" required>
+                        </div>
+                        <div id="login-status" class="status"></div>
+                        <button type="submit" id="login-button" class="btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Войти
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Смена пароля -->
+            <section id="change-password-section" class="section hidden">
+                <div class="login-container">
+                    <h2>Смена пароля</h2>
+                    <form class="login-form" onsubmit="changePassword(); return false;">
+                        <!-- Скрытое поле username для доступности -->
+                        <input type="hidden" name="username" autocomplete="username">
+                        <div class="form-group">
+                            <label>Email:</label>
+                            <div class="email-display" id="change-password-email-display"></div>
+                            <input type="hidden" id="change-password-email">
+                        </div>
+                        <div class="form-group">
+                            <label for="current-password">Текущий пароль:</label>
+                            <input type="password" id="current-password" class="form-input" placeholder="Введите текущий пароль" autocomplete="current-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password">Новый пароль:</label>
+                            <input type="password" id="new-password" class="form-input" placeholder="Введите новый пароль" autocomplete="new-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Подтвердите новый пароль:</label>
+                            <input type="password" id="confirm-password" class="form-input" placeholder="Повторите новый пароль" autocomplete="new-password" required>
+                        </div>
+                        <div id="change-password-status" class="status"></div>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-key"></i> Сменить пароль
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="backToLogin()" style="margin-top: 10px;">
+                            <i class="fas fa-arrow-left"></i> Назад к входу
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Панель администратора -->
+            <section id="admin-panel" class="section hidden">
+                <div class="section-header">
+                    <h2>Панель администратора</h2>
+                    <div class="user-info">
+                        <span id="current-user-email"></span>
+                        <button class="btn-secondary" onclick="logoutUser()">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Управление пользователями -->
+                <div class="admin-section">
+                    <h3>Управление пользователями</h3>
+                    <div class="admin-actions">
+                        <button class="btn-primary" onclick="showAddUserModal()">
+                            <i class="fas fa-user-plus"></i> Добавить пользователя
+                        </button>
+                        <button class="btn-secondary" onclick="showEmailConfigModal()">
+                            <i class="fas fa-envelope"></i> Настройка email
+                        </button>
+                    </div>
+                    <div id="users-list" class="users-list">
+                        <!-- Список пользователей будет загружен здесь -->
+                    </div>
+                </div>
+                
+                <!-- Навигация по ролям -->
+                <div class="admin-section">
+                    <h3>Перейти к работе</h3>
+                    <div class="role-buttons">
+                        <button class="role-btn" onclick="redirectToPurchaserInterface()">
+                            <h3><i class="fas fa-upload"></i> Закупщик</h3>
+                            <p>Загрузка базы данных из Excel</p>
+                        </button>
+                        <button class="role-btn" onclick="redirectToSalesInterface()">
+                            <h3><i class="fas fa-calculator"></i> Менеджер по продажам</h3>
+                            <p>Расчет ставок для клиентов</p>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Выбор роли (для обычных пользователей) -->
+            <section id="role-selection" class="section hidden">
+                <div class="section-header">
+                    <h2>Выберите вашу роль</h2>
+                    <button class="btn-secondary" onclick="logoutUser()">
+                        <i class="fas fa-sign-out-alt"></i> Выйти
+                    </button>
+                </div>
                 <div class="role-buttons">
-                    <button class="role-btn" onclick="selectRole('purchaser')">
-                        <h3>Закупщик</h3>
+                    <button class="role-btn" onclick="redirectToPurchaserInterface()">
+                        <h3><i class="fas fa-upload"></i> Закупщик</h3>
                         <p>Загрузка базы данных из Excel</p>
                     </button>
-                    <button class="role-btn" onclick="selectSalesRole()">
-                        <h3>Менеджер по продажам</h3>
+                    <button class="role-btn" onclick="redirectToSalesInterface()">
+                        <h3><i class="fas fa-calculator"></i> Менеджер по продажам</h3>
                         <p>Расчет ставок для клиентов</p>
                     </button>
                 </div>
@@ -34,7 +143,9 @@
             <section id="database-selection" class="section hidden">
                 <div class="section-header">
                     <h2>Выберите тип базы данных</h2>
-                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                    <button class="btn-secondary" onclick="logoutUser()">
+                        <i class="fas fa-sign-out-alt"></i> Выйти
+                    </button>
                 </div>
                 <div class="database-buttons">
                     <button class="db-btn" onclick="selectDatabase('sea')">
@@ -162,7 +273,9 @@
             <section id="calculation-type-selection" class="section hidden">
                 <div class="section-header">
                     <h2>Выберите тип расчета</h2>
-                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                    <button class="btn-secondary" onclick="logoutUser()">
+                        <i class="fas fa-sign-out-alt"></i> Выйти
+                    </button>
                 </div>
                 <div class="calculation-type-buttons">
                     <button class="calculation-type-btn" onclick="selectCalculationType('separate')">
@@ -176,11 +289,13 @@
                 </div>
             </section>
 
-            <!-- Интерфейс менеджера по продажам -->
+            <!-- Интерфейс менеджера по продажам (комплексные ставки) -->
             <section id="sales-interface" class="section hidden">
                 <div class="section-header">
                     <h2>Калькулятор ставок</h2>
-                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                    <div class="sales-header-buttons">
+                        <button class="btn-back" onclick="goBack()">← Назад</button>
+                    </div>
                 </div>
                 <div class="calculator-header">
                     <div id="last-update" class="last-update"></div>
@@ -327,7 +442,7 @@
     </div>
 
     <!-- Модальное окно для расчета маржинальности -->
-    <div id="margin-modal" class="modal hidden">
+    <div id="margin-modal" class="modal hidden" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Расчет маржинальности</h2>
@@ -367,7 +482,101 @@
         </div>
     </div>
 
+    <!-- Модальное окно для добавления пользователя -->
+    <div id="add-user-modal" class="modal hidden" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Добавить пользователя</h2>
+                <button class="modal-close" onclick="closeAddUserModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="new-user-email">Email:</label>
+                    <input type="email" id="new-user-email" class="form-input" placeholder="Введите email пользователя" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-user-role">Роль:</label>
+                    <select id="new-user-role" class="form-select">
+                        <option value="purchaser">Менеджер по закупу</option>
+                        <option value="sales">Менеджер по продажам</option>
+                        <option value="admin">Администратор</option>
+                    </select>
+                </div>
+                <div id="add-user-status" class="status"></div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeAddUserModal()">Отмена</button>
+                    <button class="btn-primary" onclick="addNewUser()">Добавить пользователя</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для настройки email -->
+    <div id="email-config-modal" class="modal hidden" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Настройка email рассылки</h2>
+                <button class="modal-close" onclick="closeEmailConfigModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Скрытое поле username для доступности -->
+                <input type="hidden" name="username" autocomplete="username">
+                <div class="email-config-info">
+                    <h3>Инструкция по настройке</h3>
+                    <p>Для реальной отправки email необходимо настроить SMTP сервер:</p>
+                    <ul>
+                        <li><strong>Gmail:</strong> Включите двухфакторную аутентификацию и создайте пароль приложения</li>
+                        <li><strong>Yandex:</strong> Включите двухфакторную аутентификацию и создайте пароль приложения</li>
+                        <li><strong>Mail.ru:</strong> Включите двухфакторную аутентификацию и создайте пароль приложения</li>
+                    </ul>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email-provider">Почтовый сервис:</label>
+                    <select id="email-provider" class="form-select" onchange="updateEmailConfig()">
+                        <option value="">Выберите сервис</option>
+                        <option value="gmail">Gmail</option>
+                        <option value="yandex">Yandex</option>
+                        <option value="mailru">Mail.ru</option>
+                        <option value="custom">Другой SMTP</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="smtp-host">SMTP сервер:</label>
+                    <input type="text" id="smtp-host" class="form-input" placeholder="smtp.gmail.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="smtp-port">Порт:</label>
+                    <input type="number" id="smtp-port" class="form-input" placeholder="587" value="587">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email-address">Email адрес:</label>
+                    <input type="email" id="email-address" class="form-input" placeholder="ваш-email@gmail.com" autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email-password">Пароль приложения:</label>
+                    <input type="password" id="email-password" class="form-input" placeholder="Пароль приложения (не основной пароль)" autocomplete="new-password">
+                </div>
+                
+                <div id="email-config-status" class="status"></div>
+                
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeEmailConfigModal()">Отмена</button>
+                    <button class="btn-primary" onclick="saveEmailConfig()">Сохранить настройки</button>
+                    <button class="btn-success" onclick="testEmailConfig()">Тест отправки</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Загружаем модули в правильном порядке -->
+    <script src="auth.js"></script>
+    <script src="email-config.js"></script>
+    <script src="auth-ui.js"></script>
     <script src="utils.js"></script>
     <script src="modules/direct-rail.js"></script>
     <script src="modules/direct-sea.js"></script>
