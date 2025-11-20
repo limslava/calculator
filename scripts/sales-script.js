@@ -1535,14 +1535,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Проверяем авторизацию
     const currentUser = checkAuth();
-    if (!currentUser || currentUser.role !== 'sales') {
-        // Если пользователь не авторизован или не менеджер по продажам, перенаправляем на главную
+    if (!currentUser || (currentUser.role !== 'sales' && currentUser.role !== 'admin')) {
+        // Если пользователь не авторизован или не имеет прав доступа, перенаправляем на главную
         console.log('❌ Неавторизованный доступ, перенаправление на главную');
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return;
     }
     
-    console.log('✅ Пользователь авторизован как менеджер по продажам:', currentUser.email);
+    console.log('✅ Пользователь авторизован:', currentUser.email, 'Роль:', currentUser.role);
     
     // Загружаем курс ЦБ РФ
     await loadExchangeRate();
@@ -1648,8 +1648,8 @@ function logoutUser() {
     // Очищаем localStorage авторизации
     localStorage.removeItem('current_user');
     
-    // Возвращаем на главную страницу
-    window.location.href = 'index.html';
+    // Возвращаем на главную страницу (index.html)
+    window.location.href = '../index.html';
 }
 
 // Обновляет отображение курса в интерфейсе

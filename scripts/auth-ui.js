@@ -43,7 +43,7 @@ function logoutUser() {
     // Если мы находимся в отдельном интерфейсе, возвращаемся на главную страницу
     if (window.location.pathname.includes('sales-interface.html') ||
         window.location.pathname.includes('purchaser-interface.html')) {
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
     } else {
         showLoginInterface();
     }
@@ -111,13 +111,13 @@ function showUserInterface(user) {
         console.log('✅ Показана панель администратора');
     } else if (user.role === Auth.USER_ROLES.PURCHASER) {
         // Перенаправляем на отдельный интерфейс менеджера по закупкам
-        console.log('🔄 Перенаправление менеджера по закупкам на purchaser-interface.html');
-        window.location.href = 'purchaser-interface.html';
+        console.log('🔄 Перенаправление менеджера по закупкам на interfaces/purchaser-interface.html');
+        window.location.href = 'interfaces/purchaser-interface.html';
         return; // Прерываем выполнение, так как происходит перенаправление
     } else if (user.role === Auth.USER_ROLES.SALES) {
         // Перенаправляем на отдельный интерфейс менеджера по продажам
-        console.log('🔄 Перенаправление менеджера по продажам на sales-interface.html');
-        window.location.href = 'sales-interface.html';
+        console.log('🔄 Перенаправление менеджера по продажам на interfaces/sales-interface.html');
+        window.location.href = 'interfaces/sales-interface.html';
         return; // Прерываем выполнение, так как происходит перенаправление
     } else {
         // Показываем выбор роли для неизвестных ролей
@@ -246,7 +246,7 @@ function loadUsersList() {
     const users = Auth.getUsers();
     
     if (users.length === 0) {
-        usersListElement.innerHTML = '<p>Нет пользователей</p>';
+        usersListElement.innerHTML = '<div class="no-users-message"><i class="fas fa-users"></i><p>Нет пользователей в системе</p></div>';
         return;
     }
     
@@ -279,19 +279,21 @@ function loadUsersList() {
         
         usersHTML += `
             <tr>
-                <td>${user.email}</td>
+                <td><strong>${user.email}</strong></td>
                 <td>${roleNames[user.role]}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>${createdAt}</td>
                 <td>${lastLogin}</td>
                 <td class="user-actions">
-                    <button class="btn-small ${user.isActive ? 'btn-warning' : 'btn-success'}" 
+                    <button class="btn-small ${user.isActive ? 'btn-warning' : 'btn-success'}"
                             onclick="toggleUserStatus('${user.id}')">
+                        <i class="fas ${user.isActive ? 'fa-lock' : 'fa-unlock'}"></i>
                         ${user.isActive ? 'Заблокировать' : 'Разблокировать'}
                     </button>
-                    <button class="btn-small btn-danger" 
-                            onclick="deleteUser('${user.id}')" 
+                    <button class="btn-small btn-danger"
+                            onclick="deleteUser('${user.id}')"
                             ${user.id === Auth.getCurrentUser()?.id ? 'disabled' : ''}>
+                        <i class="fas fa-trash"></i>
                         Удалить
                     </button>
                 </td>
@@ -302,6 +304,9 @@ function loadUsersList() {
     usersHTML += `
             </tbody>
         </table>
+        <div class="users-summary">
+            <p><strong>Всего пользователей:</strong> ${users.length}</p>
+        </div>
     `;
     
     usersListElement.innerHTML = usersHTML;

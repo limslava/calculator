@@ -263,11 +263,13 @@ function redirectToSalesInterface() {
         return;
     }
     
-    // Обновляем роль пользователя в системе
-    Auth.updateUserRole(currentUser.id, 'sales');
+    // Для администратора не меняем роль, для остальных пользователей обновляем роль
+    if (currentUser.role !== Auth.USER_ROLES.ADMIN) {
+        Auth.updateUserRole(currentUser.id, 'sales');
+    }
     
-    // Перенаправляем на отдельный интерфейс менеджера по продажам
-    window.location.href = 'sales-interface.html';
+    // Для всех пользователей (включая администратора) перенаправляем на отдельный интерфейс
+    window.location.href = 'interfaces/sales-interface.html';
 }
 
 // Функция перенаправления менеджера по закупкам на отдельный интерфейс
@@ -279,11 +281,13 @@ function redirectToPurchaserInterface() {
         return;
     }
     
-    // Обновляем роль пользователя в системе
-    Auth.updateUserRole(currentUser.id, 'purchaser');
+    // Для администратора не меняем роль, для остальных пользователей обновляем роль
+    if (currentUser.role !== Auth.USER_ROLES.ADMIN) {
+        Auth.updateUserRole(currentUser.id, 'purchaser');
+    }
     
-    // Перенаправляем на отдельный интерфейс менеджера по закупкам
-    window.location.href = 'purchaser-interface.html';
+    // Для всех пользователей (включая администратора) перенаправляем на отдельный интерфейс
+    window.location.href = 'interfaces/purchaser-interface.html';
 }
 
 // Функция для обновления отображения кнопок в заголовке менеджера по продажам

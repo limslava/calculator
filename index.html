@@ -77,44 +77,52 @@
 
             <!-- Панель администратора -->
             <section id="admin-panel" class="section hidden">
-                <div class="section-header">
-                    <h2>Панель администратора</h2>
-                    <div class="user-info">
-                        <span id="current-user-email"></span>
-                        <button class="btn-secondary" onclick="logoutUser()">
-                            <i class="fas fa-sign-out-alt"></i> Выйти
-                        </button>
+                <div class="admin-panel-container">
+                    <div class="section-header">
+                        <h2>Панель администратора</h2>
+                        <div class="user-info">
+                            <span id="current-user-email"></span>
+                            <button class="btn-secondary" onclick="logoutUser()">
+                                <i class="fas fa-sign-out-alt"></i> Выйти
+                            </button>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Управление пользователями -->
-                <div class="admin-section">
-                    <h3>Управление пользователями</h3>
-                    <div class="admin-actions">
-                        <button class="btn-primary" onclick="showAddUserModal()">
-                            <i class="fas fa-user-plus"></i> Добавить пользователя
-                        </button>
-                        <button class="btn-secondary" onclick="showEmailConfigModal()">
-                            <i class="fas fa-envelope"></i> Настройка email
-                        </button>
+                    
+                    <!-- Управление пользователями -->
+                    <div class="admin-section">
+                        <h3><i class="fas fa-users"></i> Управление пользователями</h3>
+                        <div class="admin-actions">
+                            <button class="btn-primary" onclick="showAddUserModal()">
+                                <i class="fas fa-user-plus"></i> Добавить пользователя
+                            </button>
+                            <button class="btn-secondary" onclick="showEmailConfigModal()">
+                                <i class="fas fa-envelope"></i> Настройка email
+                            </button>
+                        </div>
+                        <div id="users-list" class="users-list">
+                            <!-- Список пользователей будет загружен здесь -->
+                        </div>
                     </div>
-                    <div id="users-list" class="users-list">
-                        <!-- Список пользователей будет загружен здесь -->
-                    </div>
-                </div>
-                
-                <!-- Навигация по ролям -->
-                <div class="admin-section">
-                    <h3>Перейти к работе</h3>
-                    <div class="role-buttons">
-                        <button class="role-btn" onclick="redirectToPurchaserInterface()">
-                            <h3><i class="fas fa-upload"></i> Закупщик</h3>
-                            <p>Загрузка базы данных из Excel</p>
-                        </button>
-                        <button class="role-btn" onclick="redirectToSalesInterface()">
-                            <h3><i class="fas fa-calculator"></i> Менеджер по продажам</h3>
-                            <p>Расчет ставок для клиентов</p>
-                        </button>
+                    
+                    <!-- Навигация по ролям -->
+                    <div class="admin-section">
+                        <h3><i class="fas fa-exchange-alt"></i> Перейти к работе</h3>
+                        <div class="role-cards">
+                            <div class="role-card" onclick="redirectToPurchaserInterface()">
+                                <div class="icon">
+                                    <i class="fas fa-upload"></i>
+                                </div>
+                                <h4>Закупщик</h4>
+                                <p>Загрузка базы данных из Excel файлов и управление тарифами</p>
+                            </div>
+                            <div class="role-card" onclick="redirectToSalesInterface()">
+                                <div class="icon">
+                                    <i class="fas fa-calculator"></i>
+                                </div>
+                                <h4>Менеджер по продажам</h4>
+                                <p>Расчет логистических ставок для клиентов и анализ маржинальности</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -486,16 +494,16 @@
     <div id="add-user-modal" class="modal hidden" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Добавить пользователя</h2>
+                <h2><i class="fas fa-user-plus"></i> Добавить пользователя</h2>
                 <button class="modal-close" onclick="closeAddUserModal()">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="new-user-email">Email:</label>
+                    <label for="new-user-email"><i class="fas fa-envelope"></i> Email:</label>
                     <input type="email" id="new-user-email" class="form-input" placeholder="Введите email пользователя" required>
                 </div>
                 <div class="form-group">
-                    <label for="new-user-role">Роль:</label>
+                    <label for="new-user-role"><i class="fas fa-user-tag"></i> Роль:</label>
                     <select id="new-user-role" class="form-select">
                         <option value="purchaser">Менеджер по закупу</option>
                         <option value="sales">Менеджер по продажам</option>
@@ -504,8 +512,12 @@
                 </div>
                 <div id="add-user-status" class="status"></div>
                 <div class="modal-actions">
-                    <button class="btn-secondary" onclick="closeAddUserModal()">Отмена</button>
-                    <button class="btn-primary" onclick="addNewUser()">Добавить пользователя</button>
+                    <button class="btn-secondary" onclick="closeAddUserModal()">
+                        <i class="fas fa-times"></i> Отмена
+                    </button>
+                    <button class="btn-primary" onclick="addNewUser()">
+                        <i class="fas fa-user-plus"></i> Добавить пользователя
+                    </button>
                 </div>
             </div>
         </div>
@@ -515,14 +527,14 @@
     <div id="email-config-modal" class="modal hidden" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Настройка email рассылки</h2>
+                <h2><i class="fas fa-envelope"></i> Настройка email рассылки</h2>
                 <button class="modal-close" onclick="closeEmailConfigModal()">×</button>
             </div>
             <div class="modal-body">
                 <!-- Скрытое поле username для доступности -->
                 <input type="hidden" name="username" autocomplete="username">
                 <div class="email-config-info">
-                    <h3>Инструкция по настройке</h3>
+                    <h3><i class="fas fa-info-circle"></i> Инструкция по настройке</h3>
                     <p>Для реальной отправки email необходимо настроить SMTP сервер:</p>
                     <ul>
                         <li><strong>Gmail:</strong> Включите двухфакторную аутентификацию и создайте пароль приложения</li>
@@ -532,7 +544,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="email-provider">Почтовый сервис:</label>
+                    <label for="email-provider"><i class="fas fa-server"></i> Почтовый сервис:</label>
                     <select id="email-provider" class="form-select" onchange="updateEmailConfig()">
                         <option value="">Выберите сервис</option>
                         <option value="gmail">Gmail</option>
@@ -543,41 +555,47 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="smtp-host">SMTP сервер:</label>
+                    <label for="smtp-host"><i class="fas fa-network-wired"></i> SMTP сервер:</label>
                     <input type="text" id="smtp-host" class="form-input" placeholder="smtp.gmail.com">
                 </div>
                 
                 <div class="form-group">
-                    <label for="smtp-port">Порт:</label>
+                    <label for="smtp-port"><i class="fas fa-plug"></i> Порт:</label>
                     <input type="number" id="smtp-port" class="form-input" placeholder="587" value="587">
                 </div>
                 
                 <div class="form-group">
-                    <label for="email-address">Email адрес:</label>
+                    <label for="email-address"><i class="fas fa-at"></i> Email адрес:</label>
                     <input type="email" id="email-address" class="form-input" placeholder="ваш-email@gmail.com" autocomplete="email">
                 </div>
                 
                 <div class="form-group">
-                    <label for="email-password">Пароль приложения:</label>
+                    <label for="email-password"><i class="fas fa-key"></i> Пароль приложения:</label>
                     <input type="password" id="email-password" class="form-input" placeholder="Пароль приложения (не основной пароль)" autocomplete="new-password">
                 </div>
                 
                 <div id="email-config-status" class="status"></div>
                 
                 <div class="modal-actions">
-                    <button class="btn-secondary" onclick="closeEmailConfigModal()">Отмена</button>
-                    <button class="btn-primary" onclick="saveEmailConfig()">Сохранить настройки</button>
-                    <button class="btn-success" onclick="testEmailConfig()">Тест отправки</button>
+                    <button class="btn-secondary" onclick="closeEmailConfigModal()">
+                        <i class="fas fa-times"></i> Отмена
+                    </button>
+                    <button class="btn-primary" onclick="saveEmailConfig()">
+                        <i class="fas fa-save"></i> Сохранить настройки
+                    </button>
+                    <button class="btn-success" onclick="testEmailConfig()">
+                        <i class="fas fa-paper-plane"></i> Тест отправки
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Загружаем модули в правильном порядке -->
-    <script src="auth.js"></script>
-    <script src="email-config.js"></script>
-    <script src="auth-ui.js"></script>
-    <script src="utils.js"></script>
+    <script src="config/auth.js"></script>
+    <script src="config/email-config.js"></script>
+    <script src="scripts/auth-ui.js"></script>
+    <script src="scripts/utils.js"></script>
     <script src="modules/direct-rail.js"></script>
     <script src="modules/direct-sea.js"></script>
     <script src="modules/sea.js"></script>

@@ -34,14 +34,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Проверяем авторизацию
     const currentUser = checkAuth();
-    if (!currentUser || currentUser.role !== 'purchaser') {
-        // Если пользователь не авторизован или не менеджер по закупкам, перенаправляем на главную
+    if (!currentUser || (currentUser.role !== 'purchaser' && currentUser.role !== 'admin')) {
+        // Если пользователь не авторизован или не имеет прав доступа, перенаправляем на главную
         console.log('❌ Неавторизованный доступ, перенаправление на главную');
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return;
     }
     
-    console.log('✅ Пользователь авторизован как менеджер по закупкам:', currentUser.email);
+    console.log('✅ Пользователь авторизован:', currentUser.email, 'Роль:', currentUser.role);
     
     // Автоматически загружаем данные с сервера при запуске
     await loadDatabaseData();
@@ -327,6 +327,9 @@ function loadTariffData() {
                 
                 console.log('✅ Тарифы загружены из localStorage');
                 Utils.showStatus('Тарифы загружены', 'success', 'tariff-status');
+                
+                // Показываем предпросмотр тарифов
+                showTariffPreview(tariff);
             }
         } catch (error) {
             console.error('❌ Ошибка загрузки тарифов:', error);
@@ -398,6 +401,18 @@ function showTariffPreview(tariffData) {
         return;
     }
     
+    // Проверяем, есть ли данные для отображения
+    if (!tariffData || (!tariffData.vtt && !tariffData.prr20 && !tariffData.prr40 && !tariffData.auto20 && !tariffData.auto40)) {
+        previewTable.innerHTML = `
+            <div class="status-message info">
+                <i class="fas fa-info-circle"></i>
+                <p>Тарифы еще не сохранены. Заполните поля и нажмите "Сохранить тарифы"</p>
+            </div>
+        `;
+        previewSection.classList.remove('hidden');
+        return;
+    }
+    
     let tableHTML = `
         <table>
             <thead>
@@ -428,6 +443,8 @@ function showTariffPreview(tariffData) {
     tableHTML += `
             </tbody>
         </table>
+        <p style="margin-top: 10px; color: #666; font-size: 14px;">
+        </p>
     `;
     
     previewTable.innerHTML = tableHTML;
@@ -448,6 +465,19 @@ async function loadDatabaseData() {
             const serverData = await response.json();
             database[dbType] = serverData.data || [];
             console.log(`✅ Загружены данные с сервера для ${dbType}: ${database[dbType].length} записей`);
+            
+            // Если загружены тарифы и мы находимся в интерфейсе тарифов, показываем их
+            if (dbType === 'tariff' && database.tariff.length > 0 && currentDatabase === 'tariff') {
+                const tariff = database.tariff[0];
+                // Заполняем поля формы
+                document.getElementById('vtt-rate').value = tariff.vtt || '';
+                document.getElementById('prr20-rate').value = tariff.prr20 || '';
+                document.getElementById('prr40-rate').value = tariff.prr40 || '';
+                document.getElementById('auto20-rate').value = tariff.auto20 || '';
+                document.getElementById('auto40-rate').value = tariff.auto40 || '';
+                // Показываем предпросмотр
+                showTariffPreview(tariff);
+            }
             
         } catch (error) {
             console.error(`❌ Ошибка загрузки данных с сервера для ${dbType}:`, error);
@@ -486,6 +516,6 @@ function logoutUser() {
     // Очищаем localStorage авторизации
     localStorage.removeItem('current_user');
     
-    // Возвращаем на главную страницу
-    window.location.href = 'index.html';
+    // Возвращаем на главную страницу (index.html)
+    window.location.href = '../index.html';
 }
