@@ -61,7 +61,7 @@ function selectCalculationType(type) {
         document.getElementById('sales-interface').classList.remove('hidden');
         resetCalculatorForm();
         setupCalculator();
-        Utils.showLastUpdate();
+        Utils.showLastUpdate('complex', 'last-update');
     }
 }
 
@@ -77,7 +77,7 @@ function selectDatabase(dbType) {
         document.getElementById('sales-separate-interface').classList.remove('hidden');
         resetCalculatorForm();
         setupCalculator();
-        Utils.showLastUpdate();
+        Utils.showLastUpdate(currentDatabase, 'last-update-separate');
     });
 }
 
@@ -1513,18 +1513,13 @@ function displayComplexResults(results, departure, destination, containerType) {
     resultsSection.classList.remove('hidden');
 }
 
-// Простая функция для проверки авторизации
-function checkAuth() {
-    const currentUserData = localStorage.getItem('current_user');
-    if (!currentUserData) {
-        return null;
-    }
-    
+// Функция для проверки авторизации с сервера
+async function checkAuth() {
     try {
-        const user = JSON.parse(currentUserData);
-        return user;
+        const currentUser = await ServerAuth.getCurrentUser();
+        return currentUser;
     } catch (error) {
-        console.error('Ошибка парсинга данных пользователя:', error);
+        console.error('Ошибка проверки авторизации:', error);
         return null;
     }
 }
@@ -1533,8 +1528,8 @@ function checkAuth() {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Приложение менеджера по продажам инициализировано');
     
-    // Проверяем авторизацию
-    const currentUser = checkAuth();
+    // Проверяем авторизацию с сервера
+    const currentUser = await checkAuth();
     if (!currentUser || (currentUser.role !== 'sales' && currentUser.role !== 'admin')) {
         // Если пользователь не авторизован или не имеет прав доступа, перенаправляем на главную
         console.log('❌ Неавторизованный доступ, перенаправление на главную');
@@ -1573,6 +1568,23 @@ async function loadDatabaseData() {
             const serverData = await response.json();
             database[dbType] = serverData.data || [];
             console.log(`✅ Загружены данные с сервера для ${dbType}: ${database[dbType].length} записей`);
+            
+            // 🔧 СОХРАНЯЕМ ИНФОРМАЦИЮ О ВРЕМЕНИ ОБНОВЛЕНИЯ В LOCALSTORAGE
+            if (serverData.lastUpdate) {
+                const updateData = {
+                    timestamp: serverData.lastUpdate,
+                    formatted: new Date(serverData.lastUpdate).toLocaleString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    count: serverData.count || database[dbType].length
+                };
+                localStorage.setItem(`last_update_${dbType}`, JSON.stringify(updateData));
+                console.log(`✅ Сохранено время обновления для ${dbType}: ${updateData.formatted}`);
+            }
             
         } catch (error) {
             console.error(`❌ Ошибка загрузки данных с сервера для ${dbType}:`, error);
@@ -1636,17 +1648,21 @@ async function loadExchangeRate() {
 }
 
 // Функция выхода из системы
-function logoutUser() {
+async function logoutUser() {
     console.log('🔐 Выход из системы менеджера по продажам');
+    
+    try {
+        // Выход через серверную аутентификацию
+        await ServerAuth.logoutUser();
+    } catch (error) {
+        console.error('Ошибка при выходе из системы:', error);
+    }
     
     // Сбрасываем глобальные переменные
     window.currentRole = '';
     window.currentDatabase = '';
     window.currentCalculationType = '';
     window.uploadedData = null;
-    
-    // Очищаем localStorage авторизации
-    localStorage.removeItem('current_user');
     
     // Возвращаем на главную страницу (index.html)
     window.location.href = '../index.html';

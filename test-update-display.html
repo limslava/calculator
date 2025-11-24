@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест отображения времени обновления</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .last-update {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+            padding: 5px;
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест отображения времени обновления</h1>
+    
+    <div class="test-section">
+        <h3>Тест для раздельных ставок</h3>
+        <div id="last-update-separate" class="last-update">Время обновления: не определено</div>
+        <button onclick="testSeparateUpdate()">Тест обновления раздельных ставок</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Тест для комплексных ставок</h3>
+        <div id="last-update" class="last-update">Время обновления: не определено</div>
+        <button onclick="testComplexUpdate()">Тест обновления комплексных ставок</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Тест для тарифов</h3>
+        <div id="last-update-tariff" class="last-update">Время обновления: не определено</div>
+        <button onclick="testTariffUpdate()">Тест обновления тарифов</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Тест для закупщика</h3>
+        <div id="last-update-purchaser" class="last-update">Время обновления: не определено</div>
+        <button onclick="testPurchaserUpdate()">Тест обновления для закупщика</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Очистка данных</h3>
+        <button onclick="clearTestData()">Очистить тестовые данные</button>
+        <button onclick="showAllUpdates()">Показать все обновления</button>
+    </div>
+
+    <script src="scripts/utils.js"></script>
+    <script>
+        // Тест для раздельных ставок
+        function testSeparateUpdate() {
+            const updateData = {
+                timestamp: new Date().toISOString(),
+                formatted: new Date().toLocaleString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                count: Math.floor(Math.random() * 100) + 1
+            };
+            
+            // Сохраняем для разных типов баз данных
+            const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea'];
+            const randomDbType = dbTypes[Math.floor(Math.random() * dbTypes.length)];
+            
+            localStorage.setItem(`last_update_${randomDbType}`, JSON.stringify(updateData));
+            console.log(`✅ Сохранено время обновления для ${randomDbType}: ${updateData.formatted}`);
+            
+            // Показываем обновление
+            Utils.showLastUpdate(randomDbType, 'last-update-separate');
+        }
+        
+        // Тест для комплексных ставок
+        function testComplexUpdate() {
+            const updateData = {
+                timestamp: new Date().toISOString(),
+                formatted: new Date().toLocaleString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                count: Math.floor(Math.random() * 50) + 1
+            };
+            
+            localStorage.setItem('last_update_complex', JSON.stringify(updateData));
+            console.log(`✅ Сохранено время обновления для комплексных ставок: ${updateData.formatted}`);
+            
+            // Показываем обновление
+            Utils.showLastUpdate('complex', 'last-update');
+        }
+        
+        // Тест для тарифов
+        function testTariffUpdate() {
+            const updateData = {
+                timestamp: new Date().toISOString(),
+                formatted: new Date().toLocaleString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                count: 1
+            };
+            
+            localStorage.setItem('last_update_tariff', JSON.stringify(updateData));
+            console.log(`✅ Сохранено время обновления для тарифов: ${updateData.formatted}`);
+            
+            // Показываем обновление
+            Utils.showLastUpdate('tariff', 'last-update-tariff');
+        }
+        
+        // Тест для закупщика
+        function testPurchaserUpdate() {
+            const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea'];
+            const randomDbType = dbTypes[Math.floor(Math.random() * dbTypes.length)];
+            
+            const updateData = {
+                timestamp: new Date().toISOString(),
+                formatted: new Date().toLocaleString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                count: Math.floor(Math.random() * 200) + 1
+            };
+            
+            localStorage.setItem(`last_update_${randomDbType}`, JSON.stringify(updateData));
+            console.log(`✅ Сохранено время обновления для закупщика (${randomDbType}): ${updateData.formatted}`);
+            
+            // Показываем обновление
+            Utils.showLastUpdate(randomDbType, 'last-update-purchaser');
+        }
+        
+        // Очистка тестовых данных
+        function clearTestData() {
+            const keys = [
+                'last_update_sea', 'last_update_rail', 'last_update_direct_rail', 'last_update_direct_sea',
+                'last_update_complex', 'last_update_tariff'
+            ];
+            
+            keys.forEach(key => {
+                localStorage.removeItem(key);
+            });
+            
+            // Очищаем отображение
+            document.querySelectorAll('.last-update').forEach(el => {
+                el.textContent = 'Время обновления: не определено';
+            });
+            
+            console.log('🧹 Все тестовые данные очищены');
+        }
+        
+        // Показать все обновления
+        function showAllUpdates() {
+            const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'complex', 'tariff'];
+            
+            dbTypes.forEach(dbType => {
+                const savedUpdate = localStorage.getItem(`last_update_${dbType}`);
+                if (savedUpdate) {
+                    try {
+                        const updateData = JSON.parse(savedUpdate);
+                        console.log(`📊 ${dbType}: ${updateData.formatted} (${updateData.count} записей)`);
+                    } catch (e) {
+                        console.error(`❌ Ошибка парсинга для ${dbType}:`, e);
+                    }
+                } else {
+                    console.log(`📊 ${dbType}: нет данных`);
+                }
+            });
+        }
+        
+        // Инициализация - показываем текущие данные
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Тест отображения времени обновления инициализирован');
+            showAllUpdates();
+        });
+    </script>
+</body>
+</html>

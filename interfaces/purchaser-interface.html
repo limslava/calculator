@@ -55,6 +55,9 @@
                     <h2>Загрузка базы данных</h2>
                     <button class="btn-back" onclick="goBack()">← Назад</button>
                 </div>
+                <div class="calculator-header">
+                    <div id="last-update-purchaser" class="last-update"></div>
+                </div>
                 <div class="upload-section">
                     <div class="template-info">
                         <h3>Формат файла для загрузки</h3>
@@ -106,6 +109,9 @@
                     <h2>Ввод тарифных ставок</h2>
                     <button class="btn-back" onclick="goBack()">← Назад</button>
                 </div>
+                <div class="calculator-header">
+                    <div id="last-update-tariff" class="last-update"></div>
+                </div>
                 <div class="tariff-section">
                     <div class="tariff-info">
                         <h3>Введите тарифные ставки (финансовые, руб)</h3>
@@ -150,7 +156,7 @@
     </div>
 
     <!-- Загружаем модули в правильном порядке -->
-    <script src="../config/auth.js"></script>
+    <script src="../scripts/server-auth.js"></script>
     <script src="../scripts/utils.js"></script>
     <script src="../scripts/purchaser-script.js"></script>
 </body>

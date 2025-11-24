@@ -236,20 +236,35 @@ function getDatabaseName(dbType) {
 }
 
 // Функция для показа последнего обновления
-function showLastUpdate() {
-    const lastUpdateElement = document.getElementById('last-update');
-    if (!lastUpdateElement) return;
+function showLastUpdate(databaseType = null, elementId = 'last-update') {
+    const lastUpdateElement = document.getElementById(elementId);
+    if (!lastUpdateElement) {
+        console.log(`❌ Элемент с ID '${elementId}' не найден`);
+        return;
+    }
     
-    const savedUpdate = localStorage.getItem(`last_update_${currentDatabase}`);
+    // Используем переданный тип базы или глобальную переменную
+    const dbType = databaseType || window.currentDatabase;
+    
+    if (!dbType) {
+        console.log('⚠️ Тип базы данных не определен');
+        lastUpdateElement.textContent = 'Данные не обновлялись';
+        return;
+    }
+    
+    const savedUpdate = localStorage.getItem(`last_update_${dbType}`);
     if (savedUpdate) {
         try {
             const updateData = JSON.parse(savedUpdate);
             lastUpdateElement.textContent = `Последнее обновление: ${updateData.formatted}`;
+            console.log(`✅ Отображено время обновления для ${dbType}: ${updateData.formatted}`);
         } catch (e) {
             console.error('Ошибка парсинга даты обновления:', e);
+            lastUpdateElement.textContent = 'Ошибка загрузки данных обновления';
         }
     } else {
         lastUpdateElement.textContent = 'Данные не обновлялись';
+        console.log(`⚠️ Нет сохраненных данных обновления для ${dbType}`);
     }
 }
 

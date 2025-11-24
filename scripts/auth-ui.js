@@ -1,7 +1,7 @@
 // 🎯 ИНТЕРФЕЙС СИСТЕМЫ АУТЕНТИФИКАЦИИ
 
 // Функция для входа пользователя
-function loginUser() {
+async function loginUser() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     const statusElement = document.getElementById('login-status');
@@ -11,13 +11,20 @@ function loginUser() {
         return;
     }
     
-    const result = Auth.authenticateUser(email, password);
+    Utils.showStatus('Вход в систему...', '', 'login-status');
     
-    if (result.success) {
-        Utils.showStatus('Успешный вход!', 'success', 'login-status');
-        showUserInterface(result.user);
-    } else {
-        Utils.showStatus(result.error, 'error', 'login-status');
+    try {
+        const result = await ServerAuth.loginUser(email, password);
+        
+        if (result.success) {
+            Utils.showStatus('Успешный вход!', 'success', 'login-status');
+            showUserInterface(result.user);
+        } else {
+            Utils.showStatus(result.error, 'error', 'login-status');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка входа:', error);
+        Utils.showStatus('Ошибка соединения с сервером', 'error', 'login-status');
     }
 }
 
@@ -38,7 +45,7 @@ function logoutUser() {
         window.currentCalculationType = '';
     }
     
-    Auth.logoutUser();
+    ServerAuth.logoutUser();
     
     // Если мы находимся в отдельном интерфейсе, возвращаемся на главную страницу
     if (window.location.pathname.includes('sales-interface.html') ||
@@ -104,7 +111,7 @@ function showUserInterface(user) {
         currentUserEmailElement.textContent = user.email;
     }
     
-    if (user.role === Auth.USER_ROLES.ADMIN) {
+    if (user.role === ServerAuth.USER_ROLES.ADMIN) {
         // Показываем панель администратора
         document.getElementById('admin-panel').classList.remove('hidden');
         loadUsersList();
@@ -146,7 +153,7 @@ function closeAddUserModal() {
 }
 
 // Функция для добавления нового пользователя
-function addNewUser() {
+async function addNewUser() {
     const email = document.getElementById('new-user-email').value;
     const role = document.getElementById('new-user-role').value;
     const statusElement = document.getElementById('add-user-status');
@@ -163,31 +170,38 @@ function addNewUser() {
         return;
     }
     
-    const result = Auth.createUser(email, role);
+    Utils.showStatus('Создание пользователя...', '', 'add-user-status');
     
-    if (result.user) {
-        Utils.showStatus('Пользователь успешно создан!', 'success', 'add-user-status');
+    try {
+        const result = await ServerAuth.createUser(email, role);
         
-        // Отправляем данные для входа на email
-        const emailResult = Auth.sendLoginCredentials(email, result.generatedPassword);
-        
-        if (emailResult.success) {
-            // Показываем данные для входа в интерфейсе
-            showLoginCredentials(email, result.generatedPassword, emailResult);
-            Utils.showStatus('Данные для входа сохранены', 'success', 'add-user-status');
+        if (result.success) {
+            Utils.showStatus('Пользователь успешно создан!', 'success', 'add-user-status');
+            
+            // Отправляем данные для входа на email
+            const emailResult = await ServerAuth.sendLoginCredentials(email, result.generatedPassword);
+            
+            if (emailResult.success) {
+                // Показываем данные для входа в интерфейсе
+                showLoginCredentials(email, result.generatedPassword, emailResult);
+                Utils.showStatus('Данные для входа сохранены', 'success', 'add-user-status');
+            } else {
+                Utils.showStatus('Пользователь создан, но не удалось отправить email: ' + result.generatedPassword, 'warning', 'add-user-status');
+            }
+            
+            // Обновляем список пользователей
+            await loadUsersList();
+            
+            // Закрываем модальное окно через 3 секунды
+            setTimeout(() => {
+                closeAddUserModal();
+            }, 3000);
         } else {
-            Utils.showStatus('Пользователь создан, но не удалось отправить email: ' + result.generatedPassword, 'warning', 'add-user-status');
+            Utils.showStatus('Ошибка при создании пользователя: ' + result.error, 'error', 'add-user-status');
         }
-        
-        // Обновляем список пользователей
-        loadUsersList();
-        
-        // Закрываем модальное окно через 3 секунды
-        setTimeout(() => {
-            closeAddUserModal();
-        }, 3000);
-    } else {
-        Utils.showStatus('Ошибка при создании пользователя', 'error', 'add-user-status');
+    } catch (error) {
+        console.error('❌ Ошибка создания пользователя:', error);
+        Utils.showStatus('Ошибка соединения с сервером', 'error', 'add-user-status');
     }
 }
 
@@ -241,102 +255,118 @@ function showLoginCredentials(email, password, emailResult) {
 }
 
 // Функция для загрузки списка пользователей
-function loadUsersList() {
+async function loadUsersList() {
     const usersListElement = document.getElementById('users-list');
-    const users = Auth.getUsers();
     
-    if (users.length === 0) {
-        usersListElement.innerHTML = '<div class="no-users-message"><i class="fas fa-users"></i><p>Нет пользователей в системе</p></div>';
-        return;
-    }
-    
-    let usersHTML = `
-        <table class="users-table">
-            <thead>
-                <tr>
-                    <th>Email</th>
-                    <th>Роль</th>
-                    <th>Статус</th>
-                    <th>Дата создания</th>
-                    <th>Последний вход</th>
-                    <th>Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    
-    users.forEach(user => {
-        const roleNames = {
-            'admin': 'Администратор',
-            'purchaser': 'Менеджер по закупу',
-            'sales': 'Менеджер по продажам'
-        };
+    try {
+        const users = await ServerAuth.getUsers();
         
-        const statusText = user.isActive ? 'Активен' : 'Заблокирован';
-        const statusClass = user.isActive ? 'status-active' : 'status-inactive';
-        const createdAt = user.createdAt ? new Date(user.createdAt).toLocaleDateString('ru-RU') : '-';
-        const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ru-RU') : 'Никогда';
+        if (users.length === 0) {
+            usersListElement.innerHTML = '<div class="no-users-message"><i class="fas fa-users"></i><p>Нет пользователей в системе</p></div>';
+            return;
+        }
+        
+        let usersHTML = `
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Роль</th>
+                        <th>Статус</th>
+                        <th>Дата создания</th>
+                        <th>Последний вход</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        users.forEach(user => {
+            const roleNames = {
+                'admin': 'Администратор',
+                'purchaser': 'Менеджер по закупу',
+                'sales': 'Менеджер по продажам'
+            };
+            
+            const statusText = user.isActive ? 'Активен' : 'Заблокирован';
+            const statusClass = user.isActive ? 'status-active' : 'status-inactive';
+            const createdAt = user.createdAt ? new Date(user.createdAt).toLocaleDateString('ru-RU') : '-';
+            const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ru-RU') : 'Никогда';
+            
+            usersHTML += `
+                <tr>
+                    <td><strong>${user.email}</strong></td>
+                    <td>${roleNames[user.role]}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${createdAt}</td>
+                    <td>${lastLogin}</td>
+                    <td class="user-actions">
+                        <button class="btn-small ${user.isActive ? 'btn-warning' : 'btn-success'}"
+                                onclick="toggleUserStatus('${user.id}')">
+                            <i class="fas ${user.isActive ? 'fa-lock' : 'fa-unlock'}"></i>
+                            ${user.isActive ? 'Заблокировать' : 'Разблокировать'}
+                        </button>
+                        <button class="btn-small btn-danger"
+                                onclick="deleteUser('${user.id}')"
+                                ${user.id === ServerAuth.getCurrentUser()?.id ? 'disabled' : ''}>
+                            <i class="fas fa-trash"></i>
+                            Удалить
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
         
         usersHTML += `
-            <tr>
-                <td><strong>${user.email}</strong></td>
-                <td>${roleNames[user.role]}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                <td>${createdAt}</td>
-                <td>${lastLogin}</td>
-                <td class="user-actions">
-                    <button class="btn-small ${user.isActive ? 'btn-warning' : 'btn-success'}"
-                            onclick="toggleUserStatus('${user.id}')">
-                        <i class="fas ${user.isActive ? 'fa-lock' : 'fa-unlock'}"></i>
-                        ${user.isActive ? 'Заблокировать' : 'Разблокировать'}
-                    </button>
-                    <button class="btn-small btn-danger"
-                            onclick="deleteUser('${user.id}')"
-                            ${user.id === Auth.getCurrentUser()?.id ? 'disabled' : ''}>
-                        <i class="fas fa-trash"></i>
-                        Удалить
-                    </button>
-                </td>
-            </tr>
+                </tbody>
+            </table>
+            <div class="users-summary">
+                <p><strong>Всего пользователей:</strong> ${users.length}</p>
+            </div>
         `;
-    });
-    
-    usersHTML += `
-            </tbody>
-        </table>
-        <div class="users-summary">
-            <p><strong>Всего пользователей:</strong> ${users.length}</p>
-        </div>
-    `;
-    
-    usersListElement.innerHTML = usersHTML;
+        
+        usersListElement.innerHTML = usersHTML;
+    } catch (error) {
+        console.error('❌ Ошибка загрузки списка пользователей:', error);
+        usersListElement.innerHTML = '<div class="no-users-message"><i class="fas fa-exclamation-triangle"></i><p>Ошибка загрузки пользователей</p></div>';
+    }
 }
 
 // Функция для блокировки/разблокировки пользователя
-function toggleUserStatus(userId) {
-    const result = Auth.toggleUserStatus(userId);
-    
-    if (result.success) {
-        Utils.showStatus(result.message, 'success');
-        loadUsersList();
-    } else {
-        Utils.showStatus(result.error, 'error');
+async function toggleUserStatus(userId) {
+    try {
+        const result = await ServerAuth.toggleUserStatus(userId);
+        
+        if (result.success) {
+            Utils.showStatus(result.message, 'success');
+            await loadUsersList();
+        } else {
+            Utils.showStatus(result.error, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка изменения статуса пользователя:', error);
+        Utils.showStatus('Ошибка соединения с сервером', 'error');
     }
 }
 
 // Функция для удаления пользователя
-function deleteUser(userId) {
+async function deleteUser(userId) {
     if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) {
         return;
     }
     
-    const result = Auth.deleteUser(userId);
-    
-    if (result.success) {
-        Utils.showStatus(result.message, 'success');
-        loadUsersList();
-    } else {
-        Utils.showStatus(result.error, 'error');
+    try {
+        const result = await ServerAuth.deleteUser(userId);
+        
+        if (result.success) {
+            Utils.showStatus(result.message, 'success');
+            await loadUsersList();
+        } else {
+            Utils.showStatus(result.error, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка удаления пользователя:', error);
+        Utils.showStatus('Ошибка соединения с сервером', 'error');
     }
 }
 
@@ -492,18 +522,12 @@ function testEmailConfig() {
 }
 
 // Функция для проверки авторизации при загрузке страницы
-function checkAuthOnLoad() {
+async function checkAuthOnLoad() {
     // Если уже показана форма смены пароля, не показываем интерфейс пользователя
     if (window.passwordChangeFormShown) {
         console.log('🔐 Форма смены пароля уже показана, пропускаем авторизацию');
         return;
     }
-    
-    const currentUser = Auth.getCurrentUser();
-    
-    console.log('🔐 Проверка авторизации при загрузке:', currentUser ? currentUser.email : 'не авторизован');
-    console.log('📊 localStorage current_user:', localStorage.getItem('current_user'));
-    console.log('📊 localStorage logistics_users:', localStorage.getItem('logistics_users') ? 'есть данные' : 'нет данных');
     
     // Проверяем, находимся ли мы в отдельном интерфейсе
     const isSalesInterface = window.location.pathname.includes('sales-interface.html');
@@ -516,10 +540,21 @@ function checkAuthOnLoad() {
         return;
     }
     
-    if (currentUser) {
-        console.log('✅ Пользователь авторизован в главном интерфейсе');
-        showUserInterface(currentUser);
-    } else {
+    try {
+        const currentUser = await ServerAuth.initialize();
+        
+        console.log('🔐 Проверка авторизации при загрузке:', currentUser ? currentUser.email : 'не авторизован');
+        console.log('📊 localStorage auth_token:', localStorage.getItem('auth_token') ? 'есть токен' : 'нет токена');
+        
+        if (currentUser) {
+            console.log('✅ Пользователь авторизован в главном интерфейсе');
+            showUserInterface(currentUser);
+        } else {
+            console.log('🔐 Пользователь не авторизован, показываем форму входа');
+            showLoginInterface();
+        }
+    } catch (error) {
+        console.error('❌ Ошибка проверки авторизации:', error);
         console.log('🔐 Пользователь не авторизован, показываем форму входа');
         showLoginInterface();
     }
@@ -598,7 +633,7 @@ function showChangePasswordForm(email) {
 }
 
 // Функция для смены пароля
-function changePassword() {
+async function changePassword() {
     const email = document.getElementById('change-password-email').value;
     const currentPassword = document.getElementById('current-password').value;
     const newPassword = document.getElementById('new-password').value;
@@ -620,39 +655,47 @@ function changePassword() {
         return;
     }
     
-    // Проверяем текущий пароль
-    const authResult = Auth.authenticateUser(email, currentPassword);
-    if (!authResult.success) {
-        Utils.showStatus('Неверный текущий пароль', 'error', 'change-password-status');
-        return;
-    }
+    Utils.showStatus('Смена пароля...', '', 'change-password-status');
     
-    // Меняем пароль
-    const user = authResult.user;
-    const changeResult = Auth.changeUserPassword(user.id, newPassword);
-    
-    if (changeResult.success) {
-        Utils.showStatus('Пароль успешно изменен! Теперь вы можете войти с новым паролем.', 'success', 'change-password-status');
+    try {
+        // Сначала входим с текущим паролем для получения ID пользователя
+        const loginResult = await ServerAuth.loginUser(email, currentPassword);
         
-        // Очищаем поля и показываем форму входа через 3 секунды
-        setTimeout(() => {
-            document.getElementById('current-password').value = '';
-            document.getElementById('new-password').value = '';
-            document.getElementById('confirm-password').value = '';
+        if (!loginResult.success) {
+            Utils.showStatus('Неверный текущий пароль', 'error', 'change-password-status');
+            return;
+        }
+        
+        // Меняем пароль
+        const user = loginResult.user;
+        const changeResult = await ServerAuth.changeUserPassword(user.id, currentPassword, newPassword);
+        
+        if (changeResult.success) {
+            Utils.showStatus('Пароль успешно изменен! Теперь вы можете войти с новым паролем.', 'success', 'change-password-status');
             
-            const loginSection = document.getElementById('login-section');
-            const changePasswordSection = document.getElementById('change-password-section');
-            
-            if (loginSection && changePasswordSection) {
-                changePasswordSection.classList.add('hidden');
-                loginSection.classList.remove('hidden');
-            }
-            
-            // Очищаем URL параметры
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }, 3000);
-    } else {
-        Utils.showStatus('Ошибка при смене пароля: ' + changeResult.error, 'error', 'change-password-status');
+            // Очищаем поля и показываем форму входа через 3 секунды
+            setTimeout(() => {
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+                
+                const loginSection = document.getElementById('login-section');
+                const changePasswordSection = document.getElementById('change-password-section');
+                
+                if (loginSection && changePasswordSection) {
+                    changePasswordSection.classList.add('hidden');
+                    loginSection.classList.remove('hidden');
+                }
+                
+                // Очищаем URL параметры
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }, 3000);
+        } else {
+            Utils.showStatus('Ошибка при смене пароля: ' + changeResult.error, 'error', 'change-password-status');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка смены пароля:', error);
+        Utils.showStatus('Ошибка соединения с сервером', 'error', 'change-password-status');
     }
 }
 

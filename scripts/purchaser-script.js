@@ -12,18 +12,13 @@ let database = {
     tariff: []
 };
 
-// Простая функция для проверки авторизации
-function checkAuth() {
-    const currentUserData = localStorage.getItem('current_user');
-    if (!currentUserData) {
-        return null;
-    }
-    
+// Функция для проверки авторизации с сервера
+async function checkAuth() {
     try {
-        const user = JSON.parse(currentUserData);
-        return user;
+        const currentUser = await ServerAuth.getCurrentUser();
+        return currentUser;
     } catch (error) {
-        console.error('Ошибка парсинга данных пользователя:', error);
+        console.error('Ошибка проверки авторизации:', error);
         return null;
     }
 }
@@ -32,8 +27,8 @@ function checkAuth() {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Приложение менеджера по закупкам инициализировано');
     
-    // Проверяем авторизацию
-    const currentUser = checkAuth();
+    // Проверяем авторизацию с сервера
+    const currentUser = await checkAuth();
     if (!currentUser || (currentUser.role !== 'purchaser' && currentUser.role !== 'admin')) {
         // Если пользователь не авторизован или не имеет прав доступа, перенаправляем на главную
         console.log('❌ Неавторизованный доступ, перенаправление на главную');
@@ -63,10 +58,14 @@ function selectDatabase(dbType) {
         if (dbType === 'tariff') {
             console.log('🔧 Открываем интерфейс тарифов для закупщика');
             document.getElementById('tariff-interface').classList.remove('hidden');
+            // Показываем время обновления тарифов
+            Utils.showLastUpdate('tariff', 'last-update-tariff');
             loadTariffData();
         } else {
             console.log('🔧 Открываем интерфейс загрузки файлов для закупщика:', dbType);
             document.getElementById('purchaser-interface').classList.remove('hidden');
+            // Показываем время обновления текущей базы
+            Utils.showLastUpdate(dbType, 'last-update-purchaser');
             // Очищаем предыдущие данные
             document.getElementById('excel-file').value = '';
             document.getElementById('process-file').disabled = true;
@@ -287,6 +286,23 @@ async function uploadDataToDatabase() {
             // Сохраняем в localStorage как резервную копию
             localStorage.setItem(`logistics_db_${currentDatabase}`, JSON.stringify(uploadedData));
             
+            // Сохраняем время обновления базы данных
+            const updateData = {
+                timestamp: new Date().toISOString(),
+                formatted: new Date().toLocaleString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                count: uploadedData.length
+            };
+            localStorage.setItem(`last_update_${currentDatabase}`, JSON.stringify(updateData));
+            
+            // Обновляем отображение времени обновления
+            Utils.showLastUpdate(currentDatabase, 'last-update-purchaser');
+            
             console.log(`✅ Данные успешно загружены в базу ${currentDatabase}: ${uploadedData.length} записей`);
             Utils.showStatus(`✅ Данные успешно загружены в базу ${currentDatabase} (${uploadedData.length} записей)`, 'success');
             
@@ -335,6 +351,9 @@ function loadTariffData() {
             console.error('❌ Ошибка загрузки тарифов:', error);
         }
     }
+    
+    // Обновляем отображение времени обновления тарифов
+    Utils.showLastUpdate('tariff', 'last-update-tariff');
 }
 
 function saveTariffData() {
@@ -366,6 +385,23 @@ function saveTariffData() {
     
     // Сохраняем в глобальную базу данных
     database.tariff = [tariffData];
+    
+    // Сохраняем время обновления тарифов
+    const updateData = {
+        timestamp: new Date().toISOString(),
+        formatted: new Date().toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }),
+        count: 1
+    };
+    localStorage.setItem('last_update_tariff', JSON.stringify(updateData));
+    
+    // Обновляем отображение времени обновления
+    Utils.showLastUpdate('tariff', 'last-update-tariff');
     
     // Отправляем на сервер
     fetch('/api/data/tariff', {
@@ -466,6 +502,23 @@ async function loadDatabaseData() {
             database[dbType] = serverData.data || [];
             console.log(`✅ Загружены данные с сервера для ${dbType}: ${database[dbType].length} записей`);
             
+            // 🔧 СОХРАНЯЕМ ИНФОРМАЦИЮ О ВРЕМЕНИ ОБНОВЛЕНИЯ В LOCALSTORAGE
+            if (serverData.lastUpdate) {
+                const updateData = {
+                    timestamp: serverData.lastUpdate,
+                    formatted: new Date(serverData.lastUpdate).toLocaleString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    count: serverData.count || database[dbType].length
+                };
+                localStorage.setItem(`last_update_${dbType}`, JSON.stringify(updateData));
+                console.log(`✅ Сохранено время обновления для ${dbType}: ${updateData.formatted}`);
+            }
+            
             // Если загружены тарифы и мы находимся в интерфейсе тарифов, показываем их
             if (dbType === 'tariff' && database.tariff.length > 0 && currentDatabase === 'tariff') {
                 const tariff = database.tariff[0];
@@ -505,16 +558,20 @@ async function loadDatabaseData() {
 }
 
 // Функция выхода из системы
-function logoutUser() {
+async function logoutUser() {
     console.log('🔐 Выход из системы менеджера по закупкам');
+    
+    try {
+        // Выход через серверную аутентификацию
+        await ServerAuth.logoutUser();
+    } catch (error) {
+        console.error('Ошибка при выходе из системы:', error);
+    }
     
     // Сбрасываем глобальные переменные
     window.currentRole = '';
     window.currentDatabase = '';
     window.uploadedData = null;
-    
-    // Очищаем localStorage авторизации
-    localStorage.removeItem('current_user');
     
     // Возвращаем на главную страницу (index.html)
     window.location.href = '../index.html';
