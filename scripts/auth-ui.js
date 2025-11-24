@@ -78,9 +78,9 @@ function showLoginInterface() {
 // Функция для отображения интерфейса пользователя
 function showUserInterface(user) {
     console.log('🔐 Показываем интерфейс для пользователя:', user.email, 'с ролью:', user.role);
-    console.log('🔧 Проверка роли администратора:', user.role === Auth.USER_ROLES.ADMIN);
-    console.log('🔧 Проверка роли закупщика:', user.role === Auth.USER_ROLES.PURCHASER);
-    console.log('🔧 Проверка роли продавца:', user.role === Auth.USER_ROLES.SALES);
+    console.log('🔧 Проверка роли администратора:', user.role === ServerAuth.USER_ROLES.ADMIN);
+    console.log('🔧 Проверка роли закупщика:', user.role === ServerAuth.USER_ROLES.PURCHASER);
+    console.log('🔧 Проверка роли продавца:', user.role === ServerAuth.USER_ROLES.SALES);
     
     // Сбрасываем глобальные переменные при входе нового пользователя
     window.currentRole = user.role; // Устанавливаем роль пользователя
@@ -116,12 +116,12 @@ function showUserInterface(user) {
         document.getElementById('admin-panel').classList.remove('hidden');
         loadUsersList();
         console.log('✅ Показана панель администратора');
-    } else if (user.role === Auth.USER_ROLES.PURCHASER) {
+    } else if (user.role === ServerAuth.USER_ROLES.PURCHASER) {
         // Перенаправляем на отдельный интерфейс менеджера по закупкам
         console.log('🔄 Перенаправление менеджера по закупкам на interfaces/purchaser-interface.html');
         window.location.href = 'interfaces/purchaser-interface.html';
         return; // Прерываем выполнение, так как происходит перенаправление
-    } else if (user.role === Auth.USER_ROLES.SALES) {
+    } else if (user.role === ServerAuth.USER_ROLES.SALES) {
         // Перенаправляем на отдельный интерфейс менеджера по продажам
         console.log('🔄 Перенаправление менеджера по продажам на interfaces/sales-interface.html');
         window.location.href = 'interfaces/sales-interface.html';
@@ -602,9 +602,9 @@ function checkUrlParameters() {
         console.log('🔐 Запрос на смену пароля для:', email);
         
         // Принудительно выходим из системы, чтобы показать форму смены пароля
-        if (Auth.getCurrentUser()) {
+        if (ServerAuth.getCurrentUser()) {
             console.log('🔐 Выход из системы для показа формы смены пароля');
-            Auth.logoutUser();
+            ServerAuth.logoutUser();
         }
         
         // Показываем форму смены пароля
