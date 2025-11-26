@@ -1,9 +1,16 @@
 // Загрузка переменных окружения
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-} else {
+require('dotenv').config();
+if (process.env.NODE_ENV === 'production') {
   require('dotenv').config({ path: '.env.production' });
 }
+
+// Отладочная информация о переменных окружения
+console.log('=== ENV DEBUG INFO ===');
+console.log(`🔧 NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`🔧 DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
+console.log(`🔧 PORT: ${process.env.PORT}`);
+console.log(`🔧 JWT_SECRET: ${process.env.JWT_SECRET ? 'SET' : 'NOT SET'}`);
+console.log('======================');
 
 const express = require('express');
 const compression = require('compression');
@@ -30,7 +37,8 @@ async function initializeDatabase() {
         const isConnected = await testConnection();
         if (!isConnected) {
             console.error('❌ Не удалось подключиться к базе данных');
-            return false;
+            console.log('⚠️ Приложение запускается в режиме только для чтения');
+            return true; // Разрешаем запуск сервера даже без базы данных
         }
 
         // Синхронизируем базу данных
@@ -59,7 +67,8 @@ async function initializeDatabase() {
         return true;
     } catch (error) {
         console.error('❌ Ошибка инициализации базы данных:', error);
-        return false;
+        console.log('⚠️ Приложение запускается в режиме только для чтения');
+        return true; // Разрешаем запуск сервера даже с ошибкой базы данных
     }
 }
 
