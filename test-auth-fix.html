@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест исправления авторизации</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .warning {
+            color: orange;
+            font-weight: bold;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест исправления авторизации</h1>
+    
+    <div class="test-section">
+        <h2>Проблема</h2>
+        <p>Скрипт пытался загружать данные с сервера до авторизации пользователя, что вызывало ошибки 401 (Unauthorized).</p>
+        <p class="error">GET https://calculator-limslava.amvera.io/api/data/sea 401 (Unauthorized)</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Исправления</h2>
+        <ul>
+            <li>✅ Убрана автоматическая загрузка данных при инициализации страницы</li>
+            <li>✅ Добавлена проверка авторизации в функции <code>loadDatabaseData()</code></li>
+            <li>✅ Добавлена функция <code>loadLocalDataOnly()</code> для загрузки только локальных данных</li>
+            <li>✅ Обновлена функция <code>setupCalculator()</code> для проверки авторизации</li>
+            <li>✅ Данные загружаются только после выбора роли или базы данных</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>Логика работы после исправления</h2>
+        <ol>
+            <li>Страница загружается → <span class="warning">НЕ загружает данные с сервера</span></li>
+            <li>Пользователь авторизуется → <span class="success">Загружаются данные с сервера</span></li>
+            <li>Если авторизация не пройдена → <span class="warning">Загружаются только локальные данные</span></li>
+            <li>При выборе базы данных → <span class="success">Загружаются данные с сервера (если авторизован)</span></li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>Проверка в консоли браузера</h2>
+        <p>Откройте консоль разработчика (F12) и проверьте:</p>
+        <div class="log">
+// Должны видеть:
+✅ Приложение логистики инициализировано
+⏳ Ожидание авторизации для загрузки данных с сервера
+✅ Курс ЦБ РФ загружен: 1 USD = ... RUB
+
+// НЕ должны видеть:
+❌ Ошибка загрузки данных с сервера для sea: Error: HTTP error! status: 401
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Статус исправления</h2>
+        <p class="success">✅ Проблема решена! Данные больше не загружаются до авторизации.</p>
+        <p>Теперь приложение будет корректно работать как с авторизацией, так и без нее.</p>
+    </div>
+</body>
+</html>

@@ -108,7 +108,7 @@ async function selectDatabase(dbType) {
     console.log('🎯 Выбран тип базы данных:', dbType, 'для роли:', role);
     document.getElementById('database-selection').classList.add('hidden');
     
-    // Синхронизируем данные с сервером при каждом входе
+    // Синхронизируем данные с сервером при каждом входе (только после авторизации)
     await loadDatabaseData();
     
     if (role === 'purchaser') {
@@ -781,7 +781,14 @@ function showTariffPreview(tariffData) {
 
 // Функции для менеджера по продажам
 function setupCalculator() {
-    loadDatabaseData();
+    // Загружаем данные только если пользователь авторизован
+    const currentUser = ServerAuth.getCurrentUser();
+    if (currentUser) {
+        loadDatabaseData();
+    } else {
+        // Загружаем только локальные данные
+        loadLocalDataOnly();
+    }
     
     console.log('🔧 Настройка калькулятора:', {
         calculationType: currentCalculationType,
@@ -956,6 +963,15 @@ function setupComplexAutocomplete() {
 }
 
 async function loadDatabaseData() {
+    // 🔧 ПРОВЕРЯЕМ АВТОРИЗАЦИЮ ПЕРЕД ЗАГРУЗКОЙ ДАННЫХ
+    const currentUser = ServerAuth.getCurrentUser();
+    if (!currentUser) {
+        console.warn('⚠️ Пользователь не авторизован, загружаем только локальные данные');
+        // Загружаем только локальные данные без обращения к серверу
+        loadLocalDataOnly();
+        return;
+    }
+    
     // 🔧 ЗАГРУЗКА ДАННЫХ ИЗ СЕРВЕРА ДЛЯ ВСЕХ ТИПОВ БАЗ
     const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff'];
     
@@ -1004,6 +1020,31 @@ async function loadDatabaseData() {
         currentDatabase: currentDatabase,
         currentRole: currentRole
     });
+}
+
+// Функция для загрузки только локальных данных (без обращения к серверу)
+function loadLocalDataOnly() {
+    const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff'];
+    
+    for (const dbType of dbTypes) {
+        const savedData = localStorage.getItem(`logistics_db_${dbType}`);
+        if (savedData) {
+            try {
+                database[dbType] = JSON.parse(savedData);
+                console.log(`✅ Загружены локальные данные для ${dbType}: ${database[dbType].length} записей`);
+            } catch (localError) {
+                console.error(`❌ Ошибка загрузки локальных данных для ${dbType}:`, localError);
+                database[dbType] = [];
+            }
+        } else {
+            console.warn(`⚠️ Нет локальных данных для ${dbType}`);
+            database[dbType] = [];
+        }
+    }
+    
+    // 🔧 ЭКСПОРТИРУЕМ ДАННЫЕ В ГЛОБАЛЬНУЮ ОБЛАСТЬ ДЛЯ МОДУЛЕЙ
+    window.database = database;
+    console.log('🌐 Локальные данные экспортированы в window.database для модулей');
 }
 
 function calculateAllRates(departure, destination, containerType) {
@@ -1550,9 +1591,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Загружаем курс ЦБ РФ
     await loadExchangeRate();
     
-    // Автоматически загружаем данные с сервера при запуске
-    await loadDatabaseData();
-    console.log('✅ Данные загружены с сервера при инициализации');
+    // НЕ загружаем данные с сервера при запуске - ждем авторизации
+    // Данные будут загружены при выборе роли или базы данных
+    console.log('⏳ Ожидание авторизации для загрузки данных с сервера');
     
     // Проверяем наличие библиотеки XLSX
     if (typeof XLSX === 'undefined') {
