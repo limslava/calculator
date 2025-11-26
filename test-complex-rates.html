@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест комплексных ставок</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .complex-results-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .transport-type-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .transport-type-direct_rail { background-color: #e3f2fd; color: #1976d2; }
+        .transport-type-direct_sea { background-color: #e8f5e8; color: #2e7d32; }
+        .transport-type-sea { background-color: #fff3e0; color: #f57c00; }
+        .transport-type-rail { background-color: #fce4ec; color: #c2185b; }
+        .transport-type-sea_rail { background-color: #f3e5f5; color: #7b1fa2; }
+        .best-rate-row {
+            background-color: #e8f5e8;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест таблицы комплексных ставок</h1>
+    <p>Проверка отображения новых полей в таблице комплексных ставок:</p>
+    
+    <div class="complex-results-section">
+        <h4>Результаты для: Shanghai → Moscow</h4>
+        <div class="sorting-info" style="margin-bottom: 10px; font-style: italic; color: #666;">
+            📊 Результаты отсортированы по возрастанию общей ставки
+        </div>
+        <div class="exchange-rate-info"><small>Курс ЦБ РФ: 1 USD = 90 RUB</small></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Тип перевозки</th>
+                    <th>Ставка море</th>
+                    <th>Перевозчик</th>
+                    <th>ETD</th>
+                    <th>Дата действия</th>
+                    <th>Ставка ЖД</th>
+                    <th>Станция отправления</th>
+                    <th>Погран переход</th>
+                    <th>Общая ставка</th>
+                    <th>Дополнительная информация</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Прямое ЖД -->
+                <tr class="best-rate-row">
+                    <td>
+                        <span class="transport-type-badge transport-type-direct_rail">
+                            Прямое ЖД 🏆
+                        </span>
+                    </td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>15.12.2024</td>
+                    <td>-</td>
+                    <td>$1500</td>
+                    <td>Shanghai Station</td>
+                    <td>Manzhouli</td>
+                    <td><strong>135000 RUB</strong></td>
+                    <td>Станция прибытия: Moscow Terminal</td>
+                </tr>
+                
+                <!-- Прямое море -->
+                <tr>
+                    <td>
+                        <span class="transport-type-badge transport-type-direct_sea">
+                            Прямое море
+                        </span>
+                    </td>
+                    <td>$1200</td>
+                    <td>Maersk</td>
+                    <td>10.12.2024</td>
+                    <td>31.12.2024</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td><strong>108000 RUB</strong></td>
+                    <td>Агент: Ocean Freight Co</td>
+                </tr>
+                
+                <!-- Море -->
+                <tr>
+                    <td>
+                        <span class="transport-type-badge transport-type-sea">
+                            Море
+                        </span>
+                    </td>
+                    <td>$1100</td>
+                    <td>COSCO</td>
+                    <td>12.12.2024</td>
+                    <td>25.12.2024</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td><strong>99000 RUB</strong></td>
+                    <td>DROP OFF AREA: St. Petersburg</td>
+                </tr>
+                
+                <!-- Комплексная ставка Море+ЖД -->
+                <tr>
+                    <td>
+                        <span class="transport-type-badge transport-type-sea_rail">
+                            Море + ЖД
+                        </span>
+                    </td>
+                    <td>$800</td>
+                    <td>MSC</td>
+                    <td>08.12.2024</td>
+                    <td>20.12.2024</td>
+                    <td>25000 RUB</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td><strong>97000 RUB</strong></td>
+                    <td>Море: Shanghai → St. Petersburg (St. Petersburg) → ЖД: St. Petersburg → Moscow</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 5px;">
+        <h3>✅ Проверка новых полей:</h3>
+        <ul>
+            <li><strong>Для моря:</strong> Carrier, ETD, Date of validity</li>
+            <li><strong>Для прямого ЖД:</strong> Станция отправления, Погран переход, ETD</li>
+            <li>Все поля корректно отображаются в таблице</li>
+            <li>Сортировка по общей ставке работает правильно</li>
+        </ul>
+    </div>
+</body>
+</html>

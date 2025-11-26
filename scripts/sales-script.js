@@ -1444,7 +1444,12 @@ function displayComplexResults(results, departure, destination, containerType) {
                     <tr>
                         <th>Тип перевозки</th>
                         <th>Ставка море</th>
+                        <th>Перевозчик</th>
+                        <th>ETD</th>
+                        <th>Дата действия</th>
                         <th>Ставка ЖД</th>
+                        <th>Станция отправления</th>
+                        <th>Погран переход</th>
                         <th>Общая ставка</th>
                         <th>Дополнительная информация</th>
                     </tr>
@@ -1462,27 +1467,52 @@ function displayComplexResults(results, departure, destination, containerType) {
         let seaRate = '';
         let railRate = '';
         let totalRate = '';
+        let carrier = '-';
+        let etd = '-';
+        let dateOfValidity = '-';
+        let departureStation = '-';
+        let borderCrossing = '-';
         let additionalInfo = '';
         
         if (result.transportType === 'direct_rail') {
             seaRate = '-';
             railRate = `$${result.rate}`;
             totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
+            carrier = '-';
+            etd = result.data.etd || '-';
+            dateOfValidity = '-';
+            departureStation = result.data.departureStation || '-';
+            borderCrossing = result.data.borderCrossing || '-';
             additionalInfo = `Станция прибытия: ${result.data.arrivalStation || 'Не указана'}`;
         } else if (result.transportType === 'direct_sea') {
             seaRate = `$${result.rate}`;
             railRate = '-';
             totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
-            additionalInfo = `ETD: ${result.data.etd || 'Не указан'}`;
+            carrier = result.data.carrier || '-';
+            etd = result.data.etd || '-';
+            dateOfValidity = result.data.dateOfValidity || '-';
+            departureStation = '-';
+            borderCrossing = '-';
+            additionalInfo = `Агент: ${result.data.agent || 'Не указан'}`;
         } else if (result.transportType === 'sea') {
             seaRate = `$${result.rate}`;
             railRate = '-';
             totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
+            carrier = result.data.carrier || '-';
+            etd = result.data.etd || '-';
+            dateOfValidity = result.data.dateOfValidity || '-';
+            departureStation = '-';
+            borderCrossing = '-';
             additionalInfo = `DROP OFF AREA: ${result.data.dropOffArea || 'Не указан'}`;
         } else if (result.transportType === 'rail') {
             seaRate = '-';
             railRate = `${result.rate} RUB`;
             totalRate = `${result.rate} RUB`;
+            carrier = '-';
+            etd = '-';
+            dateOfValidity = '-';
+            departureStation = '-';
+            borderCrossing = '-';
             additionalInfo = `Агент: ${result.data.agent || 'Не указан'}`;
         } else if (result.transportType === 'sea_rail') {
             // Комплексная ставка: море в USD, ЖД в RUB
@@ -1495,6 +1525,13 @@ function displayComplexResults(results, departure, destination, containerType) {
             // Для комплексных ставок Море+ЖД всегда отображаем в RUB
             // (курс ЦБ РФ всегда должен быть загружен)
             totalRate = `${result.rate} RUB`;
+            
+            // Для комплексных ставок берем данные из морской части
+            carrier = result.data.sea.carrier || '-';
+            etd = result.data.sea.etd || '-';
+            dateOfValidity = result.data.sea.dateOfValidity || '-';
+            departureStation = '-';
+            borderCrossing = '-';
             
             additionalInfo = result.data.connection || 'Комплексная перевозка Море+ЖД';
             // Добавляем информацию о ВТТ, если он включен
@@ -1512,7 +1549,12 @@ function displayComplexResults(results, departure, destination, containerType) {
                     </span>
                 </td>
                 <td>${seaRate}</td>
+                <td>${carrier}</td>
+                <td>${etd}</td>
+                <td>${dateOfValidity}</td>
                 <td>${railRate}</td>
+                <td>${departureStation}</td>
+                <td>${borderCrossing}</td>
                 <td><strong>${totalRate}</strong></td>
                 <td>${additionalInfo}</td>
             </tr>
