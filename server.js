@@ -1,3 +1,10 @@
+// Загрузка переменных окружения
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+} else {
+  require('dotenv').config({ path: '.env.production' });
+}
+
 const express = require('express');
 const compression = require('compression');
 const helmet = require('helmet');
