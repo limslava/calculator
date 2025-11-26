@@ -50,7 +50,7 @@ function normalizeCityName(city) {
 
 // Функции для управления интерфейсом
 function selectRole(role) {
-    const currentUser = Auth.getCurrentUser();
+    const currentUser = ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -58,7 +58,7 @@ function selectRole(role) {
     }
     
     // Обновляем роль пользователя в системе
-    Auth.updateUserRole(currentUser.id, role);
+    // Auth.updateUserRole(currentUser.id, role); // Функция не реализована
     
     currentRole = role;
     document.getElementById('role-selection').classList.add('hidden');
@@ -69,7 +69,7 @@ function selectRole(role) {
 }
 
 function selectSalesRole() {
-    const currentUser = Auth.getCurrentUser();
+    const currentUser = ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -77,7 +77,7 @@ function selectSalesRole() {
     }
     
     // Обновляем роль пользователя в системе
-    Auth.updateUserRole(currentUser.id, 'sales');
+    // Auth.updateUserRole(currentUser.id, 'sales'); // Функция не реализована
     
     currentRole = 'sales';
     document.getElementById('role-selection').classList.add('hidden');
@@ -88,7 +88,7 @@ function selectSalesRole() {
 }
 
 async function selectDatabase(dbType) {
-    const currentUser = Auth.getCurrentUser();
+    const currentUser = ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -256,7 +256,7 @@ function goBack() {
 
 // Функция перенаправления менеджера по продажам на отдельный интерфейс
 function redirectToSalesInterface() {
-    const currentUser = Auth.getCurrentUser();
+    const currentUser = ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -264,8 +264,8 @@ function redirectToSalesInterface() {
     }
     
     // Для администратора не меняем роль, для остальных пользователей обновляем роль
-    if (currentUser.role !== Auth.USER_ROLES.ADMIN) {
-        Auth.updateUserRole(currentUser.id, 'sales');
+    if (currentUser.role !== ServerAuth.USER_ROLES.ADMIN) {
+        // Auth.updateUserRole(currentUser.id, 'sales'); // Функция не реализована
     }
     
     // Для всех пользователей (включая администратора) перенаправляем на отдельный интерфейс
@@ -274,7 +274,7 @@ function redirectToSalesInterface() {
 
 // Функция перенаправления менеджера по закупкам на отдельный интерфейс
 function redirectToPurchaserInterface() {
-    const currentUser = Auth.getCurrentUser();
+    const currentUser = ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -282,8 +282,8 @@ function redirectToPurchaserInterface() {
     }
     
     // Для администратора не меняем роль, для остальных пользователей обновляем роль
-    if (currentUser.role !== Auth.USER_ROLES.ADMIN) {
-        Auth.updateUserRole(currentUser.id, 'purchaser');
+    if (currentUser.role !== ServerAuth.USER_ROLES.ADMIN) {
+        // Auth.updateUserRole(currentUser.id, 'purchaser'); // Функция не реализована
     }
     
     // Для всех пользователей (включая администратора) перенаправляем на отдельный интерфейс
@@ -1528,7 +1528,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Приложение логистики инициализировано');
     
     // Инициализация системы аутентификации
-    Auth.initialize();
+    ServerAuth.initialize();
     
     // Небольшая задержка для гарантии загрузки всех модулей
     setTimeout(() => {

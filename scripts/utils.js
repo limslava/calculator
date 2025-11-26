@@ -236,7 +236,7 @@ function getDatabaseName(dbType) {
 }
 
 // Функция для показа последнего обновления
-function showLastUpdate(databaseType = null, elementId = 'last-update') {
+async function showLastUpdate(databaseType = null, elementId = 'last-update') {
     const lastUpdateElement = document.getElementById(elementId);
     if (!lastUpdateElement) {
         console.log(`❌ Элемент с ID '${elementId}' не найден`);
@@ -252,19 +252,51 @@ function showLastUpdate(databaseType = null, elementId = 'last-update') {
         return;
     }
     
-    const savedUpdate = localStorage.getItem(`last_update_${dbType}`);
-    if (savedUpdate) {
-        try {
-            const updateData = JSON.parse(savedUpdate);
-            lastUpdateElement.textContent = `Последнее обновление: ${updateData.formatted}`;
-            console.log(`✅ Отображено время обновления для ${dbType}: ${updateData.formatted}`);
-        } catch (e) {
-            console.error('Ошибка парсинга даты обновления:', e);
-            lastUpdateElement.textContent = 'Ошибка загрузки данных обновления';
+    // Для комплексного расчета не загружаем данные из базы
+    if (dbType === 'complex') {
+        console.log('🔧 Комплексный расчет - данные не загружаются из базы');
+        lastUpdateElement.textContent = 'Комплексный расчет (данные не сохраняются)';
+        return;
+    }
+    
+    try {
+        // Получаем токен авторизации
+        const token = localStorage.getItem('auth_token');
+        
+        // Загружаем данные с сервера
+        const response = await fetch(`/api/data/${dbType}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-    } else {
-        lastUpdateElement.textContent = 'Данные не обновлялись';
-        console.log(`⚠️ Нет сохраненных данных обновления для ${dbType}`);
+        
+        const serverData = await response.json();
+        
+        if (serverData.lastUpdate) {
+            const updateDate = new Date(serverData.lastUpdate);
+            const formattedDate = updateDate.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const count = serverData.count || serverData.data?.length || 0;
+            lastUpdateElement.textContent = `Последнее обновление: ${formattedDate} (${count} записей)`;
+            console.log(`✅ Отображено время обновления с сервера для ${dbType}: ${formattedDate}`);
+        } else {
+            lastUpdateElement.textContent = 'Данные не обновлялись';
+            console.log(`⚠️ Нет данных обновления на сервере для ${dbType}`);
+        }
+        
+    } catch (error) {
+        console.error(`❌ Ошибка загрузки времени обновления для ${dbType}:`, error);
+        lastUpdateElement.textContent = 'Ошибка загрузки данных обновления';
     }
 }
 

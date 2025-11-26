@@ -261,11 +261,15 @@ async function uploadDataToDatabase() {
     Utils.showStatus('Загрузка данных в базу...', '');
 
     try {
+        // Получаем токен авторизации
+        const token = localStorage.getItem('auth_token');
+        
         // Отправляем данные на сервер
         const response = await fetch(`/api/data/${currentDatabase}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 data: uploadedData,
@@ -283,28 +287,11 @@ async function uploadDataToDatabase() {
             // Обновляем локальную копию данных
             database[currentDatabase] = uploadedData;
             
-            // Сохраняем в localStorage как резервную копию
-            localStorage.setItem(`logistics_db_${currentDatabase}`, JSON.stringify(uploadedData));
-            
-            // Сохраняем время обновления базы данных
-            const updateData = {
-                timestamp: new Date().toISOString(),
-                formatted: new Date().toLocaleString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }),
-                count: uploadedData.length
-            };
-            localStorage.setItem(`last_update_${currentDatabase}`, JSON.stringify(updateData));
+            console.log(`✅ Данные успешно загружены в серверную базу ${currentDatabase}: ${uploadedData.length} записей`);
+            Utils.showStatus(`✅ Данные успешно загружены в серверную базу ${currentDatabase} (${uploadedData.length} записей)`, 'success');
             
             // Обновляем отображение времени обновления
-            Utils.showLastUpdate(currentDatabase, 'last-update-purchaser');
-            
-            console.log(`✅ Данные успешно загружены в базу ${currentDatabase}: ${uploadedData.length} записей`);
-            Utils.showStatus(`✅ Данные успешно загружены в базу ${currentDatabase} (${uploadedData.length} записей)`, 'success');
+            await Utils.showLastUpdate(currentDatabase, 'last-update-purchaser');
             
             // Сбрасываем состояние
             uploadedData = null;
@@ -325,39 +312,17 @@ async function uploadDataToDatabase() {
 
 // Функции для работы с тарифами
 function loadTariffData() {
-    console.log('📊 Загрузка данных тарифов');
+    console.log('📊 Загрузка данных тарифов с сервера');
     
-    // Загружаем тарифы из localStorage или базы данных
-    const savedTariffs = localStorage.getItem('logistics_db_tariff');
-    if (savedTariffs) {
-        try {
-            const tariffs = JSON.parse(savedTariffs);
-            if (tariffs && tariffs.length > 0) {
-                // Заполняем поля формы
-                const tariff = tariffs[0]; // Берем первый тариф
-                document.getElementById('vtt-rate').value = tariff.vtt || '';
-                document.getElementById('prr20-rate').value = tariff.prr20 || '';
-                document.getElementById('prr40-rate').value = tariff.prr40 || '';
-                document.getElementById('auto20-rate').value = tariff.auto20 || '';
-                document.getElementById('auto40-rate').value = tariff.auto40 || '';
-                
-                console.log('✅ Тарифы загружены из localStorage');
-                Utils.showStatus('Тарифы загружены', 'success', 'tariff-status');
-                
-                // Показываем предпросмотр тарифов
-                showTariffPreview(tariff);
-            }
-        } catch (error) {
-            console.error('❌ Ошибка загрузки тарифов:', error);
-        }
-    }
+    // Тарифы загружаются автоматически через loadDatabaseData()
+    // Эта функция вызывается после загрузки данных с сервера
     
     // Обновляем отображение времени обновления тарифов
     Utils.showLastUpdate('tariff', 'last-update-tariff');
 }
 
-function saveTariffData() {
-    console.log('💾 Сохранение тарифных данных');
+async function saveTariffData() {
+    console.log('💾 Сохранение тарифных данных на сервере');
     
     const vttRate = document.getElementById('vtt-rate').value;
     const prr20Rate = document.getElementById('prr20-rate').value;
@@ -380,52 +345,47 @@ function saveTariffData() {
         timestamp: new Date().toISOString()
     };
     
-    // Сохраняем в localStorage
-    localStorage.setItem('logistics_db_tariff', JSON.stringify([tariffData]));
-    
-    // Сохраняем в глобальную базу данных
-    database.tariff = [tariffData];
-    
-    // Сохраняем время обновления тарифов
-    const updateData = {
-        timestamp: new Date().toISOString(),
-        formatted: new Date().toLocaleString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        }),
-        count: 1
-    };
-    localStorage.setItem('last_update_tariff', JSON.stringify(updateData));
-    
-    // Обновляем отображение времени обновления
-    Utils.showLastUpdate('tariff', 'last-update-tariff');
-    
-    // Отправляем на сервер
-    fetch('/api/data/tariff', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            data: [tariffData],
-            type: 'tariff'
-        })
-    }).then(response => {
-        if (response.ok) {
-            console.log('✅ Тарифы успешно сохранены');
-            Utils.showStatus('Тарифы успешно сохранены', 'success', 'tariff-status');
-            showTariffPreview(tariffData);
-        } else {
-            throw new Error('Ошибка сохранения на сервере');
+    try {
+        // Получаем токен авторизации
+        const token = localStorage.getItem('auth_token');
+        
+        // Отправляем на сервер
+        const response = await fetch('/api/data/tariff', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                data: [tariffData],
+                type: 'tariff'
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-    }).catch(error => {
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Обновляем локальную копию данных
+            database.tariff = [tariffData];
+            
+            console.log('✅ Тарифы успешно сохранены на сервере');
+            Utils.showStatus('Тарифы успешно сохранены на сервере', 'success', 'tariff-status');
+            showTariffPreview(tariffData);
+            
+            // Обновляем отображение времени обновления
+            await Utils.showLastUpdate('tariff', 'last-update-tariff');
+        } else {
+            throw new Error(result.message || 'Ошибка сохранения на сервере');
+        }
+        
+    } catch (error) {
         console.error('❌ Ошибка сохранения тарифов:', error);
-        Utils.showStatus('Тарифы сохранены локально (ошибка сервера)', 'warning', 'tariff-status');
-        showTariffPreview(tariffData);
-    });
+        Utils.showStatus(`Ошибка сохранения тарифов: ${error.message}`, 'error', 'tariff-status');
+    }
 }
 
 function showTariffPreview(tariffData) {
@@ -493,7 +453,14 @@ async function loadDatabaseData() {
     
     for (const dbType of dbTypes) {
         try {
-            const response = await fetch(`/api/data/${dbType}`);
+            // Получаем токен авторизации
+            const token = localStorage.getItem('auth_token');
+            
+            const response = await fetch(`/api/data/${dbType}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -501,23 +468,6 @@ async function loadDatabaseData() {
             const serverData = await response.json();
             database[dbType] = serverData.data || [];
             console.log(`✅ Загружены данные с сервера для ${dbType}: ${database[dbType].length} записей`);
-            
-            // 🔧 СОХРАНЯЕМ ИНФОРМАЦИЮ О ВРЕМЕНИ ОБНОВЛЕНИЯ В LOCALSTORAGE
-            if (serverData.lastUpdate) {
-                const updateData = {
-                    timestamp: serverData.lastUpdate,
-                    formatted: new Date(serverData.lastUpdate).toLocaleString('ru-RU', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }),
-                    count: serverData.count || database[dbType].length
-                };
-                localStorage.setItem(`last_update_${dbType}`, JSON.stringify(updateData));
-                console.log(`✅ Сохранено время обновления для ${dbType}: ${updateData.formatted}`);
-            }
             
             // Если загружены тарифы и мы находимся в интерфейсе тарифов, показываем их
             if (dbType === 'tariff' && database.tariff.length > 0 && currentDatabase === 'tariff') {
@@ -535,20 +485,8 @@ async function loadDatabaseData() {
         } catch (error) {
             console.error(`❌ Ошибка загрузки данных с сервера для ${dbType}:`, error);
             
-            // Резервная загрузка из localStorage
-            const savedData = localStorage.getItem(`logistics_db_${dbType}`);
-            if (savedData) {
-                try {
-                    database[dbType] = JSON.parse(savedData);
-                    console.log(`✅ Загружены резервные данные из localStorage для ${dbType}: ${database[dbType].length} записей`);
-                } catch (localError) {
-                    console.error(`❌ Ошибка загрузки резервных данных для ${dbType}:`, localError);
-                    database[dbType] = [];
-                }
-            } else {
-                console.warn(`⚠️ Нет сохраненных данных для ${dbType}`);
-                database[dbType] = [];
-            }
+            console.warn(`⚠️ Нет данных на сервере для ${dbType}`);
+            database[dbType] = [];
         }
     }
     

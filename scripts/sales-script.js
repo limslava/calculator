@@ -1340,15 +1340,15 @@ function calculateAllRates(departure, destination, containerType) {
                     let totalRateForSorting = 0;
                     let currencyForSorting = '$';
                     
-                    if (usdToRubRate) {
-                        // Конвертируем морскую ставку в RUB и складываем с ЖД ставкой
-                        totalRateForSorting = Math.round(seaRate * usdToRubRate) + railRate;
-                        currencyForSorting = 'RUB';
-                    } else {
-                        // Если курс не загружен, используем USD для сортировки (только морская часть)
-                        totalRateForSorting = seaRate;
-                        currencyForSorting = '$';
+                    // Курс ЦБ РФ всегда должен быть загружен для комплексных ставок
+                    if (!usdToRubRate) {
+                        console.error('❌ Курс ЦБ РФ не загружен! Невозможно рассчитать комплексные ставки');
+                        return; // Пропускаем эту ставку если курс не загружен
                     }
+                    
+                    // Конвертируем морскую ставку в RUB и складываем с ЖД ставкой
+                    totalRateForSorting = Math.round(seaRate * usdToRubRate) + railRate;
+                    currencyForSorting = 'RUB';
                     
                     // Добавляем ВТТ к ставке только для комплексных ставок Море+ЖД
                     if (isVTTTrigger && vttRate > 0) {
@@ -1380,15 +1380,25 @@ function calculateAllRates(departure, destination, containerType) {
     console.log('🔧 Всего результатов комплексного расчета:', allResults.length);
     
     // Сортируем результаты по общей ставке (от меньшей к большей)
+    // 🔧 ИСПРАВЛЕНИЕ: Конвертируем все ставки в RUB для корректной сортировки
     allResults.sort((a, b) => {
         // Безопасная сортировка с проверкой на undefined и null
-        const rateA = a.rate || 0;
-        const rateB = b.rate || 0;
+        let rateA = a.rate || 0;
+        let rateB = b.rate || 0;
+        
+        // 🔧 Конвертируем USD в RUB для сортировки
+        if (a.currency === '$' && usdToRubRate) {
+            rateA = rateA * usdToRubRate;
+        }
+        if (b.currency === '$' && usdToRubRate) {
+            rateB = rateB * usdToRubRate;
+        }
+        
         return rateA - rateB;
     });
 
     console.log('📊 Отсортированные результаты комплексного расчета:',
-        allResults.map(r => ({ type: r.transportType, rate: r.rate })));
+        allResults.map(r => ({ type: r.transportType, rate: r.rate, name: r.transportName, currency: r.currency })));
 
     // Сохраняем результаты в глобальную переменную для доступа из модального окна
     window.allResults = allResults;
@@ -1400,6 +1410,17 @@ function calculateAllRates(departure, destination, containerType) {
 function displayComplexResults(results, departure, destination, containerType) {
     const resultsSection = document.getElementById('results');
     const ratesTable = document.getElementById('rates-table');
+    
+    // 🔧 ДОПОЛНИТЕЛЬНАЯ ОТЛАДКА ДЛЯ ПРОВЕРКИ СОРТИРОВКИ
+    console.log('🔧 Отладочная информация перед отображением:');
+    results.forEach((result, index) => {
+        // 🔧 Показываем конвертированные значения для сортировки
+        let rateForSorting = result.rate;
+        if (result.currency === '$' && usdToRubRate) {
+            rateForSorting = Math.round(result.rate * usdToRubRate);
+        }
+        console.log(`  ${index + 1}. ${result.transportName}: ${result.rate} ${result.currency} (${rateForSorting} RUB для сортировки)`);
+    });
     
     if (results.length === 0) {
         ratesTable.innerHTML = `
@@ -1471,14 +1492,9 @@ function displayComplexResults(results, departure, destination, containerType) {
             seaRate = `$${seaRateUSD}`;
             railRate = `${railRateRUB} RUB`;
             
-            // Отображаем общую ставку в зависимости от валюты сортировки
-            if (result.currency === 'RUB') {
-                // Уже конвертировано в RUB
-                totalRate = `${result.rate} RUB`;
-            } else {
-                // Используем USD для сортировки (только морская часть)
-                totalRate = `$${result.rate}`;
-            }
+            // Для комплексных ставок Море+ЖД всегда отображаем в RUB
+            // (курс ЦБ РФ всегда должен быть загружен)
+            totalRate = `${result.rate} RUB`;
             
             additionalInfo = result.data.connection || 'Комплексная перевозка Море+ЖД';
             // Добавляем информацию о ВТТ, если он включен
@@ -1560,7 +1576,9 @@ async function loadDatabaseData() {
     
     for (const dbType of dbTypes) {
         try {
-            const response = await fetch(`/api/data/${dbType}`);
+            // Используем ServerAuth.makeAuthRequest для авторизованных запросов
+            const response = await ServerAuth.makeAuthRequest(`/api/data/${dbType}`);
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -1642,7 +1660,7 @@ async function loadExchangeRate() {
         }
     } catch (error) {
         console.error('❌ Ошибка загрузки курса ЦБ РФ:', error);
-        Utils.showStatus('Не удалось загрузить курс ЦБ РФ', 'error');
+        Utils.showStatus('❌ ОШИБКА: Не удалось загрузить курс ЦБ РФ. Комплексные ставки не будут работать!', 'error');
         return false;
     }
 }
