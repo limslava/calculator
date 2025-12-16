@@ -1,10 +1,11 @@
 // Серверное хранилище данных для логистического калькулятора с поддержкой базы данных
-const { 
-  SeaData, 
-  RailData, 
-  DirectRailData, 
-  DirectSeaData, 
-  TariffData 
+const {
+  SeaData,
+  RailData,
+  DirectRailData,
+  DirectSeaData,
+  TariffData,
+  AgentTariffData
 } = require('./models');
 
 class DataStorage {
@@ -19,7 +20,8 @@ class DataStorage {
       'rail': RailData,
       'direct_rail': DirectRailData,
       'direct_sea': DirectSeaData,
-      'tariff': TariffData
+      'tariff': TariffData,
+      'agent_tariff': AgentTariffData
     };
     
     return models[dbType];
@@ -103,7 +105,7 @@ class DataStorage {
   }
 
   async getAllData() {
-    const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff'];
+    const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff', 'agent_tariff'];
     const result = {};
     
     for (const dbType of dbTypes) {

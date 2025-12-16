@@ -75,7 +75,7 @@ async function initializeDatabase() {
 // Функция для создания начальных данных логистики
 async function createInitialLogisticsData() {
     try {
-        const { SeaData, RailData, DirectRailData, DirectSeaData, TariffData } = require('./models');
+        const { SeaData, RailData, DirectRailData, DirectSeaData, TariffData, AgentTariffData } = require('./models');
         
         // Начальные данные
         const initialData = {
@@ -92,7 +92,8 @@ async function createInitialLogisticsData() {
                     auto40: null,
                     timestamp: new Date().toISOString()
                 }
-            ]
+            ],
+            agent_tariff: []
         };
 
         // Создаем данные только если таблицы пустые
@@ -101,7 +102,8 @@ async function createInitialLogisticsData() {
             { model: RailData, type: 'rail', name: 'железнодорожных перевозок' },
             { model: DirectRailData, type: 'direct_rail', name: 'прямых железнодорожных перевозок' },
             { model: DirectSeaData, type: 'direct_sea', name: 'прямых морских перевозок' },
-            { model: TariffData, type: 'tariff', name: 'тарифных данных' }
+            { model: TariffData, type: 'tariff', name: 'тарифных данных' },
+            { model: AgentTariffData, type: 'agent_tariff', name: 'тарифных данных агентов' }
         ];
 
         for (const { model, type, name } of models) {

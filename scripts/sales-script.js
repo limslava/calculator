@@ -9,7 +9,8 @@ let database = {
     rail: [],
     direct_rail: [],
     direct_sea: [],
-    tariff: []
+    tariff: [],
+    agent_tariff: []
 };
 
 // Курс ЦБ РФ
@@ -47,6 +48,73 @@ function normalizeCityName(city) {
     return city.charAt(0).toUpperCase() + city.slice(1).toLowerCase();
 }
 
+// Функция для получения ставки ВТТ по терминалу
+function getVttRateForTerminal(terminalName) {
+    if (!database.tariff || database.tariff.length === 0) {
+        return 0;
+    }
+    
+    // Ищем тариф с указанным терминалом (регистронезависимо)
+    const normalizedTerminal = terminalName ? terminalName.trim().toLowerCase() : '';
+    const tariff = database.tariff.find(t =>
+        t.terminal && t.terminal.trim().toLowerCase() === normalizedTerminal
+    );
+    
+    if (tariff && tariff.vtt !== undefined && tariff.vtt !== null) {
+        return tariff.vtt;
+    }
+    
+    // Если не нашли, ищем тариф с терминалом "Общий"
+    const generalTariff = database.tariff.find(t =>
+        t.terminal && t.terminal.trim().toLowerCase() === 'общий'
+    );
+    
+    if (generalTariff && generalTariff.vtt !== undefined && generalTariff.vtt !== null) {
+        return generalTariff.vtt;
+    }
+    
+    // Если нет общего, берем первый тариф
+    if (database.tariff[0] && database.tariff[0].vtt !== undefined && database.tariff[0].vtt !== null) {
+        return database.tariff[0].vtt;
+    }
+    
+    return 0;
+}
+
+// Функция для получения информации об агенте по имени
+function getAgentInfo(agentName) {
+    if (!database.agent_tariff || database.agent_tariff.length === 0) {
+        console.log('❌ База данных агентов пуста');
+        return null;
+    }
+    
+    const normalizedAgent = agentName ? agentName.trim().toLowerCase() : '';
+    console.log('🔍 Поиск агента:', normalizedAgent);
+    
+    // Ищем точное совпадение по полю name
+    const agent = database.agent_tariff.find(a =>
+        a.name && a.name.trim().toLowerCase() === normalizedAgent
+    );
+    
+    if (agent) {
+        console.log('✅ Найден агент:', agent.name, 'СНП:', agent.snp);
+        return agent;
+    }
+    
+    // Ищем частичное совпадение
+    const partialAgent = database.agent_tariff.find(a =>
+        a.name && a.name.trim().toLowerCase().includes(normalizedAgent)
+    );
+    
+    if (partialAgent) {
+        console.log('✅ Найден агент частичным совпадением:', partialAgent.name, 'СНП:', partialAgent.snp);
+        return partialAgent;
+    }
+    
+    console.log('⚠️ Агент не найден:', agentName);
+    return null;
+}
+
 // Функции для управления интерфейсом
 function selectCalculationType(type) {
     currentCalculationType = type;
@@ -79,6 +147,12 @@ function selectDatabase(dbType) {
         setupCalculator();
         Utils.showLastUpdate(currentDatabase, 'last-update-separate');
     });
+    onsole.log('📊 Проверка структуры tariff данных:', {
+    hasTariffData: !!database.tariff,
+    tariffLength: database.tariff?.length || 0,
+    tariffStructure: database.tariff?.slice(0, 3) || 'нет данных',
+    firstTariff: database.tariff?.[0] || 'нет данных'
+});
 }
 
 function goBack() {
@@ -668,12 +742,15 @@ function displaySeaRates(results, containerType) {
 // 🔧 ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ ОТОБРАЖАЕМОГО ИМЕНИ ТИПА КОНТЕЙНЕРА
 function getContainerTypeDisplayName(containerType) {
     switch (containerType) {
-        case 'soc_20': return 'SOC 20\'';
-        case 'soc_40': return 'SOC 40\'';
-        case 'dc_20': return '20\'DC FILO';
-        case 'hc_40': return '40\'HC FILO';
-        case 'dc_20_direct': return '20\'DC';
-        case 'hc_40_direct': return '40\'HC';
+        case 'soc_20': return 'SOC 20\' COC';
+        case 'soc_40': return 'SOC 40\' COC';
+        case 'dc_20': return '20\'DC COC';
+        case 'hc_40': return '40\'HC COC';
+        case 'dc_20_direct': return '20\'DC COC';
+        case 'hc_40_direct': return '40\'HC COC';
+        case 'container20Under24': return '20\'DC COC';
+        case 'container20Over24': return '20\'DC COC';
+        case 'container40': return '40\'HC COC';
         default: return containerType;
     }
 }
@@ -1333,8 +1410,9 @@ function calculateAllRates(departure, destination, containerType) {
                 
                 // Складываем ставки только если обе ненулевые
                 if (seaRate > 0 && railRate > 0) {
-                    // Получаем стоимость ВТТ из тарифов (если есть)
-                    const vttRate = database.tariff && database.tariff.length > 0 ? database.tariff[0].vtt || 0 : 0;
+                    // Получаем стоимость ВТТ из тарифов для терминала (если есть)
+                    const terminal = railItem.agent || railItem.city || '';
+                    const vttRate = getVttRateForTerminal(terminal);
                     
                     // Для сортировки используем конвертированную сумму в RUB
                     let totalRateForSorting = 0;
@@ -1361,8 +1439,14 @@ function calculateAllRates(departure, destination, containerType) {
                         rate: totalRateForSorting,
                         currency: currencyForSorting,
                         data: {
-                            sea: seaItem,
-                            rail: railItem,
+                            sea: {
+                                ...seaItem,
+                                containerType: containerType
+                            },
+                            rail: {
+                                ...railItem,
+                                containerType: containerType
+                            },
                             seaRate: seaRate,
                             railRate: railRate,
                             connection: `Море: ${normalizeCityName(seaItem.pol)} → ${normalizeCityName(seaItem.pod)} (${normalizeCityName(seaItem.city)}) → ЖД: ${normalizeCityName(railItem.city)} → ${normalizeCityName(railItem.destination)}`,
@@ -1444,6 +1528,7 @@ function displayComplexResults(results, departure, destination, containerType) {
                     <tr>
                         <th>Тип перевозки</th>
                         <th>Ставка море</th>
+                        <th>Агент</th>
                         <th>Перевозчик</th>
                         <th>ETD</th>
                         <th>Дата действия</th>
@@ -1468,6 +1553,7 @@ function displayComplexResults(results, departure, destination, containerType) {
         let railRate = '';
         let totalRate = '';
         let carrier = '-';
+        let agent = '-';
         let etd = '-';
         let dateOfValidity = '-';
         let departureStation = '-';
@@ -1479,6 +1565,7 @@ function displayComplexResults(results, departure, destination, containerType) {
             railRate = `$${result.rate}`;
             totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
             carrier = '-';
+            agent = result.data.agent || '-';
             etd = result.data.etd || '-';
             dateOfValidity = '-';
             departureStation = result.data.departureStation || '-';
@@ -1489,6 +1576,7 @@ function displayComplexResults(results, departure, destination, containerType) {
             railRate = '-';
             totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
             carrier = result.data.carrier || '-';
+            agent = result.data.agent || '-';
             etd = result.data.etd || '-';
             dateOfValidity = result.data.dateOfValidity || '-';
             departureStation = '-';
@@ -1499,6 +1587,7 @@ function displayComplexResults(results, departure, destination, containerType) {
             railRate = '-';
             totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
             carrier = result.data.carrier || '-';
+            agent = result.data.agent || '-';
             etd = result.data.etd || '-';
             dateOfValidity = result.data.dateOfValidity || '-';
             departureStation = '-';
@@ -1509,6 +1598,7 @@ function displayComplexResults(results, departure, destination, containerType) {
             railRate = `${result.rate} RUB`;
             totalRate = `${result.rate} RUB`;
             carrier = '-';
+            agent = result.data.agent || '-';
             etd = '-';
             dateOfValidity = '-';
             departureStation = '-';
@@ -1528,6 +1618,7 @@ function displayComplexResults(results, departure, destination, containerType) {
             
             // Для комплексных ставок берем данные из морской части
             carrier = result.data.sea.carrier || '-';
+            agent = result.data.sea.agent || '-';
             etd = result.data.sea.etd || '-';
             dateOfValidity = result.data.sea.dateOfValidity || '-';
             departureStation = '-';
@@ -1549,6 +1640,7 @@ function displayComplexResults(results, departure, destination, containerType) {
                     </span>
                 </td>
                 <td>${seaRate}</td>
+                <td>${agent}</td>
                 <td>${carrier}</td>
                 <td>${etd}</td>
                 <td>${dateOfValidity}</td>
@@ -1614,7 +1706,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Функции для загрузки данных и курса валют
 async function loadDatabaseData() {
     // 🔧 ЗАГРУЗКА ДАННЫХ ИЗ СЕРВЕРА ДЛЯ ВСЕХ ТИПОВ БАЗ
-    const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff'];
+    const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff', 'agent_tariff'];
     
     for (const dbType of dbTypes) {
         try {
@@ -1953,121 +2045,741 @@ function createMarginInputs(result) {
     marginInputsContainer.innerHTML = marginHTML;
 }
 
-// Расчет и отображение результата с накруткой
+// Расчет и отображение результата с накруткой в виде таблицы
+// Расчет и отображение результата с накруткой в виде таблицы
 function calculateAndDisplayMargin() {
     if (!currentResultForMargin) return;
     
     const resultContainer = document.getElementById('margin-result-container');
     let resultHTML = '';
     
-    // Добавляем маршрут для всех типов перевозок
-    let routeInfo = '';
-    if (currentResultForMargin.transportType === 'direct_rail') {
-        routeInfo = `${currentResultForMargin.data.fob || 'Не указан'} → ${currentResultForMargin.data.arrivalCity || 'Не указан'}`;
-    } else if (currentResultForMargin.transportType === 'direct_sea') {
-        routeInfo = `${currentResultForMargin.data.pol || 'Не указан'} → ${currentResultForMargin.data.pod || 'Не указан'}`;
-    } else if (currentResultForMargin.transportType === 'sea') {
-        routeInfo = `${currentResultForMargin.data.pol || 'Не указан'} → ${currentResultForMargin.data.pod || 'Не указан'}`;
-    } else if (currentResultForMargin.transportType === 'rail') {
-        routeInfo = `${currentResultForMargin.data.city || 'Не указан'} → ${currentResultForMargin.data.destination || 'Не указан'}`;
-    } else if (currentResultForMargin.transportType === 'sea_rail') {
-        routeInfo = currentResultForMargin.data.connection || 'Комплексный маршрут';
+    let transportType = currentResultForMargin.transportType;
+    let data = currentResultForMargin.data;
+    
+    // Определяем компоненты в зависимости от типа перевозки
+    const components = [];
+    let storageInfo = null; // Информация о хранении из тарифов
+    let terminalInfo = null; // Информация о терминале
+    
+    if (transportType === 'direct_rail' || transportType === 'rail') {
+        // ЖД перевозки
+        const containerTypeDisplay = getContainerTypeDisplayName(data.containerType || 'container40');
+        const terminalName = data.agent || data.city || '';
+        
+        // Получаем информацию о терминале из тарифов
+        terminalInfo = getTerminalInfo(terminalName);
+        if (terminalInfo) {
+            storageInfo = getStorageInfoForContainer(terminalInfo, 'rail', containerTypeDisplay);
+        }
+        
+        components.push({
+            name: 'ЖД',
+            baseRate: currentResultForMargin.rate,
+            margin: parseFloat(document.getElementById('rail-margin').value) || 0,
+            currency: transportType === 'rail' ? 'RUB' : 'USD',
+            isRail: true,
+            description: transportType === 'direct_rail' 
+                ? `ЖД перевозки FOB ${data.fob || ''} - ${data.arrivalCity || ''}, ${containerTypeDisplay}`
+                : `ЖД перевозки ${data.city || ''} - ${data.destination || ''}, ${containerTypeDisplay}`,
+            terminalName: terminalName
+        });
+    } else if (transportType === 'direct_sea' || transportType === 'sea') {
+        // Морские перевозки
+        const containerTypeDisplay = getContainerTypeDisplayName(data.containerType || 'hc_40');
+        const terminalName = data.pod || data.agent || '';
+        
+        // Получаем информацию о терминале из тарифов
+        terminalInfo = getTerminalInfo(terminalName);
+        if (terminalInfo) {
+            storageInfo = getStorageInfoForContainer(terminalInfo, 'sea', containerTypeDisplay);
+        }
+        
+        components.push({
+            name: 'Море',
+            baseRate: currentResultForMargin.rate,
+            margin: parseFloat(document.getElementById('sea-margin').value) || 0,
+            currency: 'USD',
+            isSea: true,
+            description: `Морской фрахт FOB ${data.pol || ''} - ${data.pod || ''}, ${containerTypeDisplay}`,
+            terminalName: terminalName
+        });
+    } else if (transportType === 'sea_rail') {
+        // Комплексные перевозки Море+ЖД
+        const seaMargin = parseFloat(document.getElementById('sea-margin').value) || 0;
+        const railMargin = parseFloat(document.getElementById('rail-margin').value) || 0;
+        
+        const seaContainerType = getContainerTypeDisplayName(data.sea?.containerType || 'hc_40');
+        const railContainerType = getContainerTypeDisplayName(data.rail?.containerType || 'container40');
+        
+        const seaTerminalName = data.sea?.pod || data.sea?.agent || '';
+        const railTerminalName = data.rail?.agent || data.rail?.city || '';
+        
+        // Получаем информацию о терминалах из тарифов
+        // Используем морской терминал для информации о хранении
+        terminalInfo = getTerminalInfo(seaTerminalName);
+        if (terminalInfo) {
+            storageInfo = getStorageInfoForContainer(terminalInfo, 'sea', seaContainerType);
+        }
+        
+        components.push({
+            name: 'Море',
+            baseRate: data.seaRate,
+            margin: seaMargin,
+            currency: 'USD',
+            isSea: true,
+            description: `Морской фрахт FOB ${data.sea?.pol || ''} - ${data.sea?.pod || ''}, ${seaContainerType}`,
+            terminalName: seaTerminalName
+        });
+        components.push({
+            name: 'ЖД',
+            baseRate: data.railRate,
+            margin: railMargin,
+            currency: 'RUB',
+            isRail: true,
+            description: `ЖД перевозки ${data.rail?.city || ''} - ${data.rail?.destination || ''}, ${railContainerType}`,
+            terminalName: railTerminalName
+        });
+        // ВТТ не включаем в таблицу, будет отдельно
     }
     
+    // Генерируем таблицу в зависимости от типа перевозки
+    let tableHTML = '';
+    let textTable = ''; // текстовое представление для копирования
+    
+    // Общая логика для всех типов перевозок
+    if (components.length === 2) { // Комплексные перевозки (Море+ЖД)
+        const seaFinal = components[0].baseRate + components[0].margin;
+        const railFinal = components[1].baseRate + components[1].margin;
+        
+        tableHTML = `
+            <table class="margin-table">
+                <thead>
+                    <tr>
+                        <th>Услуга</th>
+                        <th>Стоимость услуг</th>
+                        <th>Валюта</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>${components[0].description}</td>
+                        <td>${seaFinal}</td>
+                        <td>${components[0].currency}</td>
+                    </tr>
+                    <tr>
+                        <td>${components[1].description}</td>
+                        <td>${railFinal}</td>
+                        <td>${components[1].currency}</td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+        
+        textTable = `Услуга\tСтоимость услуг\tВалюта\n`;
+        textTable += `${components[0].description}\t${seaFinal}\t${components[0].currency}\n`;
+        textTable += `${components[1].description}\t${railFinal}\t${components[1].currency}`;
+        
+    } else if (components.length === 1) { // Отдельные перевозки
+        const finalRate = components[0].baseRate + components[0].margin;
+        
+        tableHTML = `
+            <table class="margin-table">
+                <thead>
+                    <tr>
+                        <th>Услуга</th>
+                        <th>Стоимость услуг</th>
+                        <th>Валюта</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>${components[0].description}</td>
+                        <td>${finalRate}</td>
+                        <td>${components[0].currency}</td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+        
+        textTable = `Услуга\tСтоимость услуг\tВалюта\n`;
+        textTable += `${components[0].description}\t${finalRate}\t${components[0].currency}`;
+    }
+    
+    resultHTML = tableHTML;
+    
+    // Добавляем информацию о ВТТ отдельно, если это комплексная ставка и ВТТ включен
+if (transportType === 'sea_rail' && data.vttIncluded) {
+    const vttText = `ВТТ : ${data.vttRate} RUB`;
     resultHTML += `
-        <div class="result-section">
-            <h4>Маршрут:</h4>
-            <div class="cost-item">
-                <span>${routeInfo}</span>
+        <div class="vtt-section" style="margin-top: 13px;">
+            <p style="font-weight: bold; font-size: 12px; margin-bottom: 5px; color: #333;">
+                ${vttText}
+            </p>
+        </div>
+    `;
+    textTable += `\nВТТ\t${data.vttRate}\tRUB`;
+}
+    
+    // Добавляем блок дополнительной информации с динамическими данными
+    let infoHTML = generateAdditionalInfo(transportType, data, storageInfo, terminalInfo, components);
+    resultHTML += infoHTML;
+    
+    resultContainer.innerHTML = resultHTML;
+    
+    // Сохраняем текстовое представление в глобальной переменной для копирования
+    window.marginTableText = textTable;
+}
+
+// 🔧 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+
+// Получение информации о терминале из тарифов
+function getTerminalInfo(terminalName) {
+    console.log('🔍 getTerminalInfo вызвана с terminalName:', terminalName);
+    
+    if (!terminalName || !database.tariff || database.tariff.length === 0) {
+        console.log('❌ Недостаточно данных: terminalName отсутствует или база тарифов пуста');
+        return null;
+    }
+    
+    const normalizedTerminal = terminalName.trim().toLowerCase();
+    console.log('🔍 Нормализованное имя терминала:', normalizedTerminal);
+    
+    // Отладочный вывод всех терминалов
+    console.log('📋 Все доступные терминалы в базе:');
+    database.tariff.forEach((t, i) => {
+        if (t.terminal) {
+            console.log(`  ${i}. "${t.terminal}" -> нормализовано: "${t.terminal.trim().toLowerCase()}"`);
+        }
+    });
+    
+    // Ищем точное совпадение
+    let terminal = database.tariff.find(t =>
+        t.terminal && t.terminal.trim().toLowerCase() === normalizedTerminal
+    );
+    
+    if (terminal) {
+        console.log('✅ Найден терминал точным совпадением:', terminal.terminal);
+        console.log('📊 Структура найденного терминала:', {
+            terminal: terminal.terminal,
+            hasStorage: !!terminal.storage,
+            storageLength: terminal.storage?.length || 0,
+            storage: terminal.storage
+        });
+    } else {
+        console.log('⚠️ Не найдено точного совпадения, ищем частичное');
+        
+        // Ищем частичное совпадение
+        terminal = database.tariff.find(t =>
+            t.terminal && t.terminal.trim().toLowerCase().includes(normalizedTerminal)
+        );
+        
+        if (terminal) {
+            console.log('✅ Найден терминал частичным совпадением:', terminal.terminal);
+        } else {
+            console.log('⚠️ Не найдено частичного совпадения, ищем "Общий"');
+            
+            // Используем общий тариф
+            terminal = database.tariff.find(t =>
+                t.terminal && t.terminal.trim().toLowerCase() === 'общий'
+            );
+            
+            if (terminal) {
+                console.log('✅ Используем общий терминал:', terminal.terminal);
+            } else {
+                console.log('❌ Не найден даже общий терминал');
+                return null;
+            }
+        }
+    }
+    
+    return terminal;
+}
+
+// Получение информации о хранении для контейнера
+function getStorageInfoForContainer(terminalInfo, transportType, containerType) {
+    if (!terminalInfo || !terminalInfo.storage || terminalInfo.storage.length === 0) {
+        return null;
+    }
+    
+    // Определяем, используем ли ставки для 20' или 40' контейнера
+    const is20ft = containerType.includes('20');
+    const is40ft = containerType.includes('40');
+    
+    // Ищем первый диапазон хранения (самый дешевый/бесплатный)
+    const firstStorageRange = terminalInfo.storage[0];
+    
+    if (firstStorageRange) {
+        // Определяем бесплатные дни (с 0 по X дней)
+        // Количество свободных дней = from_days - 1
+        const freeDays = firstStorageRange.from_days - 1;
+        // Платное хранение начинается с from_days суток
+        const paidStorageStarts = firstStorageRange.from_days;
+        
+        // Получаем ставку за хранение
+        let storageRate = 0;
+        if (is20ft && firstStorageRange.rate20 > 0) {
+            storageRate = firstStorageRange.rate20;
+        } else if (is40ft && firstStorageRange.rate40 > 0) {
+            storageRate = firstStorageRange.rate40;
+        }
+        
+        return {
+            freeDays: freeDays,
+            paidStorageStarts: paidStorageStarts,
+            storageRate: storageRate,
+            containerType: containerType
+        };
+    }
+    
+    return null;
+}
+
+// Генерация дополнительной информации с динамическими данными
+function generateAdditionalInfo(transportType, data, storageInfo, terminalInfo, components) {
+    console.log('🔍 Генерация дополнительной информации:', {
+        transportType,
+        hasData: !!data,
+        hasStorageInfo: !!storageInfo,
+        hasTerminalInfo: !!terminalInfo,
+        storageInfo: storageInfo,
+        terminalInfo: terminalInfo ? {
+            name: terminalInfo.terminal,
+            hasStorage: !!terminalInfo.storage,
+            storageLength: terminalInfo.storage?.length || 0
+        } : 'нет'
+    });
+    let containerTypeDisplay = '';
+    if (transportType === 'sea_rail') {
+        containerTypeDisplay = getContainerTypeDisplayName(data.sea?.containerType || 'hc_40');
+    } else if (transportType === 'direct_sea' || transportType === 'sea') {
+        containerTypeDisplay = getContainerTypeDisplayName(data.containerType || 'hc_40');
+    } else if (transportType === 'direct_rail' || transportType === 'rail') {
+        containerTypeDisplay = getContainerTypeDisplayName(data.containerType || 'container40');
+    }
+    
+    // Определяем бесплатные дни хранения
+    const freeStorageDays = storageInfo ? storageInfo.freeDays : 7; // По умолчанию 7 дней (from_days - 1)
+    const paidStorageStart = storageInfo ? storageInfo.paidStorageStarts : 8; // По умолчанию с 8-х суток (from_days)
+    const storageRate = storageInfo ? storageInfo.storageRate : 0;
+    
+    // Определяем ставку за сверхнормативное пользование контейнером
+    const containerOvertimeRate = containerTypeDisplay.includes('40') ? 20 : 10; // $20 для 40', $10 для 20'
+    
+    // Получаем информацию об агенте для морских перевозок
+    let agentInfo = null;
+    let agentName = '';
+    if (transportType === 'sea_rail') {
+        agentName = data.sea?.agent || '';
+    } else if (transportType === 'direct_sea' || transportType === 'sea') {
+        agentName = data.agent || '';
+    } else if (transportType === 'direct_rail' || transportType === 'rail') {
+        agentName = data.agent || '';
+    }
+    if (agentName) {
+        agentInfo = getAgentInfo(agentName);
+        console.log('🔍 Информация об агенте:', { agentName, agentInfo });
+    }
+    
+    let infoHTML = '';
+    
+    if (transportType === 'sea_rail') {
+        // Добавляем пункт "Оформление ВТТ" если ВТТ включен
+        const vttIncluded = data.vttIncluded || false;
+        const vttItem = vttIncluded ? '<li>Оформление ВТТ.</li>' : '';
+        
+        infoHTML = `
+            <div class="additional-info" style="margin-top: 20px; font-size: 12px; color: #555;">
+                <p><strong>Ставка применима для неопасного груза, весом не более 1500 кг/место</strong></p>
+                <p><strong>В ставки включено:</strong></p>
+                <ul>
+                    <li>Предоставление порожнего в порту отправления</li>
+                    <li>Морской фрахт FILO ${data.sea?.pol || ''} - ${data.sea?.pod || ''}</li>
+                    <li>Терминальные услуги в порту прибытия (ПРР с моря на ЖД)</li>
+                    <li>${freeStorageDays} дней хранения в порту.</li>
+                    ${vttItem}
+                    <li>ЖД перевозка ${data.rail?.city || ''} - ${data.rail?.destination || ''}</li>
+                </ul>
+                <p><strong>В ставки не включено:</strong></p>
+                <ul>
+                    <li>Таможенное оформление в порту прибытия</li>
+                    <li>Доп расходы в порту, вызванные требованиями таможни (МИДК, взвешивание, досмотр груза)</li>
+                    <li>Сверхнормативное хранение в порту по тарифам порта, в зависимости от направления выдачи (с ${paidStorageStart} суток)</li>
+                    <li>Охрана в пути следования по ЖД</li>
+                </ul>
+                <p><strong>Примечания:</strong></p>
+                <ul>
+                    <li>Ставка фиксируется на дату выхода судна</li>
+                    <li>Ставка по ЖД фиксируется на дату отправки контейнера по ЖД (НДС 0%)</li>
+                    <li>Ставки даны для неопасного груза${data.sea?.dateOfValidity ? `, Валидность по ${data.sea.dateOfValidity}` : ''}</li>
+                    ${agentInfo && agentInfo.snp ? `<li>СНП (сверхнормативное пользование контейнером): ${agentInfo.snp}</li>` : ''}
+                </ul>
+            </div>
+        `;
+    } else if (transportType === 'direct_sea' || transportType === 'sea') {
+        infoHTML = `
+            <div class="additional-info" style="margin-top: 20px; font-size: 12px; color: #555;">
+                <p><strong>Ставка применима для неопасного груза, весом не более 1500 кг/место</strong></p>
+                <p><strong>В ставки включено:</strong></p>
+                <ul>
+                    <li>Предоставление порожнего в порту отправления</li>
+                    <li>Морской фрахт FILO ${data.pol || ''} - ${data.pod || ''}</li>
+                    <li>Терминальные услуги в порту прибытия</li>
+                    <li>${freeStorageDays} дней хранения в порту (в зависимости от тарифа на хранение в порту). Т.е. если у нас хранение для данного типа контейнера в данном порту начинается с ${paidStorageStart} суток, то ${freeStorageDays} дней хранения бесплатных</li>
+                    <li>Пользование контейнером 40 сут с момента прибытия в порт назначения</li>
+                </ul>
+                <p><strong>В ставки не включено:</strong></p>
+                <ul>
+                    <li>Таможенное оформление в порту прибытия</li>
+                    <li>Доп расходы в порту, вызванные требованиями таможни (МИДК, взвешивание, досмотр груза)</li>
+                    <li>Сверхнормативное хранение в порту по тарифам порта, в зависимости от направления выдачи (с ${paidStorageStart} суток)</li>
+                    <li>Сверхнормативное пользование контейнером с 41-х суток</li>
+                </ul>
+                <p><strong>Примечания:</strong></p>
+                <ul>
+                    <li>Ставка фиксируется на дату выхода судна</li>
+                    <li>Ставки даны для неопасного груза${data.dateOfValidity ? `, Валидность по ${data.dateOfValidity}` : ''}</li>
+                    ${agentInfo && agentInfo.snp ? `<li>СНП (сверхнормативное пользование контейнером): ${agentInfo.snp}</li>` : ''}
+                </ul>
+            </div>
+        `;
+    } else if (transportType === 'direct_rail' || transportType === 'rail') {
+        infoHTML = `
+            <div class="additional-info" style="margin-top: 20px; font-size: 12px; color: #555;">
+                <p><strong>Ставка применима для неопасного груза, весом не более 1500 кг/место</strong></p>
+                <p><strong>В ставки включено:</strong></p>
+                <ul>
+                    <li>Предоставление порожнего в пункте отправления</li>
+                    <li>ЖД перевозка ${transportType === 'direct_rail' ? data.fob || '' : data.city || ''} - ${transportType === 'direct_rail' ? data.arrivalCity || '' : data.destination || ''}</li>
+                    <li>Терминальные услуги в пункте прибытия</li>
+                </ul>
+                <p><strong>В ставки не включено:</strong></p>
+                <ul>
+                    <li>Таможенное оформление</li>
+                    <li>Доп расходы, вызванные требованиями таможни (МИДК, взвешивание, досмотр груза)</li>
+                    <li>Сверхнормативное хранение</li>
+                    <li>Охрана в пути следования по ЖД</li>
+                </ul>
+                <p><strong>Примечания:</strong></p>
+                <ul>
+                    <li>Ставка по ЖД фиксируется на дату отправки контейнера по ЖД (НДС 0%)</li>
+                    <li>Ставки даны для неопасного груза${data.dateOfValidity || data.validity ? `, Валидность по ${data.dateOfValidity || data.validity || ''}` : ''}</li>
+                    ${agentInfo && agentInfo.snp ? `<li>СНП (сверхнормативное пользование контейнером): ${agentInfo.snp}</li>` : ''}
+                </ul>
+            </div>
+        `;
+    }
+    
+    return infoHTML;
+}
+
+// 🔧 ДОПОЛНИТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ УЛУЧШЕНИЯ ПОИСКА ТЕРМИНАЛА
+function normalizeTerminalName(terminalName) {
+    if (!terminalName) return '';
+    
+    // Приводим к нижнему регистру и удаляем лишние пробелы
+    const normalized = terminalName.trim().toLowerCase();
+    
+    // Удаляем общие слова, которые могут мешать поиску
+    const commonWords = ['terminal', 'терминал', 'порт', 'port', 'станция', 'station'];
+    let result = normalized;
+    
+    commonWords.forEach(word => {
+        result = result.replace(new RegExp(`\\b${word}\\b`, 'g'), '').trim();
+    });
+    
+    return result || normalized;
+}
+
+// 🔧 УЛУЧШЕННАЯ ФУНКЦИЯ КОПИРОВАНИЯ РЕЗУЛЬТАТА (БЕЗ ДЕТАЛЕЙ СТОИМОСТИ)
+function copyMarginResult() {
+    try {
+        // 1. Получаем все элементы для копирования
+        const marginResultContainer = document.getElementById('margin-result-container');
+        
+        if (!marginResultContainer) {
+            throw new Error('Контейнер результатов не найден');
+        }
+        
+        // 2. Подготавливаем данные в нескольких форматах
+        const content = prepareMarginContentForCopy(marginResultContainer);
+        
+        // 3. Пробуем скопировать с HTML форматом (сохраняет таблицы)
+        copyWithHTMLFormat(content.html).then(() => {
+            showCopySuccess('copy-result');
+        }).catch(async (htmlError) => {
+            console.log('HTML копирование не удалось, пробуем plain text:', htmlError);
+            
+            // 4. Fallback: копируем как plain text
+            try {
+                await navigator.clipboard.writeText(content.text);
+                showCopySuccess('copy-result');
+            } catch (textError) {
+                console.log('Clipboard API не доступен, используем fallback:', textError);
+                
+                // 5. Старый способ копирования
+                copyWithFallbackMethod(content.text, 'copy-result');
+            }
+        });
+        
+    } catch (error) {
+        console.error('Ошибка копирования:', error);
+        showCopyError('copy-result');
+    }
+}
+
+// 🔧 ПОДГОТОВКА КОНТЕНТА ДЛЯ КОПИРОВАНИЯ (БЕЗ ИНФОРМАЦИИ О СТОИМОСТИ)
+function prepareMarginContentForCopy(resultContainer) {
+    // 1. Подготавливаем таблицу (только услуги и ставки)
+    const tableElement = resultContainer.querySelector('table.margin-table');
+    let tableHTML = '';
+    let tableText = '';
+    
+    if (tableElement) {
+        // HTML версия таблицы (сохраняет форматирование)
+        tableHTML = cleanTableHTML(tableElement.outerHTML);
+        
+        // Текстовая версия с табуляцией (для Excel)
+        tableText = convertTableToTabDelimited(tableElement);
+    }
+    
+    // 2. Подготавливаем дополнительную информацию (условия, примечания)
+    const additionalInfo = resultContainer.querySelector('.additional-info');
+    let additionalHTML = '';
+    let additionalText = '';
+    
+    if (additionalInfo) {
+        // Убираем возможные дублирующиеся заголовки из дополнительной информации
+        additionalHTML = cleanAdditionalInfoHTML(additionalInfo.innerHTML);
+        additionalText = cleanAdditionalInfoText(additionalInfo.innerText);
+    }
+    
+    // 3. Подготавливаем ВТТ информацию (если есть)
+    const vttSection = resultContainer.querySelector('.vtt-section');
+    let vttHTML = '';
+    let vttText = '';
+    
+    if (vttSection) {
+        vttHTML = vttSection.innerHTML;
+        vttText = vttSection.innerText;
+    }
+    
+    // 4. Формируем полный HTML контент (только таблица и условия)
+    const fullHTML = `
+        <div style="font-family: Arial, sans-serif; font-size: 12px; max-width: 800px;">
+            ${tableHTML ? `
+            <div style="margin: 10px 0; overflow-x: auto;">
+                ${tableHTML}
+            </div>
+            ` : ''}
+            
+            ${vttHTML ? `
+            <div style="margin: 10px 0; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+                ${vttHTML}
+            </div>
+            ` : ''}
+            
+            ${additionalHTML ? `
+            <div style="margin-top: 15px; padding: 12px; background-color: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
+                ${additionalHTML}
+            </div>
+            ` : ''}
+            
+            <div style="margin-top: 15px; padding-top: 8px; border-top: 1px dashed #ccc; color: #6c757d; font-size: 11px;">
+                <p>Курс ЦБ РФ: 1 USD = ${usdToRubRate || 'Не загружен'} RUB</p>
             </div>
         </div>
     `;
     
-    if (currentResultForMargin.transportType === 'direct_rail' || currentResultForMargin.transportType === 'rail') {
-        const margin = parseFloat(document.getElementById('rail-margin').value) || 0;
-        const baseRate = currentResultForMargin.rate;
-        const finalRate = baseRate + margin;
-        
-        resultHTML += `
-            <div class="result-section">
-                <h4>Стоимость ЖД перевозки:</h4>
-                <div class="final-rate">${finalRate} ${currentResultForMargin.transportType === 'rail' ? 'RUB' : '$'}</div>
-            </div>
-        `;
-    } else if (currentResultForMargin.transportType === 'direct_sea' || currentResultForMargin.transportType === 'sea') {
-        const margin = parseFloat(document.getElementById('sea-margin').value) || 0;
-        const baseRate = currentResultForMargin.rate;
-        const finalRate = baseRate + margin;
-        
-        resultHTML += `
-            <div class="result-section">
-                <h4>Стоимость фрахта:</h4>
-                <div class="final-rate">$${finalRate}</div>
-            </div>
-        `;
-    } else if (currentResultForMargin.transportType === 'sea_rail') {
-        const seaMargin = parseFloat(document.getElementById('sea-margin').value) || 0;
-        const railMargin = parseFloat(document.getElementById('rail-margin').value) || 0;
-        
-        const seaBaseRate = currentResultForMargin.data.seaRate;
-        const railBaseRate = currentResultForMargin.data.railRate;
-        
-        const seaFinalRate = seaBaseRate + seaMargin;
-        const railFinalRate = railBaseRate + railMargin;
-        
-        // Конвертируем морскую ставку в RUB для сложения
-        const seaFinalRateRUB = usdToRubRate ? Math.round(seaFinalRate * usdToRubRate) : seaFinalRate;
-        const totalFinalRate = seaFinalRateRUB + railFinalRate;
-        
-        resultHTML += `
-            <div class="result-section">
-                <h4>Стоимость фрахта:</h4>
-                <div class="final-rate">$${seaFinalRate}</div>
-            </div>
-            <div class="result-section">
-                <h4>Стоимость ЖД перевозки:</h4>
-                <div class="final-rate">${railFinalRate} RUB</div>
-            </div>
-        `;
-        
-        // Добавляем информацию о ВТТ, если он включен
-        if (currentResultForMargin.data.vttIncluded) {
-            resultHTML += `
-                <div class="result-section">
-                    <h4>Стоимость ВТТ:</h4>
-                    <div class="final-rate">${currentResultForMargin.data.vttRate} RUB</div>
-                </div>
-            `;
-        }
-        
-        resultHTML += `
-            <div class="result-section">
-                <h4>Общая стоимость:</h4>
-                <div class="final-rate">${totalFinalRate} RUB</div>
-            </div>
-        `;
-    }
+    // 5. Формируем текстовую версию (только таблица и условия)
+    const fullText = `
+${tableText ? tableText + '\n' : ''}
+${vttText ? vttText + '\n' : ''}
+${additionalText ? additionalText + '\n' : ''}
+---
+Курс ЦБ РФ: 1 USD = ${usdToRubRate || 'Не загружен'} RUB
+    `.trim();
     
-    resultContainer.innerHTML = resultHTML;
+    // Сохраняем оба формата в глобальной переменной
+    window.marginTableText = fullText;
+    window.marginTableHTML = fullHTML;
+    
+    return {
+        html: fullHTML,
+        text: fullText
+    };
 }
 
-// Функция копирования результата
-function copyMarginResult() {
-    const resultContainer = document.getElementById('margin-result-container');
-    const textToCopy = resultContainer.innerText;
-    
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        const copyButton = document.getElementById('copy-result');
-        const originalText = copyButton.textContent;
-        copyButton.textContent = '✅ Скопировано!';
-        
-        setTimeout(() => {
-            copyButton.textContent = originalText;
-        }, 2000);
-    }).catch(err => {
-        console.error('Ошибка копирования:', err);
-        alert('Не удалось скопировать текст');
+// 🔧 ОЧИСТКА HTML ТАБЛИЦЫ (убираем лишние стили и классы)
+function cleanTableHTML(tableHTML) {
+    // Упрощаем таблицу для копирования
+    return tableHTML
+        .replace(/class="[^"]*"/g, '') // Убираем классы
+        .replace(/style="[^"]*"/g, '') // Убираем inline стили
+        .replace(/<tbody>/g, '')
+        .replace(/<\/tbody>/g, '')
+        .replace(/<thead>/g, '')
+        .replace(/<\/thead>/g, '')
+        .replace(/\s+/g, ' ') // Убираем лишние пробелы
+        .trim();
+}
+
+// 🔧 ОЧИСТКА HTML ДОПОЛНИТЕЛЬНОЙ ИНФОРМАЦИИ
+function cleanAdditionalInfoHTML(html) {
+    // Убираем заголовки, которые уже есть в таблице
+    return html
+        .replace(/<strong>Ставка применима для неопасного груза, весом не более 1500 кг\/место<\/strong>/g, '')
+        .replace(/<p><strong>В ставки включено:<\/strong><\/p>/g, '<p><strong>В ставки включено:</strong></p>')
+        .replace(/<p><strong>В ставки не включено:<\/strong><\/p>/g, '<p><strong>В ставки не включено:</strong></p>')
+        .replace(/<p><strong>Примечания:<\/strong><\/p>/g, '<p><strong>Примечания:</strong></p>')
+        .trim();
+}
+
+// 🔧 ОЧИСТКА ТЕКСТА ДОПОЛНИТЕЛЬНОЙ ИНФОРМАЦИИ
+function cleanAdditionalInfoText(text) {
+    // Убираем возможные дублирующиеся строки
+    const lines = text.split('\n').filter(line => {
+        // Убираем пустые строки и строки с маршрутом/стоимостью
+        const trimmedLine = line.trim();
+        return trimmedLine.length > 0 && 
+               !trimmedLine.startsWith('Маршрут:') &&
+               !trimmedLine.startsWith('Стоимость фрахта:') &&
+               !trimmedLine.startsWith('Стоимость ЖД перевозки:') &&
+               !trimmedLine.startsWith('Общая стоимость:') &&
+               !trimmedLine.startsWith('Расчет стоимости перевозки');
     });
+    
+    return lines.join('\n');
+}
+
+// 🔧 КОНВЕРТАЦИЯ ТАБЛИЦЫ В ТАБУЛИРОВАННЫЙ ТЕКСТ
+function convertTableToTabDelimited(tableElement) {
+    const rows = tableElement.querySelectorAll('tr');
+    let result = '';
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td, th');
+        const rowData = Array.from(cells).map(cell => {
+            // Очищаем текст
+            let text = cell.textContent.trim();
+            text = text.replace(/\t/g, ' ') // Заменяем табы в тексте
+                      .replace(/\n/g, ' ')  // Заменяем переносы строк
+                      .replace(/\s+/g, ' '); // Убираем лишние пробелы
+            return text;
+        });
+        
+        // Добавляем строку, только если есть данные
+        if (rowData.some(cell => cell.length > 0)) {
+            result += rowData.join('\t') + '\n';
+        }
+    });
+    
+    return result.trim();
+}
+
+// 🔧 КОПИРОВАНИЕ С HTML ФОРМАТОМ (без изменений)
+function copyWithHTMLFormat(htmlContent) {
+    return new Promise((resolve, reject) => {
+        try {
+            // Создаем временный div
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.innerHTML = htmlContent;
+            document.body.appendChild(tempDiv);
+            
+            // Выделяем содержимое
+            const range = document.createRange();
+            range.selectNode(tempDiv);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            // Пытаемся скопировать
+            const successful = document.execCommand('copy');
+            
+            // Очищаем
+            selection.removeAllRanges();
+            document.body.removeChild(tempDiv);
+            
+            if (successful) {
+                resolve();
+            } else {
+                reject(new Error('execCommand не сработал'));
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+// 🔧 FALLBACK МЕТОД КОПИРОВАНИЯ (без изменений)
+function copyWithFallbackMethod(text, buttonId) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccess(buttonId);
+        } else {
+            showCopyError(buttonId);
+        }
+    } catch (err) {
+        console.error('Fallback копирование не удалось:', err);
+        showCopyError(buttonId);
+    } finally {
+        document.body.removeChild(textArea);
+    }
+}
+
+// 🔧 ПОКАЗАТЬ УСПЕШНОЕ КОПИРОВАНИЕ (без изменений)
+function showCopySuccess(buttonId) {
+    const copyButton = document.getElementById(buttonId);
+    if (!copyButton) return;
+    
+    const originalHTML = copyButton.innerHTML;
+    const originalBackground = copyButton.style.backgroundColor;
+    const originalColor = copyButton.style.color;
+    
+    // Временно меняем вид кнопки
+    copyButton.innerHTML = '✅ Скопировано!';
+    copyButton.style.backgroundColor = '#4CAF50';
+    copyButton.style.color = 'white';
+    copyButton.disabled = true;
+    
+    // Возвращаем исходный вид через 2 секунды
+    setTimeout(() => {
+        copyButton.innerHTML = originalHTML;
+        copyButton.style.backgroundColor = originalBackground;
+        copyButton.style.color = originalColor;
+        copyButton.disabled = false;
+    }, 2000);
+}
+
+// 🔧 ПОКАЗАТЬ ОШИБКУ КОПИРОВАНИЯ (без изменений)
+function showCopyError(buttonId) {
+    const copyButton = document.getElementById(buttonId);
+    if (!copyButton) return;
+    
+    const originalHTML = copyButton.innerHTML;
+    
+    copyButton.innerHTML = '❌ Ошибка!';
+    copyButton.style.backgroundColor = '#f44336';
+    copyButton.style.color = 'white';
+    copyButton.disabled = true;
+    
+    setTimeout(() => {
+        copyButton.innerHTML = originalHTML;
+        copyButton.style.backgroundColor = '';
+        copyButton.style.color = '';
+        copyButton.disabled = false;
+    }, 2000);
 }
 
 // Сохраняем результаты в глобальную переменную для доступа из модального окна

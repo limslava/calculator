@@ -176,6 +176,33 @@ const TariffData = sequelize.define('TariffData', {
   timestamps: false
 });
 
+// Модель для тарифных данных агентов
+const AgentTariffData = sequelize.define('AgentTariffData', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  data: {
+    type: DataTypes.JSONB,
+    allowNull: false,
+    defaultValue: []
+  },
+  lastUpdate: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  count: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  }
+}, {
+  tableName: 'agent_tariff_data',
+  timestamps: false
+});
+
 // Экспорт всех моделей
 module.exports = {
   User,
@@ -183,5 +210,6 @@ module.exports = {
   RailData,
   DirectRailData,
   DirectSeaData,
-  TariffData
+  TariffData,
+  AgentTariffData
 };

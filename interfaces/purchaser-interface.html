@@ -59,28 +59,6 @@
                     <div id="last-update-purchaser" class="last-update"></div>
                 </div>
                 <div class="upload-section">
-                    <div class="template-info">
-                        <h3>Формат файла для загрузки</h3>
-                        <p>Используйте следующий формат столбцов в Excel файле:</p>
-                        <div class="columns-list">
-                            <strong>Обязательные заголовки:</strong> "станция отправления", "станция прибытия"
-                            <br><strong>Опциональные данные:</strong> Все данные могут быть неполными
-                            <br><strong>Примечание:</strong> Система гибко обрабатывает данные - заголовки обязательны, но значения могут быть пустыми
-                        </div>
-                        <p><strong>Для железнодорожных перевозок доступны следующие столбцы:</strong></p>
-                        <div class="columns-list" style="font-size: 14px; margin-top: 10px;">
-                            City, Агент, Тыловой Терминал, Пункт назначения, Автовывоз, ПРР, 20фут ктк ( до 24 тонн), 20фут ктк (от 24 тонн до 28 тонн), 40фут ктк, НДС, ВОХР 20, ВОХР 40, Фитинг/ПВ, Условия, Валидность
-                        </div>
-                        <p>
-                            <a href="templates/template-sea.xlsx" download="template-sea.xlsx" class="download-link">📥 Скачать шаблон Excel файла для морских перевозок</a>
-                            <br>
-                            <a href="templates/template-direct-rail.xlsx" download="template-direct-rail.xlsx" class="download-link">📥 Скачать шаблон Excel файла для прямого ЖД</a>
-                            <br>
-                            <a href="templates/template-direct-sea.xlsx" download="template-direct-sea.xlsx" class="download-link">📥 Скачать шаблон Excel файла для прямого моря</a>
-                            <br>
-                            <a href="templates/template-rail.xlsx" download="template-rail.xlsx" class="download-link">📥 Скачать шаблон Excel файла для железнодорожных перевозок</a>
-                        </p>
-                    </div>
                     
                     <div class="file-upload">
                         <input type="file" id="excel-file" accept=".xlsx, .xls" class="file-input">
@@ -113,45 +91,231 @@
                     <div id="last-update-tariff" class="last-update"></div>
                 </div>
                 <div class="tariff-section">
-                    <div class="tariff-info">
-                        <h3>Введите тарифные ставки (финансовые, руб)</h3>
-                        <p>Укажите стоимость услуг в российских рублях:</p>
-                    </div>
-                    
-                    <div class="tariff-inputs">
-                        <div class="form-group">
-                            <label for="vtt-rate">ВТТ (руб):</label>
-                            <input type="number" id="vtt-rate" class="form-input" placeholder="Введите стоимость ВТТ" min="0" step="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="prr20-rate">ПРР 20 (руб):</label>
-                            <input type="number" id="prr20-rate" class="form-input" placeholder="Введите стоимость ПРР 20" min="0" step="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="prr40-rate">ПРР 40 (руб):</label>
-                            <input type="number" id="prr40-rate" class="form-input" placeholder="Введите стоимость ПРР 40" min="0" step="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="auto20-rate">Автовывоз 20 (руб):</label>
-                            <input type="number" id="auto20-rate" class="form-input" placeholder="Введите стоимость автовывоза 20" min="0" step="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="auto40-rate">Автовывоз 40 (руб):</label>
-                            <input type="number" id="auto40-rate" class="form-input" placeholder="Введите стоимость автовывоза 40" min="0" step="1">
+                    <div class="tariff-type-selector">
+                        <h3>Выберите тип тарифов</h3>
+                        <div class="tariff-type-buttons">
+                            <button id="terminal-tariff-btn" class="tariff-type-btn active" onclick="switchTariffType('terminal')">
+                                <i class="fas fa-industry"></i> Тарифы для терминалов
+                            </button>
+                            <button id="agent-tariff-btn" class="tariff-type-btn" onclick="switchTariffType('agent')">
+                                <i class="fas fa-user-tie"></i> Тарифы для агентов
+                            </button>
                         </div>
                     </div>
                     
-                    <div id="tariff-status" class="status"></div>
-                    <button id="save-tariff" class="btn-success" onclick="saveTariffData()">
-                        Сохранить тарифы
-                    </button>
-                </div>
-                
-                <div id="tariff-preview" class="data-preview hidden">
-                    <h3>Предпросмотр тарифов</h3>
-                    <div id="tariff-preview-table" class="preview-table"></div>
+                    <!-- Тарифы для терминалов -->
+                    <div id="terminal-tariff-section" class="tariff-subsection">
+                        <div class="tariff-info">
+                            <h3>Введите тарифные ставки для терминалов (финансовые, руб)</h3>
+                            <p>Укажите стоимость услуг в российских рублях для каждого терминала:</p>
+                        </div>
+                        
+                        <div class="tariff-table-container">
+                            <table id="tariff-table" class="tariff-table">
+                                <thead>
+                                    <tr>
+                                        <th title="Название терминала (например, Терминал А)">Терминал</th>
+                                        <th title="Внутренний тариф терминала (руб)">ВТТ (руб)</th>
+                                        <th title="Погрузо-разгрузочные работы для 20-футового контейнера (руб)">ПРР 20 (руб)</th>
+                                        <th title="Погрузо-разгрузочные работы для 40-футового контейнера (руб)">ПРР 40 (руб)</th>
+                                        <th title="Автовывоз 20-футового контейнера (руб)">Автовывоз 20 (руб)</th>
+                                        <th title="Автовывоз 40-футового контейнера (руб)">Автовывоз 40 (руб)</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tariff-table-body">
+                                    <!-- Строки будут добавляться динамически -->
+                                </tbody>
+                            </table>
+                            <button id="add-tariff-row" class="btn-secondary" onclick="addTariffRow()" title="Добавить новую строку тарифа">
+                                <i class="fas fa-plus-circle"></i> Добавить строку
+                            </button>
+                        </div>
+                        
+                        <div id="tariff-status" class="status"></div>
+                        <button id="save-tariff" class="btn-success" onclick="saveTariffData()" title="Сохранить все тарифы в базу данных">
+                            <i class="fas fa-save"></i> Сохранить тарифы терминалов
+                        </button>
+                    </div>
+                    
+                    <!-- Тарифы для агентов -->
+                    <div id="agent-tariff-section" class="tariff-subsection hidden">
+                        <div class="tariff-info">
+                            <h3>Введите тарифные ставки для агентов</h3>
+                            <p>Укажите наименование и сверхнормативное пользование (СНП) для каждого агента:</p>
+                        </div>
+                        
+                        <div class="tariff-table-container">
+                            <table id="agent-tariff-table" class="tariff-table">
+                                <thead>
+                                    <tr>
+                                        <th title="Наименование агента">Наименование</th>
+                                        <th title="Сверхнормативное пользование (текст)">СНП</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="agent-tariff-table-body">
+                                    <!-- Строки будут добавляться динамически -->
+                                </tbody>
+                            </table>
+                            <button id="add-agent-tariff-row" class="btn-secondary" onclick="addAgentTariffRow()" title="Добавить новую строку тарифа агента">
+                                <i class="fas fa-plus-circle"></i> Добавить строку
+                            </button>
+                        </div>
+                        
+                        <div id="agent-tariff-status" class="status"></div>
+                        <button id="save-agent-tariff" class="btn-success" onclick="saveAgentTariffData()" title="Сохранить все тарифы агентов в базу данных">
+                            <i class="fas fa-save"></i> Сохранить тарифы агентов
+                        </button>
+                    </div>
+                    
+                    <!-- Предпросмотр тарифов (общий) -->
+                    <div id="tariff-preview" class="data-preview hidden">
+                        <h3>Предпросмотр тарифов</h3>
+                        <div id="tariff-preview-table" class="preview-table"></div>
+                    </div>
                 </div>
             </section>
+
+            <!-- Модальное окно для редактирования терминала -->
+            <div id="terminal-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Редактирование терминала</h2>
+                        <button class="modal-close" onclick="closeTerminalModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="terminal-form">
+                            <div class="form-section">
+                                <h3>Основные данные</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="modal-terminal">Название терминала *</label>
+                                        <input type="text" id="modal-terminal" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modal-vtt">ВТТ (руб)</label>
+                                        <input type="number" id="modal-vtt" min="0" step="1">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="modal-prr20">ПРР 20 (руб)</label>
+                                        <input type="number" id="modal-prr20" min="0" step="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modal-prr40">ПРР 40 (руб)</label>
+                                        <input type="number" id="modal-prr40" min="0" step="1">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="modal-auto20">Автовывоз 20 (руб)</label>
+                                        <input type="number" id="modal-auto20" min="0" step="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modal-auto40">Автовывоз 40 (руб)</label>
+                                        <input type="number" id="modal-auto40" min="0" step="1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>Дополнительные услуги</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="modal-weighing20">Взвешивание 20 (руб)</label>
+                                        <input type="number" id="modal-weighing20" min="0" step="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modal-weighing40">Взвешивание 40 (руб)</label>
+                                        <input type="number" id="modal-weighing40" min="0" step="1">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="modal-midk20">МИДК 20 (руб)</label>
+                                        <input type="number" id="modal-midk20" min="0" step="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modal-midk40">МИДК 40 (руб)</label>
+                                        <input type="number" id="modal-midk40" min="0" step="1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>Разделение по отправке ЖД</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="modal-rail-departure">
+                                            Учитывать отправку по ЖД (разные ставки)
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="rail-rates-section" class="hidden">
+                                    <h4>Ставки для отправки по ЖД</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="modal-rail-prr20">ПРР 20 (руб)</label>
+                                            <input type="number" id="modal-rail-prr20" min="0" step="1">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="modal-rail-prr40">ПРР 40 (руб)</label>
+                                            <input type="number" id="modal-rail-prr40" min="0" step="1">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="modal-rail-weighing20">Взвешивание 20 (руб)</label>
+                                            <input type="number" id="modal-rail-weighing20" min="0" step="1">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="modal-rail-weighing40">Взвешивание 40 (руб)</label>
+                                            <input type="number" id="modal-rail-weighing40" min="0" step="1">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="modal-rail-midk20">МИДК 20 (руб)</label>
+                                            <input type="number" id="modal-rail-midk20" min="0" step="1">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="modal-rail-midk40">МИДК 40 (руб)</label>
+                                            <input type="number" id="modal-rail-midk40" min="0" step="1">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>Хранение</h3>
+                                <div class="storage-container">
+                                    <div class="storage-grid-header">
+                                        <span class="storage-header-label">От суток</span>
+                                        <span class="storage-header-label">До суток</span>
+                                        <span class="storage-header-label">Ставка 20 фут (руб)</span>
+                                        <span class="storage-header-label">Ставка 40 фут (руб)</span>
+                                        <span class="storage-header-label">Действия</span>
+                                    </div>
+                                    <div id="storage-container">
+                                        <!-- Динамически добавляемые диапазоны хранения -->
+                                    </div>
+                                    <button type="button" class="btn-secondary add-storage-row" onclick="addStorageRange()">
+                                        <i class="fas fa-plus"></i> Добавить диапазон хранения
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" onclick="closeTerminalModal()">Отмена</button>
+                                <button type="submit" class="btn-success">Сохранить изменения</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 

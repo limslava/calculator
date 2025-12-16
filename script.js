@@ -640,64 +640,185 @@ async function saveData() {
     }
 }
 
-// Функции для работы с тарифами
+// Функции для работы с тарифами (расширенные для терминалов)
 function loadTariffData() {
+    const tbody = document.getElementById('tariff-table-body');
+    if (!tbody) return;
+    
+    // Очищаем таблицу
+    tbody.innerHTML = '';
+    
     // Загружаем сохраненные тарифы из базы данных
     if (database.tariff && database.tariff.length > 0) {
-        const tariffData = database.tariff[0]; // Берем первый (и единственный) набор тарифов
-        document.getElementById('vtt-rate').value = tariffData.vtt || '';
-        document.getElementById('prr20-rate').value = tariffData.prr20 || '';
-        document.getElementById('prr40-rate').value = tariffData.prr40 || '';
-        document.getElementById('auto20-rate').value = tariffData.auto20 || '';
-        document.getElementById('auto40-rate').value = tariffData.auto40 || '';
+        // Теперь database.tariff - это массив объектов
+        database.tariff.forEach((tariff, index) => {
+            addTariffRowToTable(tariff, index);
+        });
         
-        // Показываем предпросмотр сохраненных тарифов
-        showTariffPreview(tariffData);
+        // Показываем предпросмотр всех тарифов
+        showTariffPreview(database.tariff);
+    } else {
+        // Если нет тарифов, добавляем одну пустую строку
+        addTariffRow();
+    }
+}
+
+// Функция для получения ставки ВТТ по терминалу
+function getVttRateForTerminal(terminalName) {
+    if (!database.tariff || database.tariff.length === 0) {
+        return 0;
+    }
+    
+    // Ищем тариф с указанным терминалом (регистронезависимо)
+    const normalizedTerminal = terminalName ? terminalName.trim().toLowerCase() : '';
+    const tariff = database.tariff.find(t =>
+        t.terminal && t.terminal.trim().toLowerCase() === normalizedTerminal
+    );
+    
+    if (tariff && tariff.vtt !== undefined && tariff.vtt !== null) {
+        return tariff.vtt;
+    }
+    
+    // Если не нашли, ищем тариф с терминалом "Общий"
+    const generalTariff = database.tariff.find(t =>
+        t.terminal && t.terminal.trim().toLowerCase() === 'общий'
+    );
+    
+    if (generalTariff && generalTariff.vtt !== undefined && generalTariff.vtt !== null) {
+        return generalTariff.vtt;
+    }
+    
+    // Если нет общего, берем первый тариф
+    if (database.tariff[0] && database.tariff[0].vtt !== undefined && database.tariff[0].vtt !== null) {
+        return database.tariff[0].vtt;
+    }
+    
+    return 0;
+}
+
+function addTariffRow(tariff = null) {
+    const tbody = document.getElementById('tariff-table-body');
+    if (!tbody) return;
+    
+    const rowIndex = tbody.children.length;
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>
+            <input type="text" class="tariff-terminal" placeholder="Название терминала" value="${tariff?.terminal || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-vtt" placeholder="0" min="0" step="1" value="${tariff?.vtt || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-prr20" placeholder="0" min="0" step="1" value="${tariff?.prr20 || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-prr40" placeholder="0" min="0" step="1" value="${tariff?.prr40 || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-auto20" placeholder="0" min="0" step="1" value="${tariff?.auto20 || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${tariff?.auto40 || ''}">
+        </td>
+        <td class="actions-cell">
+            <button class="btn-small btn-danger" onclick="removeTariffRow(this)">Удалить</button>
+        </td>
+    `;
+    tbody.appendChild(row);
+}
+
+function addTariffRowToTable(tariff, index) {
+    const tbody = document.getElementById('tariff-table-body');
+    if (!tbody) return;
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>
+            <input type="text" class="tariff-terminal" placeholder="Название терминала" value="${tariff.terminal || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-vtt" placeholder="0" min="0" step="1" value="${tariff.vtt || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-prr20" placeholder="0" min="0" step="1" value="${tariff.prr20 || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-prr40" placeholder="0" min="0" step="1" value="${tariff.prr40 || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-auto20" placeholder="0" min="0" step="1" value="${tariff.auto20 || ''}">
+        </td>
+        <td>
+            <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${tariff.auto40 || ''}">
+        </td>
+        <td class="actions-cell">
+            <button class="btn-small btn-danger" onclick="removeTariffRow(this)">Удалить</button>
+        </td>
+    `;
+    tbody.appendChild(row);
+}
+
+function removeTariffRow(button) {
+    const row = button.closest('tr');
+    if (row) {
+        row.remove();
     }
 }
 
 function saveTariffData() {
-    const vttRate = parseFloat(document.getElementById('vtt-rate').value) || 0;
-    const prr20Rate = parseFloat(document.getElementById('prr20-rate').value) || 0;
-    const prr40Rate = parseFloat(document.getElementById('prr40-rate').value) || 0;
-    const auto20Rate = parseFloat(document.getElementById('auto20-rate').value) || 0;
-    const auto40Rate = parseFloat(document.getElementById('auto40-rate').value) || 0;
+    const rows = document.querySelectorAll('#tariff-table-body tr');
+    const tariffs = [];
     
-    // Проверяем, что все поля заполнены
-    if (vttRate === 0 && prr20Rate === 0 && prr40Rate === 0 && auto20Rate === 0 && auto40Rate === 0) {
-        Utils.showStatus('Пожалуйста, заполните хотя бы одно поле', 'error', 'tariff-status');
+    rows.forEach(row => {
+        const terminal = row.querySelector('.tariff-terminal').value.trim();
+        const vtt = parseFloat(row.querySelector('.tariff-vtt').value) || 0;
+        const prr20 = parseFloat(row.querySelector('.tariff-prr20').value) || 0;
+        const prr40 = parseFloat(row.querySelector('.tariff-prr40').value) || 0;
+        const auto20 = parseFloat(row.querySelector('.tariff-auto20').value) || 0;
+        const auto40 = parseFloat(row.querySelector('.tariff-auto40').value) || 0;
+        
+        // Если все поля пустые, пропускаем строку
+        if (!terminal && vtt === 0 && prr20 === 0 && prr40 === 0 && auto20 === 0 && auto40 === 0) {
+            return;
+        }
+        
+        tariffs.push({
+            terminal: terminal || 'Общий',
+            vtt,
+            prr20,
+            prr40,
+            auto20,
+            auto40,
+            timestamp: new Date().toISOString()
+        });
+    });
+    
+    if (tariffs.length === 0) {
+        Utils.showStatus('Добавьте хотя бы один тариф', 'error', 'tariff-status');
         return;
     }
     
-    const tariffData = {
-        vtt: vttRate,
-        prr20: prr20Rate,
-        prr40: prr40Rate,
-        auto20: auto20Rate,
-        auto40: auto40Rate,
-        timestamp: new Date().toISOString()
-    };
-    
     // Сохраняем в базу данных
-    database.tariff = [tariffData];
+    database.tariff = tariffs;
     
     // Сохраняем на сервер
-    saveTariffToServer(tariffData);
+    saveTariffToServer(tariffs);
     
     // Показываем предпросмотр
-    showTariffPreview(tariffData);
+    showTariffPreview(tariffs);
     
-    Utils.showStatus('Тарифы успешно сохранены', 'success', 'tariff-status');
+    Utils.showStatus(`Тарифы успешно сохранены (${tariffs.length} записей)`, 'success', 'tariff-status');
 }
 
-async function saveTariffToServer(tariffData) {
+async function saveTariffToServer(tariffs) {
     try {
         const response = await fetch('/api/data/tariff', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ data: [tariffData] })
+            body: JSON.stringify({ data: tariffs })
         });
         
         if (!response.ok) {
@@ -710,7 +831,7 @@ async function saveTariffToServer(tariffData) {
             console.log('✅ Тарифы сохранены на сервере');
             
             // Сохраняем в localStorage как резервную копию
-            localStorage.setItem('logistics_db_tariff', JSON.stringify([tariffData]));
+            localStorage.setItem('logistics_db_tariff', JSON.stringify(tariffs));
             
             // Сохраняем дату обновления
             const currentDate = new Date();
@@ -732,47 +853,57 @@ async function saveTariffToServer(tariffData) {
     } catch (error) {
         console.error('❌ Ошибка сохранения тарифов на сервере:', error);
         // Сохраняем в localStorage как резервную копию
-        localStorage.setItem('logistics_db_tariff', JSON.stringify([tariffData]));
+        localStorage.setItem('logistics_db_tariff', JSON.stringify(tariffs));
         Utils.showStatus('Тарифы сохранены локально (ошибка связи с сервером)', 'warning', 'tariff-status');
     }
 }
 
-function showTariffPreview(tariffData) {
+function showTariffPreview(tariffs) {
     const previewSection = document.getElementById('tariff-preview');
     const previewTable = document.getElementById('tariff-preview-table');
     
-    const tableHTML = `
+    if (!previewSection || !previewTable) return;
+    
+    if (!tariffs || tariffs.length === 0) {
+        previewTable.innerHTML = '<p>Нет данных для отображения</p>';
+        previewSection.classList.remove('hidden');
+        return;
+    }
+    
+    let tableHTML = `
         <table>
             <thead>
                 <tr>
-                    <th>Услуга</th>
-                    <th>Стоимость (руб)</th>
+                    <th>Терминал</th>
+                    <th>ВТТ</th>
+                    <th>ПРР 20</th>
+                    <th>ПРР 40</th>
+                    <th>Автовывоз 20</th>
+                    <th>Автовывоз 40</th>
+                    <th>Обновлено</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>ВТТ</td>
-                    <td>${tariffData.vtt}</td>
-                </tr>
-                <tr>
-                    <td>ПРР 20</td>
-                    <td>${tariffData.prr20}</td>
-                </tr>
-                <tr>
-                    <td>ПРР 40</td>
-                    <td>${tariffData.prr40}</td>
-                </tr>
-                <tr>
-                    <td>Автовывоз 20</td>
-                    <td>${tariffData.auto20}</td>
-                </tr>
-                <tr>
-                    <td>Автовывоз 40</td>
-                    <td>${tariffData.auto40}</td>
-                </tr>
+    `;
+    
+    tariffs.forEach(tariff => {
+        tableHTML += `
+            <tr>
+                <td>${tariff.terminal}</td>
+                <td>${tariff.vtt || '-'}</td>
+                <td>${tariff.prr20 || '-'}</td>
+                <td>${tariff.prr40 || '-'}</td>
+                <td>${tariff.auto20 || '-'}</td>
+                <td>${tariff.auto40 || '-'}</td>
+                <td>${new Date(tariff.timestamp).toLocaleDateString('ru-RU')}</td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
             </tbody>
         </table>
-        <p>Тарифы сохранены: ${new Date(tariffData.timestamp).toLocaleString('ru-RU')}</p>
+        <p>Всего тарифов: ${tariffs.length}</p>
     `;
     
     previewTable.innerHTML = tableHTML;
@@ -1211,8 +1342,9 @@ function calculateAllRates(departure, destination, containerType) {
                 
                 // Складываем ставки только если обе ненулевые
                 if (seaRate > 0 && railRate > 0) {
-                    // Получаем стоимость ВТТ из тарифов (если есть)
-                    const vttRate = database.tariff && database.tariff.length > 0 ? database.tariff[0].vtt || 0 : 0;
+                    // Получаем стоимость ВТТ из тарифов для терминала (если есть)
+                    const terminal = railItem.agent || railItem.city || '';
+                    const vttRate = getVttRateForTerminal(terminal);
                     
                     // Для сортировки используем конвертированную сумму в RUB
                     let totalRateForSorting = 0;

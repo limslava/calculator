@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Permissions-Policy" content="browsing-topics=()">
     <title>Калькулятор ставок в логистике</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Библиотека для работы с Excel файлами -->
@@ -239,35 +240,34 @@
                 <div class="tariff-section">
                     <div class="tariff-info">
                         <h3>Введите тарифные ставки (финансовые, руб)</h3>
-                        <p>Укажите стоимость услуг в российских рублях:</p>
+                        <p>Укажите стоимость услуг в российских рублях для каждого терминала:</p>
                     </div>
                     
-                    <div class="tariff-inputs">
-                        <div class="form-group">
-                            <label for="vtt-rate">ВТТ (руб):</label>
-                            <input type="number" id="vtt-rate" class="form-input" placeholder="Введите стоимость ВТТ" min="0" step="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="prr20-rate">ПРР 20 (руб):</label>
-                            <input type="number" id="prr20-rate" class="form-input" placeholder="Введите стоимость ПРР 20" min="0" step="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="prr40-rate">ПРР 40 (руб):</label>
-                            <input type="number" id="prr40-rate" class="form-input" placeholder="Введите стоимость ПРР 40" min="0" step="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="auto20-rate">Автовывоз 20 (руб):</label>
-                            <input type="number" id="auto20-rate" class="form-input" placeholder="Введите стоимость автовывоза 20" min="0" step="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="auto40-rate">Автовывоз 40 (руб):</label>
-                            <input type="number" id="auto40-rate" class="form-input" placeholder="Введите стоимость автовывоза 40" min="0" step="1">
-                        </div>
+                    <div class="tariff-table-container">
+                        <table id="tariff-table" class="tariff-table">
+                            <thead>
+                                <tr>
+                                    <th>Терминал</th>
+                                    <th>ВТТ (руб)</th>
+                                    <th>ПРР 20 (руб)</th>
+                                    <th>ПРР 40 (руб)</th>
+                                    <th>Автовывоз 20 (руб)</th>
+                                    <th>Автовывоз 40 (руб)</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tariff-table-body">
+                                <!-- Строки будут добавляться динамически -->
+                            </tbody>
+                        </table>
+                        <button id="add-tariff-row" class="btn-secondary" onclick="addTariffRow()">
+                            <i class="fas fa-plus"></i> Добавить строку
+                        </button>
                     </div>
                     
                     <div id="tariff-status" class="status"></div>
                     <button id="save-tariff" class="btn-success" onclick="saveTariffData()">
-                        Сохранить тарифы
+                        Сохранить все тарифы
                     </button>
                 </div>
                 
