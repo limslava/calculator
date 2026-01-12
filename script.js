@@ -1,4 +1,5 @@
 // 🎯 ОСНОВНОЙ ФАЙЛ ПРИЛОЖЕНИЯ - ТЕПЕРЬ ИСПОЛЬЗУЕТ МОДУЛИ
+console.log('✅ script.js загружен и выполняется');
 
 // Глобальные переменные
 let currentRole = window.currentRole || '';
@@ -288,6 +289,39 @@ function redirectToPurchaserInterface() {
     
     // Для всех пользователей (включая администратора) перенаправляем на отдельный интерфейс
     window.location.href = 'interfaces/purchaser-interface.html';
+}
+
+// Функция перенаправления на страницу истории загрузок
+async function redirectToTariffHistory() {
+    console.log('🔍 redirectToTariffHistory вызвана - проверка кнопки');
+    console.log('🔍 window.location.href:', window.location.href);
+    console.log('🔍 ServerAuth доступен?', typeof ServerAuth);
+    
+    // Проверяем, доступна ли функция getCurrentUser
+    if (typeof ServerAuth.getCurrentUser !== 'function') {
+        console.error('❌ ServerAuth.getCurrentUser не является функцией');
+        Utils.showStatus('Ошибка: модуль аутентификации не загружен', 'error');
+        return;
+    }
+    
+    const currentUser = await ServerAuth.getCurrentUser();
+    console.log('🔍 currentUser:', currentUser);
+    
+    if (!currentUser) {
+        console.log('🔍 Пользователь не авторизован');
+        Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
+        return;
+    }
+    
+    // Проверяем, есть ли у пользователя роль администратора
+    // Если роль отсутствует, всё равно разрешаем переход (сервер проверит права)
+    if (currentUser.role && currentUser.role !== 'admin') {
+        console.log('🔍 Пользователь не администратор, но разрешаем переход для проверки сервером');
+    }
+    
+    console.log('🔍 Перенаправление на tariff-history.html');
+    // Перенаправляем на страницу истории загрузок
+    window.location.href = 'interfaces/tariff-history.html';
 }
 
 // Функция для обновления отображения кнопок в заголовке менеджера по продажам
@@ -2037,3 +2071,20 @@ function copyMarginResult() {
 
 // Сохраняем результаты в глобальную переменную для доступа из модального окна
 window.allResults = [];
+
+// Привязка обработчика кнопки "История загрузок" для отладки
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 DOM загружен, ищем кнопку истории загрузок');
+    const historyButton = document.querySelector('button[onclick*="redirectToTariffHistory"]');
+    if (historyButton) {
+        console.log('✅ Кнопка истории загрузок найдена:', historyButton);
+        // Добавляем дополнительный обработчик для отладки
+        historyButton.addEventListener('click', function(e) {
+            console.log('🔍 Клик по кнопке истории загрузок (через addEventListener)');
+            // Вызываем оригинальную функцию
+            redirectToTariffHistory();
+        });
+    } else {
+        console.warn('⚠️ Кнопка истории загрузок не найдена');
+    }
+});

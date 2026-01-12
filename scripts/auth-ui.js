@@ -116,6 +116,9 @@ function showUserInterface(user) {
         document.getElementById('admin-panel').classList.remove('hidden');
         loadUsersList();
         console.log('✅ Показана панель администратора');
+        
+        // Привязываем обработчик кнопки "История загрузок"
+        bindTariffHistoryButton();
     } else if (user.role === ServerAuth.USER_ROLES.PURCHASER) {
         // Перенаправляем на отдельный интерфейс менеджера по закупкам
         console.log('🔄 Перенаправление менеджера по закупкам на interfaces/purchaser-interface.html');
@@ -716,6 +719,48 @@ function backToLogin() {
     window.history.replaceState({}, document.title, window.location.pathname);
 }
 
+// Функция для привязки обработчика кнопки "История загрузок"
+function bindTariffHistoryButton() {
+    console.log('🔍 Привязка обработчика кнопки "История загрузок"');
+    
+    // Ищем кнопку в панели администратора
+    const historyButton = document.querySelector('#admin-panel button[onclick*="redirectToTariffHistory"]');
+    
+    if (historyButton) {
+        console.log('✅ Кнопка "История загрузок" найдена в панели администратора:', historyButton);
+        
+        // Удаляем старый обработчик onclick, чтобы избежать дублирования
+        historyButton.removeAttribute('onclick');
+        
+        // Добавляем новый обработчик через addEventListener
+        historyButton.addEventListener('click', async function(e) {
+            console.log('🔍 Клик по кнопке "История загрузок" (обработчик из auth-ui.js)');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Проверяем, доступна ли функция redirectToTariffHistory
+            if (typeof redirectToTariffHistory === 'function') {
+                console.log('🔍 Вызов redirectToTariffHistory');
+                await redirectToTariffHistory();
+            } else {
+                console.error('❌ Функция redirectToTariffHistory не найдена');
+                Utils.showStatus('Ошибка: функция перенаправления не загружена', 'error');
+            }
+        });
+        
+        console.log('✅ Обработчик кнопки "История загрузок" успешно привязан');
+    } else {
+        console.warn('⚠️ Кнопка "История загрузок" не найдена в панели администратора');
+        
+        // Пробуем найти кнопку через другой селектор
+        const allButtons = document.querySelectorAll('#admin-panel button');
+        console.log('🔍 Все кнопки в панели администратора:', allButtons.length);
+        allButtons.forEach((btn, idx) => {
+            console.log(`🔍 Кнопка ${idx}:`, btn.textContent.trim(), btn.outerHTML.substring(0, 100));
+        });
+    }
+}
+
 // Экспортируем функции для использования в других модулях
 window.AuthUI = {
     loginUser,
@@ -728,5 +773,6 @@ window.AuthUI = {
     loadUsersList,
     toggleUserStatus,
     deleteUser,
-    checkAuthOnLoad
+    checkAuthOnLoad,
+    bindTariffHistoryButton
 };

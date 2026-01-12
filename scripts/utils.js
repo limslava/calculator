@@ -750,6 +750,91 @@ function checkModulesAvailability() {
     return modules;
 }
 
+// 🔧 ФУНКЦИЯ ДЛЯ ПАРСИНГА ТАРИФОВ АГЕНТОВ ИЗ EXCEL
+function parseAgentTariffData(excelData) {
+    console.log('🔍 Начало парсинга тарифов агентов...');
+    console.log('📊 Заголовки файла:', excelData[0]);
+    
+    const headers = excelData[0];
+    const dataRows = excelData.slice(1);
+    const parsedData = [];
+    
+    const headerMap = {
+        carrier: findColumnIndex(headers, ['Carrier', 'Перевозчик']),
+        pod: findColumnIndex(headers, ['POD', 'Порт выгрузки']),
+        dropOffArea: findColumnIndex(headers, ['DROP OFF AREA VIA VVO', 'Зона выгрузки', 'Drop off area']),
+        snp: findColumnIndex(headers, ['СНП', 'SNP', 'Сверхнормативное пользование'])
+    };
+    
+    console.log('🗺️ Найденные колонки тарифов агентов:', headerMap);
+    
+    // Проверяем наличие обязательных колонок
+    const requiredHeaders = ['Carrier', 'POD', 'СНП'];
+    const missingHeaders = requiredHeaders.filter(header => {
+        const found = headers.some(h => h && h.toString().toLowerCase().includes(header.toLowerCase()));
+        return !found;
+    });
+    
+    if (missingHeaders.length > 0) {
+        throw new Error(`Отсутствуют обязательные колонки: ${missingHeaders.join(', ')}. Требуемые заголовки: Carrier, POD, СНП`);
+    }
+    
+    dataRows.forEach((row, index) => {
+        if (!row || row.length === 0 || !row.some(cell => cell !== null && cell !== undefined && cell !== '')) {
+            return;
+        }
+        
+        const item = {};
+        
+        Object.keys(headerMap).forEach(key => {
+            const colIndex = headerMap[key];
+            let value = '';
+            
+            if (colIndex !== -1 && row[colIndex] !== undefined && row[colIndex] !== null && row[colIndex] !== '') {
+                value = row[colIndex];
+                
+                // Нормализуем строковые значения
+                if (typeof value === 'string') {
+                    value = value.trim();
+                }
+                
+                // Нормализуем перевозчика (заменяем Sollers на Pacific Logistic)
+                if (key === 'carrier') {
+                    value = normalizeAgentAndCarrier(value);
+                }
+            }
+            
+            item[key] = value;
+        });
+        
+        // Добавляем только если есть обязательные поля
+        if (item.carrier && item.pod && item.snp) {
+            // Генерируем уникальный ключ для поиска
+            item.key = `${item.carrier}_${item.pod}_${item.dropOffArea || ''}`.toLowerCase().replace(/\s+/g, '_');
+            parsedData.push(item);
+        }
+    });
+    
+    console.log(`📊 Всего строк в файле тарифов агентов: ${dataRows.length}`);
+    console.log(`✅ Успешно обработано: ${parsedData.length}`);
+    
+    // Логируем примеры обработанных данных
+    if (parsedData.length > 0) {
+        console.log('📋 Примеры обработанных тарифов агентов:');
+        parsedData.slice(0, 3).forEach((item, i) => {
+            console.log(`  ${i+1}. Carrier: "${item.carrier}", POD: "${item.pod}", Drop-off: "${item.dropOffArea}", СНП: "${item.snp}"`);
+        });
+    }
+    
+    if (parsedData.length === 0) {
+        throw new Error('Не найдено корректных данных для обработки. Проверьте наличие колонок Carrier, POD и СНП.');
+    }
+    
+    showStatus(`Успешно обработано ${parsedData.length} из ${dataRows.length} записей тарифов агентов`, 'success');
+    
+    return parsedData;
+}
+
 // Экспортируем функции для использования в основном файле
 window.Utils = {
     setupCustomDropdown,
@@ -762,6 +847,7 @@ window.Utils = {
     parseRailData,
     parseDirectRailData,
     parseDirectSeaData,
+    parseAgentTariffData,
     checkModulesAvailability,
     getTransportTypeByField,
     convertExcelDate,

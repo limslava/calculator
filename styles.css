@@ -2355,3 +2355,1070 @@ datalist option:hover {
         justify-content: center;
     }
 }
+
+/* ============================== */
+/* СТИЛИ ДЛЯ ИНТЕРФЕЙСА ИСТОРИИ ЗАГРУЗКИ ТАРИФОВ */
+/* ============================== */
+
+.tariff-history-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.tariff-history-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+}
+
+.tariff-history-section h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+.tariff-history-section h3 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+/* Фильтры и управление */
+.history-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+}
+
+.filter-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.filter-select, .filter-input {
+    padding: 10px 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+.filter-select:focus, .filter-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+/* Статистика */
+.history-stats,
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.stat-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+    transition: all 0.3s ease;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.stat-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-color: #3498db;
+}
+
+.stat-icon {
+    font-size: 1.2rem;
+    color: #3498db;
+    margin-bottom: 5px;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #3498db;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+}
+
+/* Таблица истории */
+.history-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 20px;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.history-table th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 15px;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.history-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f3f4;
+    color: #495057;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.history-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.history-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Бейджи для типов данных */
+.data-type-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-sea {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge-rail {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.badge-direct-sea {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.badge-direct-rail {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+/* Пагинация */
+.history-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.pagination-btn {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #f8f9fa;
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 0 10px;
+}
+
+/* Модальное окно деталей загрузки */
+.upload-details-modal .modal-content {
+    max-width: 1000px;
+    max-height: 85vh;
+}
+
+.upload-details-modal .modal-header {
+    background: #3498db;
+    color: white;
+}
+
+.upload-details {
+    padding: 20px;
+}
+
+.upload-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.meta-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.meta-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.preview-data-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    background: #f8f9fa;
+}
+
+.preview-data-container h4 {
+    color: #495057;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.preview-table th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 13px;
+}
+
+.preview-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f3f4;
+    color: #495057;
+    font-size: 13px;
+}
+
+.preview-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Сообщения о загрузке и ошибках */
+.loading-message {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.loading-message i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    color: #dee2e6;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Кнопки действий */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-view-details {
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-view-details:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.btn-refresh {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-refresh:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.btn-export {
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-export:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* Адаптивность для интерфейса истории */
+@media (max-width: 768px) {
+    .tariff-history-container {
+        padding: 15px;
+    }
+    
+    .tariff-history-section {
+        padding: 20px;
+    }
+    
+    .history-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        min-width: 100%;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .filter-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .history-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .history-table th,
+    .history-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .upload-meta {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tariff-history-section {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.stat-card {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Пустое состояние */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: #dee2e6;
+}
+
+.empty-state h4 {
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Уменьшение расстояния между статистикой и таблицей истории загрузок */
+#stats.section {
+    padding-bottom: 5px !important;
+    margin-bottom: 0 !important;
+}
+
+#history-table.section {
+    padding-top: 0 !important;
+    margin-top: -40px !important;
+}
+
+/* Уменьшение отступов внутри карточек статистики */
+.stats-grid {
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.stat-card {
+    padding: 8px;
+    min-height: 70px;
+}
+
+.stat-icon {
+    font-size: 1rem;
+    margin-bottom: 3px;
+}
+
+.stat-content h3 {
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    margin-bottom: 1px;
+}
+
+.stat-label {
+    font-size: 10px;
+}
+
+/* ============================== */
+/* УЛУЧШЕННАЯ КОМПОНОВКА СТРАНИЦЫ ИСТОРИИ ЗАГРУЗОК */
+/* ============================== */
+
+/* Фильтры в одну строку на больших экранах */
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 15px;
+}
+
+.filters-grid .form-group {
+    margin-bottom: 0;
+}
+
+.filters-grid .filter-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.filters-grid .filter-actions button {
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+/* Уменьшение вертикальных отступов между секциями */
+#filters.section {
+    padding: 15px 20px 10px 20px !important;
+    margin-bottom: 5px !important;
+    min-height: auto !important;
+}
+
+#stats.section {
+    padding: 0 20px 5px 20px !important;
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+    min-height: auto !important;
+}
+
+#history-table.section {
+    padding: 0 20px 15px 20px !important;
+    margin-top: 20px !important;
+    min-height: auto !important;
+}
+
+/* Улучшение заголовка таблицы с кнопками */
+#history-table .section-header {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#history-table .header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Адаптивность для фильтров */
+@media (max-width: 1200px) {
+    .filters-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .filters-grid .filter-actions {
+        grid-column: span 3;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .filters-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .filters-grid .filter-actions {
+        grid-column: span 1;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .filters-grid .filter-actions button {
+        width: 100%;
+    }
+    
+    #history-table .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    #history-table .header-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Улучшение таблицы истории */
+.table-container {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.data-table {
+    margin-bottom: 0;
+}
+
+.data-table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.data-table td {
+    border-bottom: 1px solid #f1f3f4;
+}
+
+/* Пагинация */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.pagination button {
+    min-width: 100px;
+}
+
+/* Улучшение модального окна деталей */
+.wide-modal {
+    max-width: 1000px;
+}
+
+.detail-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.detail-row {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.detail-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.detail-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Общие улучшения */
+.section-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #2c3e50;
+}
+
+.subtitle {
+    color: #6c757d;
+    font-size: 1rem;
+    margin-top: 5px;
+}
+
+/* Уменьшение общего вертикального пространства */
+.container {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+header {
+    margin-bottom: 20px;
+}
+
+/* ============================== */
+/* СТИЛИ ДЛЯ ОТОБРАЖЕНИЯ ЗАГРУЖЕННЫХ СТАВОК */
+/* ============================== */
+
+#uploaded-rates-section {
+    margin-top: 40px;
+    padding: 25px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+#uploaded-rates-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #3498db;
+}
+
+#uploaded-rates-section h3 {
+    color: #2c3e50;
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+#refresh-rates {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#refresh-rates:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* Фильтры */
+.filter-section {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    flex: 1;
+}
+
+.filter-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.filter-select, .filter-input {
+    padding: 10px 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+.filter-select:focus, .filter-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.filter-group button {
+    margin-top: 5px;
+}
+
+/* Таблица ставок */
+#rates-table-container {
+    min-height: 200px;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.placeholder-text {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 40px;
+    font-size: 16px;
+}
+
+.rates-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rates-table th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 15px;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.rates-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f3f4;
+    color: #495057;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.rates-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.rates-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Бейджи для типов данных в таблице ставок */
+.rate-type-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-sea {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge-rail {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.badge-direct-sea {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.badge-direct-rail {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.badge-tariff {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.badge-agent-tariff {
+    background: #e8eaf6;
+    color: #3949ab;
+}
+
+/* Пагинация */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-pagination {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: #f8f9fa;
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#page-info {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 0 10px;
+}
+
+/* Адаптивность для отображения ставок */
+@media (max-width: 768px) {
+    #uploaded-rates-section {
+        padding: 15px;
+        margin-top: 30px;
+    }
+    
+    #uploaded-rates-section .section-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    #refresh-rates {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .filter-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .filter-group {
+        min-width: 100%;
+    }
+    
+    .filter-group button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .rates-table th,
+    .rates-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+    
+    .pagination {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn-pagination {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Анимации */
+@keyframes fadeInRates {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#uploaded-rates-section {
+    animation: fadeInRates 0.5s ease-out;
+}

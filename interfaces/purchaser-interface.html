@@ -79,6 +79,41 @@
                         Загрузить в базу
                     </button>
                 </div>
+
+                <!-- Отображение последних загруженных ставок -->
+                <div id="uploaded-rates-section" class="data-preview">
+                    <div class="section-header">
+                        <h3>Последние загруженные ставки</h3>
+                        <button id="refresh-rates" class="btn-secondary" title="Обновить список ставок">
+                            <i class="fas fa-sync-alt"></i> Обновить
+                        </button>
+                    </div>
+                    <div id="rates-filter" class="filter-section">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="search-filter">Поиск по тексту:</label>
+                                <input type="text" id="search-filter" class="filter-input" placeholder="Введите текст для поиска...">
+                            </div>
+                            <div class="filter-group">
+                                <button id="apply-filters" class="btn-primary">
+                                    <i class="fas fa-filter"></i> Применить фильтр
+                                </button>
+                                <button id="reset-filters" class="btn-secondary">
+                                    <i class="fas fa-times"></i> Сбросить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="rates-status" class="status"></div>
+                    <div id="rates-table-container" class="preview-table">
+                        <p class="placeholder-text">Нажмите "Обновить" для загрузки последних ставок</p>
+                    </div>
+                    <div id="rates-pagination" class="pagination">
+                        <button id="prev-page" class="btn-pagination">← Назад</button>
+                        <span id="page-info">Страница 1 из 1</span>
+                        <button id="next-page" class="btn-pagination">Вперед →</button>
+                    </div>
+                </div>
             </section>
 
             <!-- Интерфейс тарифов -->
@@ -140,33 +175,13 @@
                     
                     <!-- Тарифы для агентов -->
                     <div id="agent-tariff-section" class="tariff-subsection hidden">
-                        <div class="tariff-info">
-                            <h3>Введите тарифные ставки для агентов</h3>
-                            <p>Укажите наименование и сверхнормативное пользование (СНП) для каждого агента:</p>
-                        </div>
-                        
                         <div class="tariff-table-container">
-                            <table id="agent-tariff-table" class="tariff-table">
-                                <thead>
-                                    <tr>
-                                        <th title="Наименование агента">Наименование</th>
-                                        <th title="Сверхнормативное пользование (текст)">СНП</th>
-                                        <th>Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="agent-tariff-table-body">
-                                    <!-- Строки будут добавляться динамически -->
-                                </tbody>
-                            </table>
-                            <button id="add-agent-tariff-row" class="btn-secondary" onclick="addAgentTariffRow()" title="Добавить новую строку тарифа агента">
-                                <i class="fas fa-plus-circle"></i> Добавить строку
-                            </button>
+                            <div id="agent-tariff-table-body">
+                                <!-- Содержимое будет загружено динамически -->
+                            </div>
                         </div>
                         
                         <div id="agent-tariff-status" class="status"></div>
-                        <button id="save-agent-tariff" class="btn-success" onclick="saveAgentTariffData()" title="Сохранить все тарифы агентов в базу данных">
-                            <i class="fas fa-save"></i> Сохранить тарифы агентов
-                        </button>
                     </div>
                     
                     <!-- Предпросмотр тарифов (общий) -->
@@ -323,5 +338,6 @@
     <script src="../scripts/server-auth.js"></script>
     <script src="../scripts/utils.js"></script>
     <script src="../scripts/purchaser-script.js"></script>
+    <script src="../scripts/uploaded-rates.js"></script>
 </body>
 </html>

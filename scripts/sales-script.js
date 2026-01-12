@@ -81,38 +81,128 @@ function getVttRateForTerminal(terminalName) {
     return 0;
 }
 
-// Функция для получения информации об агенте по имени
-function getAgentInfo(agentName) {
+// 🔧 ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ ИНФОРМАЦИИ О СНП ПО КОМБИНАЦИИ ПОЛЕЙ
+function getAgentInfo(transportType, data) {
     if (!database.agent_tariff || database.agent_tariff.length === 0) {
-        console.log('❌ База данных агентов пуста');
+        console.log('❌ База данных тарифов агентов пуста');
         return null;
     }
     
-    const normalizedAgent = agentName ? agentName.trim().toLowerCase() : '';
-    console.log('🔍 Поиск агента:', normalizedAgent);
+    console.log('🔍 Поиск СНП для типа перевозки:', transportType);
+    console.log('📊 Данные для поиска:', data);
     
-    // Ищем точное совпадение по полю name
-    const agent = database.agent_tariff.find(a =>
-        a.name && a.name.trim().toLowerCase() === normalizedAgent
-    );
+    let searchKey = '';
+    let agentRecord = null;
     
-    if (agent) {
-        console.log('✅ Найден агент:', agent.name, 'СНП:', agent.snp);
-        return agent;
+    // 🔧 ЛОГИКА ПОИСКА В ЗАВИСИМОСТИ ОТ ТИПА ПЕРЕВОЗКИ
+    if (transportType === 'sea' || transportType === 'sea_rail') {
+        // Для моря: взаимосвязь Carrier, POD, DROP OFF AREA VIA VVO
+        const carrier = data.carrier || data.sea?.carrier || '';
+        const pod = data.pod || data.sea?.pod || '';
+        const dropOffArea = data.dropOffArea || data.sea?.dropOffArea || '';
+        
+        console.log('🔍 Поиск СНП для моря:', { carrier, pod, dropOffArea });
+        
+        // Ищем точное совпадение по всем трем полям
+        agentRecord = database.agent_tariff.find(agent => {
+            const agentCarrier = agent.carrier || agent.name || '';
+            const agentPod = agent.pod || '';
+            const agentDropOffArea = agent.dropOffArea || '';
+            
+            // Нормализуем значения для сравнения
+            const normalizedCarrier = normalizeAgentAndCarrier(carrier).toLowerCase();
+            const normalizedAgentCarrier = normalizeAgentAndCarrier(agentCarrier).toLowerCase();
+            
+            return normalizedAgentCarrier === normalizedCarrier &&
+                   agentPod.toLowerCase() === pod.toLowerCase() &&
+                   agentDropOffArea.toLowerCase() === dropOffArea.toLowerCase();
+        });
+        
+        if (agentRecord) {
+            console.log('✅ Найден СНП для моря:', agentRecord.snp);
+            return agentRecord;
+        }
+        
+        // Если не нашли с dropOffArea, ищем только по Carrier и POD
+        if (!agentRecord && dropOffArea) {
+            agentRecord = database.agent_tariff.find(agent => {
+                const agentCarrier = agent.carrier || agent.name || '';
+                const agentPod = agent.pod || '';
+                
+                const normalizedCarrier = normalizeAgentAndCarrier(carrier).toLowerCase();
+                const normalizedAgentCarrier = normalizeAgentAndCarrier(agentCarrier).toLowerCase();
+                
+                return normalizedAgentCarrier === normalizedCarrier &&
+                       agentPod.toLowerCase() === pod.toLowerCase();
+            });
+            
+            if (agentRecord) {
+                console.log('✅ Найден СНП для моря (без dropOffArea):', agentRecord.snp);
+                return agentRecord;
+            }
+        }
+        
+        searchKey = `${carrier}_${pod}_${dropOffArea}`;
+        
+    } else if (transportType === 'direct_sea') {
+        // Для прямого моря: взаимосвязь Carrier, POD
+        const carrier = data.carrier || '';
+        const pod = data.pod || '';
+        
+        console.log('🔍 Поиск СНП для прямого моря:', { carrier, pod });
+        
+        agentRecord = database.agent_tariff.find(agent => {
+            const agentCarrier = agent.carrier || agent.name || '';
+            const agentPod = agent.pod || '';
+            
+            const normalizedCarrier = normalizeAgentAndCarrier(carrier).toLowerCase();
+            const normalizedAgentCarrier = normalizeAgentAndCarrier(agentCarrier).toLowerCase();
+            
+            return normalizedAgentCarrier === normalizedCarrier &&
+                   agentPod.toLowerCase() === pod.toLowerCase();
+        });
+        
+        if (agentRecord) {
+            console.log('✅ Найден СНП для прямого моря:', agentRecord.snp);
+            return agentRecord;
+        }
+        
+        searchKey = `${carrier}_${pod}`;
+        
+    } else if (transportType === 'direct_rail' || transportType === 'rail') {
+        // Для прямого ЖД - заглушка: возвращаем "СНП не найден"
+        console.log('⚠️ Для прямого ЖД СНП не ищется - заглушка');
+        return {
+            snp: 'СНП не найден',
+            note: 'Для прямых ЖД перевозок СНП не применяется'
+        };
     }
     
-    // Ищем частичное совпадение
-    const partialAgent = database.agent_tariff.find(a =>
-        a.name && a.name.trim().toLowerCase().includes(normalizedAgent)
-    );
-    
-    if (partialAgent) {
-        console.log('✅ Найден агент частичным совпадением:', partialAgent.name, 'СНП:', partialAgent.snp);
-        return partialAgent;
+    // Если ничего не нашли
+    if (!agentRecord) {
+        console.log('⚠️ СНП не найден для:', searchKey);
+        return {
+            snp: 'СНП не найден',
+            note: 'Не найдено соответствие в тарифах агентов'
+        };
     }
     
-    console.log('⚠️ Агент не найден:', agentName);
-    return null;
+    return agentRecord;
+}
+
+// 🔧 ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ НОРМАЛИЗАЦИИ ПЕРЕВОЗЧИКА
+function normalizeAgentAndCarrier(value) {
+    if (!value) return value;
+    
+    const normalizedValue = value.toString().trim();
+    
+    // Заменяем "Sollers" на "Pacific Logistic"
+    if (normalizedValue.toLowerCase().includes('sollers')) {
+        console.log(`🔄 Нормализация: "${normalizedValue}" → "Pacific Logistic"`);
+        return 'Pacific Logistic';
+    }
+    
+    return normalizedValue;
 }
 
 // Функции для управления интерфейсом
@@ -2365,19 +2455,17 @@ function generateAdditionalInfo(transportType, data, storageInfo, terminalInfo, 
     // Определяем ставку за сверхнормативное пользование контейнером
     const containerOvertimeRate = containerTypeDisplay.includes('40') ? 20 : 10; // $20 для 40', $10 для 20'
     
-    // Получаем информацию об агенте для морских перевозок
+    // Получаем информацию о СНП для морских перевозок
     let agentInfo = null;
-    let agentName = '';
     if (transportType === 'sea_rail') {
-        agentName = data.sea?.agent || '';
+        agentInfo = getAgentInfo('sea', data.sea || data);
+        console.log('🔍 Информация о СНП для моря+жд:', agentInfo);
     } else if (transportType === 'direct_sea' || transportType === 'sea') {
-        agentName = data.agent || '';
+        agentInfo = getAgentInfo(transportType, data);
+        console.log('🔍 Информация о СНП для моря:', agentInfo);
     } else if (transportType === 'direct_rail' || transportType === 'rail') {
-        agentName = data.agent || '';
-    }
-    if (agentName) {
-        agentInfo = getAgentInfo(agentName);
-        console.log('🔍 Информация об агенте:', { agentName, agentInfo });
+        agentInfo = getAgentInfo(transportType, data);
+        console.log('🔍 Информация о СНП для жд:', agentInfo);
     }
     
     let infoHTML = '';

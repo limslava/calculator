@@ -21,7 +21,7 @@ const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sequelize, testConnection, syncDatabase } = require('./config/database');
-const { User } = require('./models');
+const { User, UploadHistory, UploadData, Op } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -237,7 +237,7 @@ app.get('/api/data/:dbType', authenticateToken, async (req, res) => {
     }
 });
 
-app.post('/api/data/:dbType', authenticateToken, (req, res) => {
+app.post('/api/data/:dbType', authenticateToken, async (req, res) => {
     try {
         const { dbType } = req.params;
         const { data } = req.body;
@@ -252,9 +252,41 @@ app.post('/api/data/:dbType', authenticateToken, (req, res) => {
             return res.status(403).json({ error: 'Недостаточно прав для сохранения данных' });
         }
         
-        const success = dataStorage.saveData(dbType, data);
+        const success = await dataStorage.saveData(dbType, data);
         if (success) {
             console.log(`✅ Данные сохранены пользователем ${req.user.email} для ${dbType}: ${data.length} записей`);
+            
+            // Создаем запись в истории загрузки
+            try {
+                // Берем первые 5 записей для предпросмотра
+                const previewData = data.slice(0, 5);
+                
+                // Создаем запись в истории загрузки
+                const uploadHistory = await UploadHistory.create({
+                    dataType: dbType,
+                    userId: req.user.id,
+                    userEmail: req.user.email,
+                    recordCount: data.length,
+                    previewData: previewData,
+                    uploadedAt: new Date()
+                });
+                
+                // Создаем запись с полными данными в UploadData
+                const { UploadData } = require('./models');
+                await UploadData.create({
+                    uploadHistoryId: uploadHistory.id,
+                    dataType: dbType,
+                    fullData: data,
+                    recordCount: data.length,
+                    uploadedAt: new Date()
+                });
+                
+                console.log(`📝 Запись добавлена в историю загрузки для ${dbType} с полными данными`);
+            } catch (historyError) {
+                console.error('❌ Ошибка сохранения истории загрузки:', historyError);
+                // Не прерываем выполнение, если не удалось сохранить историю
+            }
+            
             res.json({ success: true, message: 'Данные сохранены', count: data.length });
         } else {
             res.status(500).json({ error: 'Ошибка сохранения данных' });
@@ -549,6 +581,220 @@ app.put('/api/users/:id/change-password', authenticateToken, async (req, res) =>
     } catch (error) {
         console.error('❌ Ошибка смены пароля:', error);
         res.status(500).json({ error: 'Ошибка сервера при смене пароля' });
+    }
+});
+
+// API для получения истории загрузки данных (только для администратора)
+app.get('/api/upload-history', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { dataType, userId, dateFrom, dateTo, page = 1, limit = 20 } = req.query;
+        
+        // Строим условия фильтрации
+        const where = {};
+        
+        if (dataType && dataType !== 'all') {
+            where.dataType = dataType;
+        }
+        
+        if (userId) {
+            where.userId = userId;
+        }
+        
+        if (dateFrom || dateTo) {
+            where.uploadedAt = {};
+            if (dateFrom) {
+                where.uploadedAt[Op.gte] = new Date(dateFrom);
+            }
+            if (dateTo) {
+                // Добавляем 1 день, чтобы включить всю дату "до"
+                const endDate = new Date(dateTo);
+                endDate.setDate(endDate.getDate() + 1);
+                where.uploadedAt[Op.lt] = endDate;
+            }
+        }
+        
+        const offset = (page - 1) * limit;
+        
+        const { count, rows } = await UploadHistory.findAndCountAll({
+            where,
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['email', 'role']
+            }],
+            order: [['uploadedAt', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+        
+        res.json({
+            success: true,
+            data: rows,
+            pagination: {
+                total: count,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(count / limit)
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка получения истории загрузки:', error);
+        console.error('🔧 Детали ошибки:', error.message, error.stack);
+        res.status(500).json({ error: 'Ошибка получения истории загрузки', details: error.message });
+    }
+});
+
+// API для получения статистики загрузок (только для администратора)
+app.get('/api/upload-stats', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { dateFrom, dateTo } = req.query;
+        
+        const where = {};
+        if (dateFrom || dateTo) {
+            where.uploadedAt = {};
+            if (dateFrom) {
+                where.uploadedAt[Op.gte] = new Date(dateFrom);
+            }
+            if (dateTo) {
+                const endDate = new Date(dateTo);
+                endDate.setDate(endDate.getDate() + 1);
+                where.uploadedAt[Op.lt] = endDate;
+            }
+        }
+        
+        // Получаем статистику по типам данных
+        const stats = await UploadHistory.findAll({
+            where,
+            attributes: [
+                'dataType',
+                [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+                [sequelize.fn('SUM', sequelize.col('recordCount')), 'totalRecords']
+            ],
+            group: ['dataType']
+        });
+        
+        // Получаем последние 5 загрузок
+        const recentUploads = await UploadHistory.findAll({
+            where,
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['email']
+            }],
+            order: [['uploadedAt', 'DESC']],
+            limit: 5
+        });
+        
+        // Получаем топ пользователей по загрузкам - упрощенный запрос
+        const topUsers = await UploadHistory.findAll({
+            where,
+            attributes: [
+                'userId',
+                'userEmail',
+                [sequelize.fn('COUNT', sequelize.col('id')), 'uploadCount'],
+                [sequelize.fn('SUM', sequelize.col('recordCount')), 'totalRecords']
+            ],
+            group: ['userId', 'userEmail'],
+            order: [[sequelize.literal('"uploadCount"'), 'DESC']],
+            limit: 5
+        });
+        
+        res.json({
+            success: true,
+            stats,
+            recentUploads,
+            topUsers
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка получения статистики загрузок:', error);
+        console.error('🔧 Детали ошибки:', error.message, error.stack);
+        // Дополнительная отладка
+        console.error('🔧 Query params:', req.query);
+        console.error('🔧 Where clause:', where);
+        res.status(500).json({ error: 'Ошибка получения статистики', details: error.message });
+    }
+});
+
+// API для получения деталей конкретной загрузки (только для администратора)
+app.get('/api/upload-history/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const upload = await UploadHistory.findByPk(id, {
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['email', 'role']
+                },
+                {
+                    model: UploadData,
+                    as: 'uploadData',
+                    attributes: ['id', 'recordCount', 'uploadedAt']
+                }
+            ]
+        });
+        
+        if (!upload) {
+            return res.status(404).json({ error: 'Запись истории не найдена' });
+        }
+        
+        res.json({
+            success: true,
+            data: upload
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка получения деталей загрузки:', error);
+        console.error('🔧 Детали ошибки:', error.message, error.stack);
+        res.status(500).json({ error: 'Ошибка получения деталей загрузки', details: error.message });
+    }
+});
+
+// API для получения полных данных конкретной загрузки (только для администратора)
+app.get('/api/upload-history/:id/full-data', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Находим запись истории
+        const upload = await UploadHistory.findByPk(id, {
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['email', 'role']
+            }]
+        });
+        
+        if (!upload) {
+            return res.status(404).json({ error: 'Запись истории не найдена' });
+        }
+        
+        // Находим полные данные
+        const uploadData = await UploadData.findOne({
+            where: { uploadHistoryId: id },
+            attributes: ['id', 'fullData', 'recordCount', 'uploadedAt']
+        });
+        
+        if (!uploadData) {
+            return res.status(404).json({ error: 'Полные данные загрузки не найдены' });
+        }
+        
+        res.json({
+            success: true,
+            data: {
+                uploadHistory: upload,
+                fullData: uploadData.fullData,
+                recordCount: uploadData.recordCount,
+                uploadedAt: uploadData.uploadedAt
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка получения полных данных загрузки:', error);
+        console.error('🔧 Детали ошибки:', error.message, error.stack);
+        res.status(500).json({ error: 'Ошибка получения полных данных загрузки', details: error.message });
     }
 });
 
