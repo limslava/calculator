@@ -273,33 +273,32 @@
                 <button class="modal-close" onclick="closeMarginModal()">×</button>
             </div>
             <div class="modal-body">
-                <div class="margin-container">
-                    <!-- Левая часть: себестоимость -->
-                    <div class="cost-section">
+                <div class="margin-container-vertical">
+                    <!-- Верхняя часть: себестоимость -->
+                    <div class="cost-section-vertical">
                         <h3>Себестоимость</h3>
                         <div id="cost-details" class="cost-details">
                             <!-- Здесь будет отображаться информация о себестоимости -->
                         </div>
                     </div>
                     
-                    <!-- Правая часть: накрутка и результат -->
-                    <div class="margin-section">
-                        <div class="margin-inputs">
-                            <h3>Накрутка</h3>
-                            <div id="margin-inputs-container">
-                                <!-- Здесь будут поля для ввода маржинальности -->
-                            </div>
+                    <!-- Средняя часть: накрутка -->
+                    <div class="margin-inputs-vertical">
+                        <h3>Накрутка</h3>
+                        <div id="margin-inputs-container">
+                            <!-- Здесь будут поля для ввода маржинальности -->
                         </div>
-                        
-                        <div class="margin-result">
-                            <h3>Результат с накруткой</h3>
-                            <div id="margin-result-container" class="result-container">
-                                <!-- Здесь будет отображаться результат с накруткой -->
-                            </div>
-                            <button id="copy-result" class="btn-primary" onclick="copyMarginResult()">
-                                📋 Копировать результат
-                            </button>
+                    </div>
+                    
+                    <!-- Нижняя часть: результат с накруткой -->
+                    <div class="margin-result-vertical">
+                        <h3>Результат с накруткой</h3>
+                        <div id="margin-result-container" class="result-container">
+                            <!-- Здесь будет отображаться результат с накруткой -->
                         </div>
+                        <button id="copy-result" class="btn-primary" onclick="copyMarginResult()">
+                            📋 Копировать результат
+                        </button>
                     </div>
                 </div>
             </div>

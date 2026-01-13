@@ -1189,7 +1189,7 @@ datalist option:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 30px;
+    padding: 15px 25px;
     border-bottom: 2px solid #e9ecef;
     background: #3498db;
     color: white;
@@ -1197,7 +1197,7 @@ datalist option:hover {
 
 .modal-header h2 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
 }
 
 .modal-close {
@@ -1221,16 +1221,16 @@ datalist option:hover {
 }
 
 .modal-body {
-    padding: 30px;
-    max-height: calc(90vh - 80px);
+    padding: 20px;
+    max-height: calc(90vh - 70px);
     overflow-y: auto;
 }
 
 .margin-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    min-height: 400px;
+    gap: 15px;
+    min-height: 300px;
 }
 
 @media (max-width: 768px) {
@@ -1240,24 +1240,132 @@ datalist option:hover {
     }
 }
 
+/* Горизонтальная компоновка для модального окна маржинальности */
+.margin-container-vertical {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    min-height: 300px;
+}
+
+.cost-section-vertical,
+.margin-inputs-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    height: fit-content;
+}
+
+.margin-result-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    grid-column: span 2;
+}
+
+.cost-section-vertical h3,
+.margin-inputs-vertical h3,
+.margin-result-vertical h3 {
+    color: #333;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+    font-size: 1rem;
+}
+
+.cost-section-vertical .cost-details {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px;
+    flex-grow: 1;
+    font-size: 11px;
+}
+
+.cost-section-vertical .cost-details table {
+    font-size: 11px;
+}
+
+.cost-section-vertical .cost-details th,
+.cost-section-vertical .cost-details td {
+    padding: 6px 8px;
+    font-size: 11px;
+}
+
+.margin-inputs-vertical #margin-inputs-container {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px;
+    flex-grow: 1;
+    font-size: 11px;
+}
+
+.margin-inputs-vertical #margin-inputs-container .margin-input-group label {
+    font-size: 11px;
+}
+
+.margin-inputs-vertical #margin-inputs-container .margin-input {
+    font-size: 11px;
+    height: 32px;
+    padding: 6px 8px;
+}
+
+.margin-result-vertical .result-container {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    min-height: 80px;
+    flex-grow: 1;
+    font-size: 11px;
+}
+
+.margin-result-vertical .result-container .result-item {
+    font-size: 11px;
+}
+
+@media (max-width: 768px) {
+    .margin-container-vertical {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 10px;
+    }
+    
+    .margin-result-vertical {
+        grid-column: span 1;
+    }
+}
+
 .cost-section, .margin-section {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
 }
 
 .cost-section h3, .margin-section h3 {
     color: #333;
     border-bottom: 2px solid #667eea;
-    padding-bottom: 8px;
-    margin-bottom: 15px;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
 }
 
 .cost-details {
     background: #f8f9fa;
     border: 1px solid #e9ecef;
     border-radius: 8px;
-    padding: 20px;
+    padding: 15px;
     flex-grow: 1;
 }
 
@@ -1265,8 +1373,9 @@ datalist option:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
+    padding: 4px 0;
     border-bottom: 1px solid #dee2e6;
+    font-size: 12px;
 }
 
 .cost-item:last-child {
@@ -1276,38 +1385,42 @@ datalist option:hover {
 .cost-label {
     font-weight: 600;
     color: #495057;
+    font-size: 12px;
 }
 
 .cost-value {
     font-weight: 700;
     color: #28a745;
+    font-size: 12px;
 }
 
 .margin-inputs {
     background: #f8f9fa;
     border: 1px solid #e9ecef;
     border-radius: 8px;
-    padding: 20px;
+    padding: 15px;
 }
 
 .margin-input-group {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 }
 
 .margin-input-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     font-weight: 600;
     color: #495057;
+    font-size: 13px;
 }
 
 .margin-input {
     width: 100%;
-    padding: 10px;
+    padding: 8px 10px;
     border: 2px solid #e0e0e0;
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 13px;
     transition: border-color 0.3s ease;
+    height: 38px;
 }
 
 .margin-input:focus {
@@ -1319,24 +1432,25 @@ datalist option:hover {
     background: #e8f5e8;
     border: 1px solid #28a745;
     border-radius: 8px;
-    padding: 20px;
+    padding: 15px;
 }
 
 .result-container {
     background: white;
     border: 1px solid #dee2e6;
     border-radius: 5px;
-    padding: 15px;
-    margin-bottom: 15px;
-    min-height: 100px;
+    padding: 12px;
+    margin-bottom: 12px;
+    min-height: 90px;
 }
 
 .result-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
+    padding: 4px 0;
     border-bottom: 1px solid #f0f0f0;
+    font-size: 12px;
 }
 
 .result-item:last-child {
@@ -1346,21 +1460,24 @@ datalist option:hover {
 .result-label {
     font-weight: 600;
     color: #495057;
+    font-size: 12px;
 }
 
 .result-value {
     font-weight: 700;
     color: #28a745;
+    font-size: 12px;
 }
 
 .result-total {
     background: #28a745;
     color: white;
-    padding: 12px;
+    padding: 10px;
     border-radius: 5px;
-    margin-top: 10px;
+    margin-top: 8px;
     font-weight: 700;
     text-align: center;
+    font-size: 14px;
 }
 
 #copy-result {
