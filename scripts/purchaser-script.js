@@ -156,10 +156,12 @@ function goBack() {
 function setupFileUpload() {
     const fileInput = document.getElementById('excel-file');
     const processButton = document.getElementById('process-file');
+    const fileNameDisplay = document.getElementById('selected-file-name');
+    const fileLabel = document.querySelector('.file-label');
     
     console.log('🔧 Настройка загрузки файлов для базы:', currentDatabase);
     
-    if (!fileInput || !processButton) {
+    if (!fileInput || !processButton || !fileNameDisplay || !fileLabel) {
         console.error('❌ Не найдены элементы для загрузки файлов');
         return;
     }
@@ -167,11 +169,31 @@ function setupFileUpload() {
     // Сбрасываем состояние
     fileInput.value = '';
     processButton.disabled = true;
+    fileNameDisplay.textContent = 'Файл не выбран';
+    fileLabel.classList.remove('file-selected');
     
     fileInput.addEventListener('change', function(e) {
         if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const fileName = file.name;
+            const fileSize = (file.size / 1024).toFixed(2); // KB
+            
+            // Отображаем имя файла
+            fileNameDisplay.textContent = `${fileName} (${fileSize} KB)`;
+            
+            // Добавляем визуальную обратную связь
+            fileLabel.classList.add('file-selected');
+            
+            // Включаем кнопку обработки
             processButton.disabled = false;
-            Utils.showStatus('Файл выбран. Нажмите "Обработать файл"', 'success');
+            
+            // Показываем статус
+            Utils.showStatus(`Файл "${fileName}" выбран. Нажмите "Обработать файл"`, 'success');
+        } else {
+            // Если файл не выбран (например, пользователь отменил выбор)
+            fileNameDisplay.textContent = 'Файл не выбран';
+            fileLabel.classList.remove('file-selected');
+            processButton.disabled = true;
         }
     });
     
@@ -353,8 +375,13 @@ async function uploadDataToDatabase() {
             document.getElementById('process-file').disabled = true;
             document.getElementById('data-preview').classList.add('hidden');
             
-            // Обновляем список загруженных ставок
-            loadUploadedRates();
+            // Обновляем список загруженных ставок - показываем сами ставки, а не историю
+            if (typeof loadLatestRates === 'function') {
+                loadLatestRates(currentDatabase);
+            } else {
+                // Если функция не доступна, загружаем историю как запасной вариант
+                loadUploadedRates();
+            }
             
         } else {
             throw new Error(result.message || 'Ошибка загрузки данных');
@@ -465,8 +492,8 @@ function addTariffRow(tariff = null) {
             <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${tariff?.auto40 || ''}">
         </td>
         <td class="actions-cell">
-            <button class="btn-small btn-edit" onclick="editTariffRow(this)" title="Редактировать">✏️</button>
-            <button class="btn-small btn-danger" onclick="removeTariffRow(this)" title="Удалить">🗑️</button>
+            <button class="btn-small btn-edit" onclick="editTariffRow(this)" title="Редактировать"><i class="fas fa-edit"></i></button>
+            <button class="btn-small btn-danger" onclick="removeTariffRow(this)" title="Удалить"><i class="fas fa-trash"></i></button>
         </td>
     `;
     tbody.appendChild(row);
@@ -497,8 +524,8 @@ function addTariffRowToTable(tariff, index) {
             <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${tariff.auto40 || ''}">
         </td>
         <td class="actions-cell">
-            <button class="btn-small btn-edit" onclick="editTariffRow(this)" title="Редактировать">✏️</button>
-            <button class="btn-small btn-danger" onclick="removeTariffRow(this)" title="Удалить">🗑️</button>
+            <button class="btn-small btn-edit" onclick="editTariffRow(this)" title="Редактировать"><i class="fas fa-edit"></i></button>
+            <button class="btn-small btn-danger" onclick="removeTariffRow(this)" title="Удалить"><i class="fas fa-trash"></i></button>
         </td>
     `;
     tbody.appendChild(row);
@@ -720,8 +747,17 @@ function showAgentTariffUploadInterface() {
                         <strong>Carrier, POD, DROP OFF AREA VIA VVO, СНП</strong>
                     </p>
                 </div>
-                <div style="margin-bottom: 20px;">
-                    <input type="file" id="agent-excel-file" accept=".xlsx,.xls" style="margin-bottom: 10px;">
+                <div class="file-upload">
+                    <input type="file" id="agent-excel-file" accept=".xlsx,.xls" class="file-input">
+                    <label for="agent-excel-file" class="file-label">
+                        <span>Выберите Excel файл с тарифами агентов (.xlsx или .xls)</span>
+                    </label>
+                    <div id="agent-file-name-display" class="file-name-display">
+                        <i class="fas fa-file-excel"></i>
+                        <span id="agent-selected-file-name">Файл не выбран</span>
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
                     <button class="btn" onclick="processAgentExcelFile()" id="process-agent-file" disabled>Обработать файл</button>
                 </div>
                 <div id="agent-data-preview" class="hidden">
@@ -733,15 +769,41 @@ function showAgentTariffUploadInterface() {
         </tr>
     `;
     
-    // Настраиваем загрузку файла
+    // Настраиваем загрузку файла с отображением имени файла
     const fileInput = document.getElementById('agent-excel-file');
     const processButton = document.getElementById('process-agent-file');
+    const fileNameDisplay = document.getElementById('agent-selected-file-name');
+    const fileLabel = document.querySelector('.file-label');
     
-    if (fileInput && processButton) {
+    if (fileInput && processButton && fileNameDisplay && fileLabel) {
+        // Сбрасываем состояние
+        fileInput.value = '';
+        processButton.disabled = true;
+        fileNameDisplay.textContent = 'Файл не выбран';
+        fileLabel.classList.remove('file-selected');
+        
         fileInput.addEventListener('change', function(e) {
             if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const fileName = file.name;
+                const fileSize = (file.size / 1024).toFixed(2); // KB
+                
+                // Отображаем имя файла
+                fileNameDisplay.textContent = `${fileName} (${fileSize} KB)`;
+                
+                // Добавляем визуальную обратную связь
+                fileLabel.classList.add('file-selected');
+                
+                // Включаем кнопку обработки
                 processButton.disabled = false;
-                Utils.showStatus('Файл выбран. Нажмите "Обработать файл"', 'success');
+                
+                // Не показываем статус, чтобы сохранить информацию о загруженных ставках
+                // Визуальная обратная связь уже есть: отображение имени файла и CSS-класс .file-selected
+            } else {
+                // Если файл не выбран (например, пользователь отменил выбор)
+                fileNameDisplay.textContent = 'Файл не выбран';
+                fileLabel.classList.remove('file-selected');
+                processButton.disabled = true;
             }
         });
     }
@@ -931,7 +993,7 @@ function addAgentTariffRow(agent = null) {
             <input type="text" class="agent-snp" placeholder="Сверхнормативное пользование" value="${agent?.snp || ''}">
         </td>
         <td class="actions-cell">
-            <button class="btn-small btn-danger" onclick="removeAgentTariffRow(this)" title="Удалить">🗑️</button>
+            <button class="btn-small btn-danger" onclick="removeAgentTariffRow(this)" title="Удалить"><i class="fas fa-trash"></i></button>
         </td>
     `;
     tbody.appendChild(row);
@@ -950,7 +1012,7 @@ function addAgentTariffRowToTable(agent, index) {
             <input type="text" class="agent-snp" placeholder="Сверхнормативное пользование" value="${agent.snp || ''}">
         </td>
         <td class="actions-cell">
-            <button class="btn-small btn-danger" onclick="removeAgentTariffRow(this)" title="Удалить">🗑️</button>
+            <button class="btn-small btn-danger" onclick="removeAgentTariffRow(this)" title="Удалить"><i class="fas fa-trash"></i></button>
         </td>
     `;
     tbody.appendChild(row);
@@ -1269,7 +1331,7 @@ function addStorageRange(storageRange = null) {
         <input type="number" class="storage-to" placeholder="30" min="0" step="1" value="${storageRange?.to || ''}">
         <input type="number" class="storage-rate20" placeholder="0" min="0" step="1" value="${storageRange?.rate20 || ''}">
         <input type="number" class="storage-rate40" placeholder="0" min="0" step="1" value="${storageRange?.rate40 || ''}">
-        <button type="button" class="btn-small btn-danger" onclick="removeStorageRange(this)">🗑️</button>
+        <button type="button" class="btn-small btn-danger" onclick="removeStorageRange(this)"><i class="fas fa-trash"></i></button>
     `;
     container.appendChild(rangeElement);
 }

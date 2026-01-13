@@ -801,7 +801,7 @@ function displaySeaRates(results, containerType) {
         const containerTypeDisplay = getContainerTypeDisplayName(containerType);
         
         tableHTML += `
-            <tr ondblclick="openMarginModal(${index})" style="cursor: pointer;">
+            <tr style="cursor: pointer;">
                 <td>${result.pol || '-'}</td>
                 <td>${result.pod || '-'}</td>
                 <td>${result.dropOffArea || '-'}</td>
@@ -900,7 +900,7 @@ function displayRailResults(results) {
         }
         
         tableHTML += `
-            <tr ondblclick="openMarginModal(${index})" style="cursor: pointer;">
+            <tr style="cursor: pointer;">
                 <td>${result.city || '-'}</td>
                 <td>${result.destination || '-'}</td>
                 <td>${containerTypeDisplay}</td>
@@ -957,7 +957,7 @@ function displayDirectRailRates(results) {
         const rateInRub = usdToRubRate ? Math.round(rate * usdToRubRate) : 0;
         
         tableHTML += `
-            <tr ondblclick="openMarginModal(${index})" style="cursor: pointer;">
+            <tr style="cursor: pointer;">
                 <td>${result.fob || '-'}</td>
                 <td>${result.arrivalCity || '-'}</td>
                 <td>40'HC</td>
@@ -1043,7 +1043,7 @@ function displayDirectSeaRates(results, containerType) {
         const containerTypeDisplay = getDirectSeaContainerTypeDisplayName(containerType);
         
         tableHTML += `
-            <tr ondblclick="openMarginModal(${index})" style="cursor: pointer;">
+            <tr style="cursor: pointer;">
                 <td>${result.pol || '-'}</td>
                 <td>${result.pod || '-'}</td>
                 <td>${containerTypeDisplay}</td>
@@ -1726,7 +1726,6 @@ function displayComplexResults(results, departure, destination, containerType) {
                 <td>
                     <span class="transport-type-badge ${transportTypeClass}">
                         ${result.transportName}
-                        ${isBestRate ? ' 🏆' : ''}
                     </span>
                 </td>
                 <td>${seaRate}</td>

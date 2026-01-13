@@ -38,7 +38,7 @@ function initUploadedRates(dbType) {
     
     if (refreshBtn) {
         refreshBtn.addEventListener('click', function() {
-            loadLatestRates(uploadedRates.currentDataType);
+            loadLatestRates(uploadedRates.currentDataType); // Загружаем последние ставки
         });
     }
     

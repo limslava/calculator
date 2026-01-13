@@ -65,6 +65,10 @@
                         <label for="excel-file" class="file-label">
                             <span>Выберите Excel файл (.xlsx или .xls)</span>
                         </label>
+                        <div id="file-name-display" class="file-name-display">
+                            <i class="fas fa-file-excel"></i>
+                            <span id="selected-file-name">Файл не выбран</span>
+                        </div>
                     </div>
                     <div id="status" class="status"></div>
                     <button id="process-file" class="btn-primary" onclick="processExcelFile()" disabled>
