@@ -934,6 +934,13 @@ function displayDirectRailRates(results) {
         return;
     }
     
+    // 🔧 СОРТИРОВКА ПО СТАВКАМ FOB ОТ МЕНЬШЕГО К БОЛЬШЕМУ
+    const sortedResults = [...results].sort((a, b) => {
+        const rateA = parseFloat(a.fob40hc) || 0;
+        const rateB = parseFloat(b.fob40hc) || 0;
+        return rateA - rateB;
+    });
+    
     let tableHTML = `
         <div class="results-section">
             <h4>Результаты расчета прямых ЖД перевозок</h4>
@@ -943,6 +950,7 @@ function displayDirectRailRates(results) {
                     <tr>
                         <th>FOB</th>
                         <th>Город прибытия</th>
+                        <th>Погран переход</th>
                         <th>Тип контейнера</th>
                         <th>Ставка</th>
                         <th>Ставка в RUB</th>
@@ -951,15 +959,20 @@ function displayDirectRailRates(results) {
                 <tbody>
     `;
     
-    results.forEach((result, index) => {
+    sortedResults.forEach((result, index) => {
         // Получаем ставку для 40'HC контейнера (основной тип для прямых ЖД)
         const rate = parseFloat(result.fob40hc) || 0;
         const rateInRub = usdToRubRate ? Math.round(rate * usdToRubRate) : 0;
         
+        // Определяем, является ли это самой выгодной ставкой (первая в отсортированном списке)
+        const isBestRate = index === 0;
+        const bestRateClass = isBestRate ? 'best-rate-row' : '';
+        
         tableHTML += `
-            <tr style="cursor: pointer;">
+            <tr class="${bestRateClass}" style="cursor: pointer;">
                 <td>${result.fob || '-'}</td>
                 <td>${result.arrivalCity || '-'}</td>
+                <td>${result.borderCrossing || '-'}</td>
                 <td>40'HC</td>
                 <td>$${rate}</td>
                 <td>${rateInRub > 0 ? rateInRub + ' RUB' : '-'}</td>
@@ -970,6 +983,9 @@ function displayDirectRailRates(results) {
     tableHTML += `
                 </tbody>
             </table>
+            <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                📊 Найдено ${sortedResults.length} ставок, отсортировано по возрастанию цены FOB
+            </p>
         </div>
     `;
     
@@ -1024,6 +1040,7 @@ function displayDirectSeaRates(results, containerType) {
                         <th>Ставка (RUB)</th>
                         <th>Перевозчик</th>
                         <th>Агент</th>
+                        <th>Remark</th>
                         <th>ETD</th>
                     </tr>
                 </thead>
@@ -1042,8 +1059,12 @@ function displayDirectSeaRates(results, containerType) {
         const rateInRub = usdToRubRate ? Math.round(rate * usdToRubRate) : 0;
         const containerTypeDisplay = getDirectSeaContainerTypeDisplayName(containerType);
         
+        // Определяем, является ли это самой выгодной ставкой (первая в отсортированном списке)
+        const isBestRate = index === 0;
+        const bestRateClass = isBestRate ? 'best-rate-row' : '';
+        
         tableHTML += `
-            <tr style="cursor: pointer;">
+            <tr class="${bestRateClass}" style="cursor: pointer;">
                 <td>${result.pol || '-'}</td>
                 <td>${result.pod || '-'}</td>
                 <td>${containerTypeDisplay}</td>
@@ -1051,6 +1072,7 @@ function displayDirectSeaRates(results, containerType) {
                 <td>${rateInRub > 0 ? rateInRub + ' RUB' : '-'}</td>
                 <td>${result.carrier || '-'}</td>
                 <td>${result.agent || '-'}</td>
+                <td>${result.remarks || '-'}</td>
                 <td>${result.etd || '-'}</td>
             </tr>
         `;
