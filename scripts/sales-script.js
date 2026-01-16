@@ -951,6 +951,7 @@ function displayDirectRailRates(results) {
                         <th>FOB</th>
                         <th>Город прибытия</th>
                         <th>Погран переход</th>
+                        <th>Агент</th>
                         <th>Тип контейнера</th>
                         <th>Ставка</th>
                         <th>Ставка в RUB</th>
@@ -973,6 +974,7 @@ function displayDirectRailRates(results) {
                 <td>${result.fob || '-'}</td>
                 <td>${result.arrivalCity || '-'}</td>
                 <td>${result.borderCrossing || '-'}</td>
+                <td>${result.agent || '-'}</td>
                 <td>40'HC</td>
                 <td>$${rate}</td>
                 <td>${rateInRub > 0 ? rateInRub + ' RUB' : '-'}</td>
