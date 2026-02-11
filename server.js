@@ -71,6 +71,11 @@ app.use(compression());
 const appDist = path.join(__dirname, 'app', 'dist');
 app.use('/app', express.static(appDist));
 
+// Redirect root to the new React app (legacy UI remains доступен по /index.html)
+app.get('/', (req, res) => {
+  res.redirect('/app/');
+});
+
 app.use(express.static(path.join(__dirname)));
 
 app.use('/api/exchange-rate', createExchangeRateRouter());

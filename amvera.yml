@@ -6,7 +6,7 @@ meta:
     version: "18"
 build:
   skip: false
-  additionalCommands: null
+  additionalCommands: npm --prefix app install && npm --prefix app run build
   artifacts:
     "*": /
 run:
