@@ -50,8 +50,8 @@ function normalizeCityName(city) {
 }
 
 // Функции для управления интерфейсом
-function selectRole(role) {
-    const currentUser = ServerAuth.getCurrentUser();
+async function selectRole(role) {
+    const currentUser = await ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -69,8 +69,397 @@ function selectRole(role) {
     Utils.showStatus(`Выбран режим: ${role === 'purchaser' ? 'Менеджер по закупу' : 'Менеджер по продажам'}`, 'success');
 }
 
-function selectSalesRole() {
-    const currentUser = ServerAuth.getCurrentUser();
+function setCurrentRole(role) {
+    currentRole = role;
+    window.currentRole = role;
+}
+
+function setCurrentDatabase(dbType) {
+    currentDatabase = dbType;
+    window.currentDatabase = dbType;
+}
+
+function setSalesMenuState(calcType, dbType = '') {
+    const salesGroup = document.querySelector('[data-sales-group="sales"]');
+    if (salesGroup) {
+        salesGroup.classList.toggle('is-active', Boolean(calcType));
+        if (salesGroup.tagName === 'DETAILS') {
+            salesGroup.open = Boolean(calcType);
+        }
+    }
+
+    const separateGroup = document.querySelector('[data-sales-calc="separate"]');
+    if (separateGroup && separateGroup.tagName === 'DETAILS') {
+        separateGroup.open = calcType === 'separate';
+    }
+    if (separateGroup) {
+        separateGroup.classList.toggle('is-active', calcType === 'separate');
+    }
+
+    const complexButton = document.querySelector('[data-sales-calc="complex"]');
+    if (complexButton) {
+        complexButton.classList.toggle('is-active', calcType === 'complex');
+    }
+
+    const dbButtons = document.querySelectorAll('[data-sales-db]');
+    dbButtons.forEach((button) => {
+        button.classList.toggle('is-active', calcType === 'separate' && button.dataset.salesDb === dbType);
+    });
+}
+
+function setPurchaserMenuState(dbType = '') {
+    const purchaserGroup = document.querySelector('[data-purchaser-group="purchaser"]');
+    if (purchaserGroup) {
+        purchaserGroup.classList.toggle('is-active', Boolean(dbType));
+        if (purchaserGroup.tagName === 'DETAILS') {
+            purchaserGroup.open = Boolean(dbType);
+        }
+    }
+
+    const dbButtons = document.querySelectorAll('[data-purchaser-db]');
+    dbButtons.forEach((button) => {
+        button.classList.toggle('is-active', Boolean(dbType) && button.dataset.purchaserDb === dbType);
+    });
+}
+
+function updateSalesHeaderTitle() {
+    const header = document.querySelector('#sales-interface .section-header h2');
+    if (!header) return;
+    if (currentCalculationType === 'complex') {
+        header.textContent = 'Калькулятор ставок — комплексные';
+        return;
+    }
+    if (currentCalculationType === 'separate' && currentDatabase) {
+        const names = {
+            sea: 'Море',
+            rail: 'ЖД',
+            direct_rail: 'Прямое ЖД',
+            direct_sea: 'Прямое море',
+            tariff: 'Тариф'
+        };
+        header.textContent = `Калькулятор ставок — раздельные: ${names[currentDatabase] || currentDatabase}`;
+        return;
+    }
+    header.textContent = 'Калькулятор ставок';
+}
+
+function setMainHeaderTitle(title) {
+    const headerTitle = document.getElementById('main-header-title');
+    if (!headerTitle) return;
+    headerTitle.textContent = title || 'Калькулятор ставок';
+}
+
+function getDatabaseLabel(dbType) {
+    const names = {
+        sea: 'Море',
+        rail: 'ЖД',
+        direct_rail: 'Прямое ЖД',
+        direct_sea: 'Прямое море',
+        tariff: 'Тариф'
+    };
+    return names[dbType] || dbType || '';
+}
+
+function getSalesMainTitle() {
+    if (currentCalculationType === 'complex') {
+        return 'Менеджер по продажам — комплексные ставки';
+    }
+    if (currentCalculationType === 'separate') {
+        if (currentDatabase) {
+            return `Менеджер по продажам — раздельные: ${getDatabaseLabel(currentDatabase)}`;
+        }
+        return 'Менеджер по продажам — раздельные ставки';
+    }
+    return 'Менеджер по продажам';
+}
+
+function getPurchaserMainTitle() {
+    if (currentDatabase) {
+        return `Закупщик — ${getDatabaseLabel(currentDatabase)}`;
+    }
+    return 'Закупщик';
+}
+
+function updatePurchaserTemplateInfo(dbType) {
+    const infoRoot = document.getElementById('purchaser-template-info');
+    if (!infoRoot) return;
+
+    const titleEl = document.getElementById('template-title');
+    const descriptionEl = document.getElementById('template-description');
+    const columnsEl = document.getElementById('template-columns');
+    const downloadEl = document.getElementById('template-download');
+
+    const config = {
+        sea: {
+            title: 'Формат файла — Морские перевозки',
+            required: ['POL', 'POD'],
+            optional: [
+                'Date of validity', 'Agent', 'Carrier', 'City', 'Transit port',
+                'DROP OFF AREA VIA VVO', 'SOC 20', 'SOC 40', "20'DC", "40'HC",
+                'Конвертация', 'ETD', 'Remarks'
+            ],
+            download: { href: 'templates/template-sea.xlsx', label: 'морских перевозок' }
+        },
+        direct_sea: {
+            title: 'Формат файла — Прямое море',
+            required: ['POL', 'POD'],
+            optional: [
+                'Date of validity', 'Agent', 'Carrier', "20'DC", "40'HC",
+                'Конвертация', 'ETD', 'Remarks'
+            ],
+            download: { href: 'templates/template-direct-sea.xlsx', label: 'прямого моря' }
+        },
+        direct_rail: {
+            title: 'Формат файла — Прямое ЖД',
+            required: ['станция отправления', 'станция прибытия'],
+            optional: [
+                'дата котировки', 'Agent', 'FOB', 'погран переход', 'город прибытия',
+                "FOB 40'HC", "EXW/FCA 40'HC", 'ETD', 'Конвертация', 'Remark'
+            ],
+            download: { href: 'templates/template-direct-rail.xlsx', label: 'прямого ЖД' }
+        },
+        rail: {
+            title: 'Формат файла — Железнодорожные перевозки',
+            required: ['City', 'Пункт назначения'],
+            optional: [
+                'Агент', 'Тыловой Терминал', 'Автовывоз', 'ПРР',
+                '20фут ктк ( до 24 тонн)', '20фут ктк (от 24 тонн до 28 тонн)',
+                '40фут ктк', 'НДС', 'ВОХР 20', 'ВОХР 40', 'Фитинг/ПВ',
+                'Условия', 'Валидность'
+            ],
+            download: { href: 'templates/template-rail.xlsx', label: 'железнодорожных перевозок' }
+        }
+    };
+
+    const info = config[dbType];
+    if (!info) {
+        if (titleEl) titleEl.textContent = 'Формат файла для загрузки';
+        if (descriptionEl) descriptionEl.textContent = 'Выберите тип перевозки слева, чтобы увидеть требования к файлу.';
+        if (columnsEl) columnsEl.textContent = '';
+        if (downloadEl) downloadEl.innerHTML = '';
+        return;
+    }
+
+    if (titleEl) titleEl.textContent = info.title;
+    if (descriptionEl) descriptionEl.textContent = 'Используйте следующий формат столбцов в Excel файле:';
+    if (columnsEl) {
+        const required = info.required.length
+            ? `<strong>Обязательные заголовки:</strong> ${info.required.join(', ')}`
+            : '';
+        const optional = info.optional.length
+            ? `<br><strong>Дополнительные заголовки:</strong> ${info.optional.join(', ')}`
+            : '';
+        const note = '<br><strong>Примечание:</strong> Заголовки обязательны, значения могут быть пустыми.';
+        columnsEl.innerHTML = `${required}${optional}${note}`;
+    }
+    if (downloadEl) {
+        downloadEl.innerHTML = `<a href="${info.download.href}" download class="download-link">📥 Скачать шаблон Excel файла для ${info.download.label}</a>`;
+    }
+}
+
+function updateMainHeaderFromState() {
+    const loginSection = document.getElementById('login-section');
+    if (loginSection && !loginSection.classList.contains('hidden')) {
+        setMainHeaderTitle('Вход в систему');
+        return;
+    }
+    const changePasswordSection = document.getElementById('change-password-section');
+    if (changePasswordSection && !changePasswordSection.classList.contains('hidden')) {
+        setMainHeaderTitle('Смена пароля');
+        return;
+    }
+    const emailConfig = document.getElementById('email-config-section');
+    if (emailConfig && !emailConfig.classList.contains('hidden')) {
+        setMainHeaderTitle('Настройка email');
+        return;
+    }
+    const uploadHistory = document.getElementById('upload-history-section');
+    if (uploadHistory && !uploadHistory.classList.contains('hidden')) {
+        setMainHeaderTitle('История загрузок');
+        return;
+    }
+    const adminPanel = document.getElementById('admin-panel');
+    if (adminPanel && !adminPanel.classList.contains('hidden')) {
+        setMainHeaderTitle('Управление пользователями');
+        return;
+    }
+    const salesInterface = document.getElementById('sales-interface');
+    if (salesInterface && !salesInterface.classList.contains('hidden')) {
+        setMainHeaderTitle(getSalesMainTitle());
+        return;
+    }
+    const purchaserInterface = document.getElementById('purchaser-interface');
+    const tariffInterface = document.getElementById('tariff-interface');
+    if ((purchaserInterface && !purchaserInterface.classList.contains('hidden')) ||
+        (tariffInterface && !tariffInterface.classList.contains('hidden'))) {
+        setMainHeaderTitle(getPurchaserMainTitle());
+        return;
+    }
+    const calculationSelection = document.getElementById('calculation-type-selection');
+    if (calculationSelection && !calculationSelection.classList.contains('hidden')) {
+        setMainHeaderTitle('Менеджер по продажам');
+        return;
+    }
+    const databaseSelection = document.getElementById('database-selection');
+    if (databaseSelection && !databaseSelection.classList.contains('hidden')) {
+        const role = window.currentRole || currentRole;
+        if (role === 'purchaser') {
+            setMainHeaderTitle('Закупщик');
+            return;
+        }
+        if (role === 'sales') {
+            setMainHeaderTitle('Менеджер по продажам');
+            return;
+        }
+    }
+    const roleSelection = document.getElementById('role-selection');
+    if (roleSelection && !roleSelection.classList.contains('hidden')) {
+        setMainHeaderTitle('Выбор роли');
+        return;
+    }
+    setMainHeaderTitle('Калькулятор ставок');
+}
+
+function ensureSidebarVisible() {
+    if (typeof setSidebarVisibility === 'function') {
+        setSidebarVisibility(true);
+        return;
+    }
+    const sidebar = document.getElementById('app-sidebar');
+    if (sidebar) {
+        sidebar.classList.remove('hidden');
+    }
+    document.body.classList.add('sidebar-visible');
+}
+
+function initUploadHistoryFrameAutoHeight() {
+    const frame = document.getElementById('upload-history-frame');
+    if (!frame) return;
+
+    window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin) return;
+        if (!frame.contentWindow || event.source !== frame.contentWindow) return;
+        const data = event.data;
+        if (!data || data.type !== 'upload-history-height') return;
+        const height = Number(data.height);
+        if (!Number.isFinite(height) || height <= 0) return;
+        frame.style.height = `${Math.max(400, Math.ceil(height))}px`;
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUploadHistoryFrameAutoHeight);
+} else {
+    initUploadHistoryFrameAutoHeight();
+}
+
+function hideMainSections() {
+    const sectionIds = [
+        'login-section',
+        'change-password-section',
+        'admin-panel',
+        'email-config-section',
+        'upload-history-section',
+        'role-selection',
+        'database-selection',
+        'purchaser-interface',
+        'tariff-interface',
+        'calculation-type-selection',
+        'sales-interface'
+    ];
+
+    sectionIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('hidden');
+        }
+    });
+}
+
+function adminShowAdminPanel() {
+    setCurrentRole('admin');
+    ensureSidebarVisible();
+    hideMainSections();
+    const adminPanel = document.getElementById('admin-panel');
+    if (adminPanel) {
+        adminPanel.classList.remove('hidden');
+    }
+    if (typeof loadUsersList === 'function') {
+        loadUsersList();
+    }
+    updateMainHeaderFromState();
+}
+
+function adminOpenPurchaser(dbType) {
+    setCurrentRole('purchaser');
+    setSalesMenuState('');
+    setPurchaserMenuState(dbType);
+    ensureSidebarVisible();
+    hideMainSections();
+    setMainHeaderTitle(`Закупщик — ${getDatabaseLabel(dbType)}`);
+    updatePurchaserTemplateInfo(dbType);
+    selectDatabase(dbType);
+}
+
+function adminShowEmailConfig() {
+    setCurrentRole('admin');
+    ensureSidebarVisible();
+    hideMainSections();
+    const section = document.getElementById('email-config-section');
+    if (section) {
+        section.classList.remove('hidden');
+    }
+    if (typeof loadEmailConfig === 'function') {
+        loadEmailConfig();
+    }
+    updateMainHeaderFromState();
+}
+
+function adminShowUploadHistory() {
+    setCurrentRole('admin');
+    ensureSidebarVisible();
+    hideMainSections();
+    const section = document.getElementById('upload-history-section');
+    if (section) {
+        section.classList.remove('hidden');
+    }
+    const frame = document.getElementById('upload-history-frame');
+    if (frame && !frame.src) {
+        const src = frame.getAttribute('data-src');
+        if (src) {
+            frame.src = src;
+        }
+    }
+    updateMainHeaderFromState();
+}
+
+function adminOpenSalesSeparate(dbType) {
+    setCurrentRole('sales');
+    currentCalculationType = 'separate';
+    setSalesMenuState('separate', dbType);
+    setPurchaserMenuState('');
+    updateSalesHeaderTitle();
+    ensureSidebarVisible();
+    hideMainSections();
+    setMainHeaderTitle(`Менеджер по продажам — раздельные: ${getDatabaseLabel(dbType)}`);
+    selectDatabase(dbType);
+}
+
+function adminOpenSalesComplex() {
+    setCurrentRole('sales');
+    setCurrentDatabase('');
+    currentCalculationType = 'complex';
+    setSalesMenuState('complex');
+    setPurchaserMenuState('');
+    updateSalesHeaderTitle();
+    ensureSidebarVisible();
+    hideMainSections();
+    setMainHeaderTitle('Менеджер по продажам — комплексные ставки');
+    selectCalculationType('complex');
+}
+
+async function selectSalesRole() {
+    const currentUser = await ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -89,7 +478,7 @@ function selectSalesRole() {
 }
 
 async function selectDatabase(dbType) {
-    const currentUser = ServerAuth.getCurrentUser();
+    const currentUser = await ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -98,14 +487,24 @@ async function selectDatabase(dbType) {
     
     // Используем глобальную переменную window.currentRole
     const role = window.currentRole || currentRole;
+    if (role === 'sales') {
+        currentCalculationType = 'separate';
+        setSalesMenuState('separate', dbType);
+        updateSalesHeaderTitle();
+        setMainHeaderTitle(`Менеджер по продажам — раздельные: ${getDatabaseLabel(dbType)}`);
+    } else if (role === 'purchaser') {
+        setPurchaserMenuState(dbType);
+        setMainHeaderTitle(`Закупщик — ${getDatabaseLabel(dbType)}`);
+        updatePurchaserTemplateInfo(dbType);
+    }
     
     // Проверяем права доступа для тарифов
-    if (dbType === 'tariff' && currentUser.role !== 'purchaser') {
+    if (dbType === 'tariff' && !['purchaser', 'admin'].includes(currentUser.role)) {
         Utils.showStatus('Доступ запрещен. Только менеджеры по закупу могут управлять тарифами.', 'error');
         return;
     }
     
-    currentDatabase = dbType;
+    setCurrentDatabase(dbType);
     console.log('🎯 Выбран тип базы данных:', dbType, 'для роли:', role);
     document.getElementById('database-selection').classList.add('hidden');
     
@@ -138,6 +537,8 @@ async function selectDatabase(dbType) {
         // Обновляем отображение кнопок в заголовке
         updateSalesHeaderButtons();
     }
+
+    updateMainHeaderFromState();
 }
 
 // Функция для обновления отображения кнопок в зависимости от роли
@@ -161,8 +562,8 @@ function updateDatabaseButtonsVisibility() {
         console.log(`🔧 Кнопка ${index}: "${button.textContent.trim()}" - тариф: ${isTariffButton}`);
         
         if (isTariffButton) {
-            // Показываем кнопку "Тариф" только для закупщика
-            if (role === 'purchaser') {
+            // Показываем кнопку "Тариф" только для закупщика и администратора
+            if (role === 'purchaser' || role === 'admin') {
                 button.style.display = 'block';
                 console.log('✅ Кнопка "Тариф" показана для закупщика');
             } else {
@@ -184,7 +585,7 @@ function goBack() {
         // Возврат из отдельных ставок к выбору типа базы данных
         console.log('🔙 Возврат из отдельных ставок к выбору типа базы данных');
         resetCalculatorForm();
-        currentDatabase = '';
+        setCurrentDatabase('');
         document.getElementById('sales-interface').classList.add('hidden');
         document.getElementById('database-selection').classList.remove('hidden');
         updateDatabaseButtonsVisibility();
@@ -213,21 +614,21 @@ function goBack() {
     } else if (role === 'purchaser' && currentDatabase === 'tariff') {
         // Возврат из интерфейса тарифов к выбору типа базы данных
         console.log('🔙 Возврат из интерфейса тарифов для закупщика');
-        currentDatabase = '';
+        setCurrentDatabase('');
         document.getElementById('tariff-interface').classList.add('hidden');
         document.getElementById('database-selection').classList.remove('hidden');
         updateDatabaseButtonsVisibility();
     } else if (role === 'purchaser' && currentDatabase) {
         // Возврат для закупщика из интерфейса загрузки файлов
         console.log('🔙 Возврат из интерфейса загрузки файлов для закупщика');
-        currentDatabase = '';
+        setCurrentDatabase('');
         document.getElementById('purchaser-interface').classList.add('hidden');
         document.getElementById('database-selection').classList.remove('hidden');
         updateDatabaseButtonsVisibility();
     } else if (role === 'purchaser') {
         // Возврат к выбору типа базы данных
         console.log('🔙 Возврат к выбору типа базы данных для закупщика');
-        currentDatabase = '';
+        setCurrentDatabase('');
         document.getElementById('purchaser-interface').classList.add('hidden');
         document.getElementById('tariff-interface').classList.add('hidden');
         document.getElementById('database-selection').classList.remove('hidden');
@@ -236,7 +637,7 @@ function goBack() {
         // Общий возврат к выбору роли
         console.log('🔙 Общий возврат к выбору роли');
         currentRole = '';
-        currentDatabase = '';
+        setCurrentDatabase('');
         currentCalculationType = '';
         document.getElementById('database-selection').classList.add('hidden');
         document.getElementById('calculation-type-selection').classList.add('hidden');
@@ -252,12 +653,21 @@ function goBack() {
     // Обновляем кнопки в заголовке после навигации
     if (role === 'sales') {
         updateSalesHeaderButtons();
+        setSalesMenuState(currentCalculationType, currentDatabase);
+        updateSalesHeaderTitle();
+    } else if (role === 'purchaser') {
+        setPurchaserMenuState(currentDatabase);
     }
+
+    updateMainHeaderFromState();
 }
 
+window.setMainHeaderTitle = setMainHeaderTitle;
+window.updateMainHeaderFromState = updateMainHeaderFromState;
+
 // Функция перенаправления менеджера по продажам на отдельный интерфейс
-function redirectToSalesInterface() {
-    const currentUser = ServerAuth.getCurrentUser();
+async function redirectToSalesInterface(options = null) {
+    const currentUser = await ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -269,13 +679,23 @@ function redirectToSalesInterface() {
         // Auth.updateUserRole(currentUser.id, 'sales'); // Функция не реализована
     }
     
+    const resolvedOptions = options && typeof options === 'object' ? options : {};
+    const params = new URLSearchParams();
+    if (resolvedOptions.calcType) {
+        params.set('calc', resolvedOptions.calcType);
+    }
+    if (resolvedOptions.dbType) {
+        params.set('db', resolvedOptions.dbType);
+    }
+    const query = params.toString();
+    
     // Для всех пользователей (включая администратора) перенаправляем на отдельный интерфейс
-    window.location.href = 'interfaces/sales-interface.html';
+    window.location.href = `interfaces/sales-interface.html${query ? `?${query}` : ''}`;
 }
 
 // Функция перенаправления менеджера по закупкам на отдельный интерфейс
-function redirectToPurchaserInterface() {
-    const currentUser = ServerAuth.getCurrentUser();
+async function redirectToPurchaserInterface(options = null) {
+    const currentUser = await ServerAuth.getCurrentUser();
     
     if (!currentUser) {
         Utils.showStatus('Ошибка: пользователь не авторизован', 'error');
@@ -287,8 +707,17 @@ function redirectToPurchaserInterface() {
         // Auth.updateUserRole(currentUser.id, 'purchaser'); // Функция не реализована
     }
     
+    const resolvedOptions = typeof options === 'string'
+        ? { dbType: options }
+        : (options && typeof options === 'object' ? options : {});
+    const params = new URLSearchParams();
+    if (resolvedOptions.dbType) {
+        params.set('db', resolvedOptions.dbType);
+    }
+    const query = params.toString();
+    
     // Для всех пользователей (включая администратора) перенаправляем на отдельный интерфейс
-    window.location.href = 'interfaces/purchaser-interface.html';
+    window.location.href = `interfaces/purchaser-interface.html${query ? `?${query}` : ''}`;
 }
 
 // Функция перенаправления на страницу истории загрузок
@@ -357,6 +786,7 @@ function updateSalesHeaderButtons() {
 
 function resetCalculatorForm() {
     document.getElementById('pol').value = '';
+    document.getElementById('city').value = '';
     document.getElementById('pod').value = '';
     document.getElementById('drop-off-area').value = '';
     document.getElementById('container-type').value = '';
@@ -378,583 +808,23 @@ function resetCalculatorForm() {
         dropdown.classList.remove('active');
         dropdown.innerHTML = '';
     });
-}
 
-// Функции для закупщика
-function setupFileUpload() {
-    const fileInput = document.getElementById('excel-file');
-    const processButton = document.getElementById('process-file');
-    
-    console.log('🔧 Настройка загрузки файлов для базы:', currentDatabase);
-    
-    if (!fileInput || !processButton) {
-        console.error('❌ Не найдены элементы для загрузки файлов');
-        return;
-    }
-    
-    // Сбрасываем состояние
-    fileInput.value = '';
-    processButton.disabled = true;
-    
-    fileInput.addEventListener('change', function(e) {
-        if (e.target.files.length > 0) {
-            processButton.disabled = false;
-            Utils.showStatus('Файл выбран. Нажмите "Обработать файл"', 'success');
-        }
+    const multiselects = document.querySelectorAll('.trd-multiselect');
+    multiselects.forEach(select => {
+        select.dataset.selected = '[]';
+        select.classList.remove('is-open');
+        const trigger = select.querySelector('.trd-ms-trigger');
+        if (trigger) trigger.textContent = 'Все';
+        select.querySelectorAll('input[type="checkbox"]').forEach(input => {
+            input.checked = false;
+        });
+        const search = select.querySelector('.trd-ms-search');
+        if (search) search.value = '';
     });
-    
-    console.log('✅ Настройка загрузки файлов завершена');
-}
-
-function processExcelFile() {
-    const fileInput = document.getElementById('excel-file');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        Utils.showStatus('Пожалуйста, выберите файл', 'error');
-        return;
-    }
-    
-    Utils.showStatus('Обработка файла...', '');
-    
-    const reader = new FileReader();
-    
-    reader.onload = function(e) {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            
-            if (jsonData.length < 2) {
-                throw new Error('Файл не содержит данных или имеет неправильную структуру');
-            }
-            
-            console.log('🔍 Парсинг файла для типа базы:', currentDatabase);
-            
-            if (currentDatabase === 'direct_rail') {
-                uploadedData = Utils.parseDirectRailData(jsonData);
-            } else if (currentDatabase === 'direct_sea') {
-                uploadedData = Utils.parseDirectSeaData(jsonData);
-            } else if (currentDatabase === 'sea') {
-                uploadedData = Utils.parseSeaData(jsonData);
-            } else if (currentDatabase === 'rail') {
-                uploadedData = Utils.parseRailData(jsonData);
-            } else {
-                console.warn('⚠️ Неизвестный тип базы, используем морской парсинг:', currentDatabase);
-                uploadedData = Utils.parseSeaData(jsonData);
-            }
-            showDataPreview(uploadedData);
-            
-        } catch (error) {
-            console.error('Ошибка обработки файла:', error);
-            Utils.showStatus(`Ошибка обработки файла: ${error.message}`, 'error');
-        }
-    };
-    
-    reader.onerror = function() {
-        Utils.showStatus('Ошибка чтения файла', 'error');
-    };
-    
-    reader.readAsArrayBuffer(file);
-}
-
-function showDataPreview(data) {
-    const previewSection = document.getElementById('data-preview');
-    const previewTable = document.getElementById('preview-table');
-    
-    let tableHTML = '';
-    
-    if (currentDatabase === 'direct_rail') {
-        tableHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Станция отправления</th>
-                        <th>Станция прибытия</th>
-                        <th>Город прибытия</th>
-                        <th>FOB 40'HC</th>
-                        <th>EXW/FCA 40'HC</th>
-                        <th>Погран переход</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        data.slice(0, 5).forEach(item => {
-            tableHTML += `
-                <tr>
-                    <td>${item.departureStation}</td>
-                    <td>${item.arrivalStation}</td>
-                    <td>${item.arrivalCity}</td>
-                    <td>$${item.fob40hc}</td>
-                    <td>$${item.exwFca40hc}</td>
-                    <td>${item.borderCrossing}</td>
-                </tr>
-            `;
-        });
-    } else if (currentDatabase === 'direct_sea') {
-        tableHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>POL</th>
-                        <th>POD</th>
-                        <th>20'DC</th>
-                        <th>40'HC</th>
-                        <th>Конвертация</th>
-                        <th>ETD</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        data.slice(0, 5).forEach(item => {
-            tableHTML += `
-                <tr>
-                    <td>${item.pol}</td>
-                    <td>${item.pod}</td>
-                    <td>$${item.dc20}</td>
-                    <td>$${item.hc40}</td>
-                    <td>${item.conversion}</td>
-                    <td>${item.etd}</td>
-                </tr>
-            `;
-        });
-    } else if (currentDatabase === 'rail') {
-        tableHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Город</th>
-                        <th>Агент</th>
-                        <th>Тыловой Терминал</th>
-                        <th>Пункт назначения</th>
-                        <th>Автовывоз</th>
-                        <th>ПРР</th>
-                        <th>20фут ктк (до 24т)</th>
-                        <th>20фут ктк (24-28т)</th>
-                        <th>40фут ктк</th>
-                        <th>НДС</th>
-                        <th>ВОХР 20</th>
-                        <th>ВОХР 40</th>
-                        <th>Фитинг/ПВ</th>
-                        <th>Условия</th>
-                        <th>Валидность</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        data.slice(0, 5).forEach(item => {
-            const тыловойТерминал = (item.тыловойТерминал !== undefined && item.тыловойТерминал !== null && item.тыловойТерминал !== '') ? item.тыловойТерминал : '-';
-            const autovivoz = (item.autovivoz !== undefined && item.autovivoz !== null && item.autovivoz !== '') ? item.autovivoz : '-';
-            const prr = (item.prr !== undefined && item.prr !== null && item.prr !== '') ? item.prr : '-';
-            const nds = (item.nds !== undefined && item.nds !== null && item.nds !== '') ? item.nds : '-';
-            const vochr20 = (item.vochr20 !== undefined && item.vochr20 !== null && item.vochr20 !== '') ? item.vochr20 : '-';
-            const vochr40 = (item.vochr40 !== undefined && item.vochr40 !== null && item.vochr40 !== '') ? item.vochr40 : '-';
-            const fitting = (item.fitting !== undefined && item.fitting !== null && item.fitting !== '') ? item.fitting : '-';
-            const conditions = (item.conditions !== undefined && item.conditions !== null && item.conditions !== '') ? item.conditions : '-';
-            
-            tableHTML += `
-                <tr>
-                    <td>${item.city}</td>
-                    <td>${item.agent}</td>
-                    <td>${тыловойТерминал}</td>
-                    <td>${item.destination}</td>
-                    <td>${autovivoz}</td>
-                    <td>${prr}</td>
-                    <td>$${item.container20Under24}</td>
-                    <td>$${item.container20Over24}</td>
-                    <td>$${item.container40}</td>
-                    <td>${nds}</td>
-                    <td>${vochr20}</td>
-                    <td>${vochr40}</td>
-                    <td>${fitting}</td>
-                    <td>${conditions}</td>
-                    <td>${item.validity}</td>
-                </tr>
-            `;
-        });
-    } else {
-        tableHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>POL</th>
-                        <th>POD</th>
-                        <th>DROP OFF AREA VIA VVO</th>
-                        <th>SOC 20'</th>
-                        <th>SOC 40'</th>
-                        <th>20'DC</th>
-                        <th>40'HC</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        data.slice(0, 5).forEach(item => {
-            tableHTML += `
-                <tr>
-                    <td>${item.pol}</td>
-                    <td>${item.pod}</td>
-                    <td>${item.dropOffArea}</td>
-                    <td>$${item.soc20}</td>
-                    <td>$${item.soc40}</td>
-                    <td>$${item.dc20}</td>
-                    <td>$${item.hc40}</td>
-                </tr>
-            `;
-        });
-    }
-    
-    tableHTML += `
-            </tbody>
-        </table>
-        <p>Показано ${Math.min(5, data.length)} из ${data.length} записей</p>
-    `;
-    
-    previewTable.innerHTML = tableHTML;
-    previewSection.classList.remove('hidden');
-}
-
-async function saveData() {
-    if (!uploadedData) {
-        Utils.showStatus('Нет данных для сохранения', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/data/${currentDatabase}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ data: uploadedData })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            database[currentDatabase] = uploadedData;
-            
-            const currentDate = new Date();
-            const updateDate = {
-                date: currentDate.toISOString(),
-                formatted: currentDate.toLocaleDateString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
-            };
-            localStorage.setItem(`last_update_${currentDatabase}`, JSON.stringify(updateDate));
-            
-            Utils.showStatus(`Данные успешно сохранены в базу "${Utils.getDatabaseName(currentDatabase)}"`, 'success');
-            
-            setTimeout(() => {
-                document.getElementById('excel-file').value = '';
-                document.getElementById('process-file').disabled = true;
-                document.getElementById('data-preview').classList.add('hidden');
-                uploadedData = null;
-            }, 2000);
-        } else {
-            throw new Error(result.error || 'Ошибка сохранения данных');
-        }
-    } catch (error) {
-        console.error('❌ Ошибка сохранения данных на сервере:', error);
-        Utils.showStatus(`Ошибка сохранения данных: ${error.message}`, 'error');
-    }
-}
-
-// Функции для работы с тарифами (расширенные для терминалов)
-function loadTariffData() {
-    const tbody = document.getElementById('tariff-table-body');
-    if (!tbody) return;
-    
-    // Очищаем таблицу
-    tbody.innerHTML = '';
-    
-    // Загружаем сохраненные тарифы из базы данных
-    if (database.tariff && database.tariff.length > 0) {
-        // Теперь database.tariff - это массив объектов
-        database.tariff.forEach((tariff, index) => {
-            addTariffRowToTable(tariff, index);
-        });
-        
-        // Показываем предпросмотр всех тарифов
-        showTariffPreview(database.tariff);
-    } else {
-        // Если нет тарифов, добавляем одну пустую строку
-        addTariffRow();
-    }
-}
-
-// Функция для получения ставки ВТТ по терминалу
-function getVttRateForTerminal(terminalName) {
-    if (!database.tariff || database.tariff.length === 0) {
-        return 0;
-    }
-    
-    // Ищем тариф с указанным терминалом (регистронезависимо)
-    const normalizedTerminal = terminalName ? terminalName.trim().toLowerCase() : '';
-    const tariff = database.tariff.find(t =>
-        t.terminal && t.terminal.trim().toLowerCase() === normalizedTerminal
-    );
-    
-    if (tariff && tariff.vtt !== undefined && tariff.vtt !== null) {
-        return tariff.vtt;
-    }
-    
-    // Если не нашли, ищем тариф с терминалом "Общий"
-    const generalTariff = database.tariff.find(t =>
-        t.terminal && t.terminal.trim().toLowerCase() === 'общий'
-    );
-    
-    if (generalTariff && generalTariff.vtt !== undefined && generalTariff.vtt !== null) {
-        return generalTariff.vtt;
-    }
-    
-    // Если нет общего, берем первый тариф
-    if (database.tariff[0] && database.tariff[0].vtt !== undefined && database.tariff[0].vtt !== null) {
-        return database.tariff[0].vtt;
-    }
-    
-    return 0;
-}
-
-function addTariffRow(tariff = null) {
-    const tbody = document.getElementById('tariff-table-body');
-    if (!tbody) return;
-    
-    const rowIndex = tbody.children.length;
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>
-            <input type="text" class="tariff-terminal" placeholder="Название терминала" value="${tariff?.terminal || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-vtt" placeholder="0" min="0" step="1" value="${tariff?.vtt || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-prr20" placeholder="0" min="0" step="1" value="${tariff?.prr20 || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-prr40" placeholder="0" min="0" step="1" value="${tariff?.prr40 || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-auto20" placeholder="0" min="0" step="1" value="${tariff?.auto20 || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${tariff?.auto40 || ''}">
-        </td>
-        <td class="actions-cell">
-            <button class="btn-small btn-danger" onclick="removeTariffRow(this)">Удалить</button>
-        </td>
-    `;
-    tbody.appendChild(row);
-}
-
-function addTariffRowToTable(tariff, index) {
-    const tbody = document.getElementById('tariff-table-body');
-    if (!tbody) return;
-    
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>
-            <input type="text" class="tariff-terminal" placeholder="Название терминала" value="${tariff.terminal || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-vtt" placeholder="0" min="0" step="1" value="${tariff.vtt || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-prr20" placeholder="0" min="0" step="1" value="${tariff.prr20 || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-prr40" placeholder="0" min="0" step="1" value="${tariff.prr40 || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-auto20" placeholder="0" min="0" step="1" value="${tariff.auto20 || ''}">
-        </td>
-        <td>
-            <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${tariff.auto40 || ''}">
-        </td>
-        <td class="actions-cell">
-            <button class="btn-small btn-danger" onclick="removeTariffRow(this)">Удалить</button>
-        </td>
-    `;
-    tbody.appendChild(row);
-}
-
-function removeTariffRow(button) {
-    const row = button.closest('tr');
-    if (row) {
-        row.remove();
-    }
-}
-
-function saveTariffData() {
-    const rows = document.querySelectorAll('#tariff-table-body tr');
-    const tariffs = [];
-    
-    rows.forEach(row => {
-        const terminal = row.querySelector('.tariff-terminal').value.trim();
-        const vtt = parseFloat(row.querySelector('.tariff-vtt').value) || 0;
-        const prr20 = parseFloat(row.querySelector('.tariff-prr20').value) || 0;
-        const prr40 = parseFloat(row.querySelector('.tariff-prr40').value) || 0;
-        const auto20 = parseFloat(row.querySelector('.tariff-auto20').value) || 0;
-        const auto40 = parseFloat(row.querySelector('.tariff-auto40').value) || 0;
-        
-        // Если все поля пустые, пропускаем строку
-        if (!terminal && vtt === 0 && prr20 === 0 && prr40 === 0 && auto20 === 0 && auto40 === 0) {
-            return;
-        }
-        
-        tariffs.push({
-            terminal: terminal || 'Общий',
-            vtt,
-            prr20,
-            prr40,
-            auto20,
-            auto40,
-            timestamp: new Date().toISOString()
-        });
-    });
-    
-    if (tariffs.length === 0) {
-        Utils.showStatus('Добавьте хотя бы один тариф', 'error', 'tariff-status');
-        return;
-    }
-    
-    // Сохраняем в базу данных
-    database.tariff = tariffs;
-    
-    // Сохраняем на сервер
-    saveTariffToServer(tariffs);
-    
-    // Показываем предпросмотр
-    showTariffPreview(tariffs);
-    
-    Utils.showStatus(`Тарифы успешно сохранены (${tariffs.length} записей)`, 'success', 'tariff-status');
-}
-
-async function saveTariffToServer(tariffs) {
-    try {
-        const response = await fetch('/api/data/tariff', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ data: tariffs })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            console.log('✅ Тарифы сохранены на сервере');
-            
-            // Сохраняем в localStorage как резервную копию
-            localStorage.setItem('logistics_db_tariff', JSON.stringify(tariffs));
-            
-            // Сохраняем дату обновления
-            const currentDate = new Date();
-            const updateDate = {
-                date: currentDate.toISOString(),
-                formatted: currentDate.toLocaleDateString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
-            };
-            localStorage.setItem('last_update_tariff', JSON.stringify(updateDate));
-            
-        } else {
-            throw new Error(result.error || 'Ошибка сохранения тарифов');
-        }
-    } catch (error) {
-        console.error('❌ Ошибка сохранения тарифов на сервере:', error);
-        // Сохраняем в localStorage как резервную копию
-        localStorage.setItem('logistics_db_tariff', JSON.stringify(tariffs));
-        Utils.showStatus('Тарифы сохранены локально (ошибка связи с сервером)', 'warning', 'tariff-status');
-    }
-}
-
-function showTariffPreview(tariffs) {
-    const previewSection = document.getElementById('tariff-preview');
-    const previewTable = document.getElementById('tariff-preview-table');
-    
-    if (!previewSection || !previewTable) return;
-    
-    if (!tariffs || tariffs.length === 0) {
-        previewTable.innerHTML = '<p>Нет данных для отображения</p>';
-        previewSection.classList.remove('hidden');
-        return;
-    }
-    
-    let tableHTML = `
-        <table>
-            <thead>
-                <tr>
-                    <th>Терминал</th>
-                    <th>ВТТ</th>
-                    <th>ПРР 20</th>
-                    <th>ПРР 40</th>
-                    <th>Автовывоз 20</th>
-                    <th>Автовывоз 40</th>
-                    <th>Обновлено</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    
-    tariffs.forEach(tariff => {
-        tableHTML += `
-            <tr>
-                <td>${tariff.terminal}</td>
-                <td>${tariff.vtt || '-'}</td>
-                <td>${tariff.prr20 || '-'}</td>
-                <td>${tariff.prr40 || '-'}</td>
-                <td>${tariff.auto20 || '-'}</td>
-                <td>${tariff.auto40 || '-'}</td>
-                <td>${new Date(tariff.timestamp).toLocaleDateString('ru-RU')}</td>
-            </tr>
-        `;
-    });
-    
-    tableHTML += `
-            </tbody>
-        </table>
-        <p>Всего тарифов: ${tariffs.length}</p>
-    `;
-    
-    previewTable.innerHTML = tableHTML;
-    previewSection.classList.remove('hidden');
 }
 
 // Функции для менеджера по продажам
 function setupCalculator() {
-    // Загружаем данные только если пользователь авторизован
-    const currentUser = ServerAuth.getCurrentUser();
-    if (currentUser) {
-        loadDatabaseData();
-    } else {
-        // Загружаем только локальные данные
-        loadLocalDataOnly();
-    }
-    
     console.log('🔧 Настройка калькулятора:', {
         calculationType: currentCalculationType,
         database: currentDatabase
@@ -987,17 +857,26 @@ function selectCalculationType(type) {
         // Показываем выбор типа базы данных для отдельных ставок
         document.getElementById('calculation-type-selection').classList.add('hidden');
         document.getElementById('database-selection').classList.remove('hidden');
+        setSalesMenuState('separate', currentDatabase);
+        updateSalesHeaderTitle();
+        setMainHeaderTitle('Менеджер по продажам — раздельные ставки');
     } else {
+        setCurrentDatabase('');
+        setSalesMenuState('complex');
+        updateSalesHeaderTitle();
+        setMainHeaderTitle('Менеджер по продажам — комплексные ставки');
         // Показываем интерфейс комплексного расчета
         document.getElementById('calculation-type-selection').classList.add('hidden');
         document.getElementById('sales-interface').classList.remove('hidden');
         resetCalculatorForm();
-        setupCalculator();
+        loadDatabaseData().then(() => setupCalculator());
         Utils.showLastUpdate();
         
         // Обновляем кнопки в заголовке для комплексных ставок
         updateSalesHeaderButtons();
     }
+
+    updateMainHeaderFromState();
 }
 
 function setupCalculationType() {
@@ -1083,8 +962,31 @@ function setupComplexAutocomplete() {
     console.log('🔧 Комплексные ставки - пункты отправления:', departureValues);
     console.log('🔧 Комплексные ставки - пункты назначения:', destinationValues);
     
-    Utils.setupCustomDropdown('complex-departure', departureValues);
-    Utils.setupCustomDropdown('complex-destination', destinationValues);
+    const departureList = document.getElementById('complex-departure-list');
+    const destinationList = document.getElementById('complex-destination-list');
+
+    const populateDatalist = (listEl, values) => {
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        values.slice(0, 200).forEach(value => {
+            const option = document.createElement('option');
+            option.value = value;
+            listEl.appendChild(option);
+        });
+    };
+
+    const updateSuggestions = (inputValue, values, listEl) => {
+        const query = normalizeCityName(inputValue || '');
+        if (!query) {
+            populateDatalist(listEl, values.slice(0, 80));
+            return;
+        }
+        const filtered = values.filter(value => normalizeCityName(value).includes(query)).slice(0, 80);
+        populateDatalist(listEl, filtered);
+    };
+
+    populateDatalist(departureList, departureValues);
+    populateDatalist(destinationList, destinationValues);
     
     // Добавляем обработчики для автоматического расчета
     const departureInput = document.getElementById('complex-departure');
@@ -1100,6 +1002,178 @@ function setupComplexAutocomplete() {
             calculateAllRates(departure, destination, containerType);
         }
     };
+
+    if (departureInput) {
+        departureInput.addEventListener('input', () => updateSuggestions(departureInput.value, departureValues, departureList));
+        departureInput.addEventListener('focus', () => updateSuggestions(departureInput.value, departureValues, departureList));
+    }
+    if (destinationInput) {
+        destinationInput.addEventListener('input', () => updateSuggestions(destinationInput.value, destinationValues, destinationList));
+        destinationInput.addEventListener('focus', () => updateSuggestions(destinationInput.value, destinationValues, destinationList));
+    }
+
+    // Line / Agent / Terminal selects (same idea as test-real-data-check)
+    const lineSelect = document.getElementById('complex-line');
+    const agentSelect = document.getElementById('complex-agent');
+    const terminalSelect = document.getElementById('complex-terminal');
+
+    const isMeaningfulTerminal = value => {
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'boolean') return false;
+        if (value === 0 || value === 1) return false;
+        const normalized = String(value).trim().toLowerCase();
+        if (!normalized) return false;
+        if (/^(да|нет|true|false|yes|no|0|1)$/i.test(normalized)) return false;
+        return true;
+    };
+    const uniqueSorted = values => [...new Set(values.filter(isMeaningfulTerminal))].sort((a, b) => a.localeCompare(b));
+    const lineValues = uniqueSorted([
+        ...database.sea.map(item => item.carrier),
+        ...database.direct_sea.map(item => item.carrier)
+    ]);
+    const agentValues = uniqueSorted([
+        ...database.sea.map(item => item.agent),
+        ...database.direct_sea.map(item => item.agent),
+        ...database.direct_rail.map(item => item.agent)
+    ]);
+    const terminalValues = uniqueSorted([
+        ...database.rail.map(item => item.agent || item.city || item.destination),
+        ...database.direct_rail.map(item => item.departureStation || item.city || item.destination)
+    ]);
+
+    const updateTriggerLabel = (container) => {
+        const trigger = container.querySelector('.trd-ms-trigger');
+        const selected = container.dataset.selected ? JSON.parse(container.dataset.selected) : [];
+        if (!trigger) return;
+        if (selected.length === 0) {
+            trigger.textContent = 'Все';
+        } else if (selected.length === 1) {
+            trigger.textContent = selected[0];
+        } else {
+            trigger.textContent = `Выбрано: ${selected.length}`;
+        }
+    };
+
+    const fillSelect = (container, values) => {
+        if (!container) return;
+        const filtered = container.id === 'complex-terminal'
+            ? values.filter(isMeaningfulTerminal)
+            : values;
+        const optionsContainer = container.querySelector('.trd-ms-options');
+        if (!optionsContainer) return;
+        if (!container.dataset.selected) container.dataset.selected = '[]';
+        const selected = JSON.parse(container.dataset.selected || '[]');
+        optionsContainer.innerHTML = '';
+        filtered.forEach(value => {
+            const option = document.createElement('label');
+            option.className = 'trd-ms-option';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = value;
+            if (selected.includes(value)) checkbox.checked = true;
+            const span = document.createElement('span');
+            span.textContent = value;
+            option.appendChild(checkbox);
+            option.appendChild(span);
+            optionsContainer.appendChild(option);
+        });
+        updateTriggerLabel(container);
+    };
+
+    fillSelect(lineSelect, lineValues);
+    fillSelect(agentSelect, agentValues);
+    fillSelect(terminalSelect, terminalValues);
+
+    // мульти-чипы отключены
+
+    const rateTypeSelect = document.getElementById('complex-rate-type');
+    const refreshComplexView = () => {
+        if (!window.allResults) return;
+        const departure = departureInput?.value;
+        const destination = destinationInput?.value;
+        const containerType = containerTypeSelect?.value;
+        if (departure && destination && containerType) {
+            displayComplexResults(window.allResults, departure, destination, containerType);
+        }
+    };
+
+    const setupMultiSelect = (container) => {
+        if (!container) return;
+        const trigger = container.querySelector('.trd-ms-trigger');
+        const panel = container.querySelector('.trd-ms-panel');
+        const optionsContainer = container.querySelector('.trd-ms-options');
+        const searchInput = container.querySelector('.trd-ms-search');
+        const actions = container.querySelector('.trd-ms-actions');
+        if (!trigger || !panel || !optionsContainer) return;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            container.classList.toggle('is-open');
+        });
+
+        optionsContainer.addEventListener('change', (e) => {
+            const checkbox = e.target.closest('input[type=\"checkbox\"]');
+            if (!checkbox) return;
+            const selected = container.dataset.selected ? JSON.parse(container.dataset.selected) : [];
+            if (checkbox.checked) {
+                if (!selected.includes(checkbox.value)) selected.push(checkbox.value);
+            } else {
+                const idx = selected.indexOf(checkbox.value);
+                if (idx !== -1) selected.splice(idx, 1);
+            }
+            container.dataset.selected = JSON.stringify(selected);
+            updateTriggerLabel(container);
+            refreshComplexView();
+        });
+
+        if (actions) {
+            actions.addEventListener('click', (e) => {
+                const actionBtn = e.target.closest('.trd-ms-action');
+                if (!actionBtn) return;
+                const action = actionBtn.dataset.action;
+                let selected = container.dataset.selected ? JSON.parse(container.dataset.selected) : [];
+                const allValues = Array.from(optionsContainer.querySelectorAll('input[type=\"checkbox\"]')).map(input => input.value);
+                if (action === 'all') {
+                    selected = [...new Set(allValues)];
+                    optionsContainer.querySelectorAll('input[type=\"checkbox\"]').forEach(input => {
+                        input.checked = true;
+                    });
+                }
+                if (action === 'clear') {
+                    selected = [];
+                    optionsContainer.querySelectorAll('input[type=\"checkbox\"]').forEach(input => {
+                        input.checked = false;
+                    });
+                }
+                container.dataset.selected = JSON.stringify(selected);
+                updateTriggerLabel(container);
+                refreshComplexView();
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.trim().toLowerCase();
+                optionsContainer.querySelectorAll('.trd-ms-option').forEach(option => {
+                    const text = option.textContent.toLowerCase();
+                    option.style.display = text.includes(query) ? 'flex' : 'none';
+                });
+            });
+        }
+    };
+
+    [lineSelect, agentSelect, terminalSelect].forEach(setupMultiSelect);
+
+    document.addEventListener('click', (e) => {
+        [lineSelect, agentSelect, terminalSelect].forEach(container => {
+            if (!container) return;
+            if (!container.contains(e.target)) container.classList.remove('is-open');
+        });
+    });
+
+    if (rateTypeSelect) {
+        rateTypeSelect.addEventListener('change', refreshComplexView);
+    }
     
     // Обновляем типы контейнеров для комплексных ставок
     updateContainerTypesForComplex(containerTypeSelect);
@@ -1129,7 +1203,7 @@ function setupComplexAutocomplete() {
 
 async function loadDatabaseData() {
     // 🔧 ПРОВЕРЯЕМ АВТОРИЗАЦИЮ ПЕРЕД ЗАГРУЗКОЙ ДАННЫХ
-    const currentUser = ServerAuth.getCurrentUser();
+    const currentUser = await ServerAuth.getCurrentUser();
     if (!currentUser) {
         console.warn('⚠️ Пользователь не авторизован, загружаем только локальные данные');
         // Загружаем только локальные данные без обращения к серверу
@@ -1142,7 +1216,7 @@ async function loadDatabaseData() {
     
     for (const dbType of dbTypes) {
         try {
-            const response = await fetch(`/api/data/${dbType}`);
+            const response = await ServerAuth.makeAuthRequest(`/api/data/${dbType}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -1436,126 +1510,186 @@ function calculateAllRates(departure, destination, containerType) {
 
     // Сохраняем результаты в глобальную переменную для доступа из модального окна
     window.allResults = allResults;
+    window.displayedResults = allResults;
     
     // Отображаем результаты
     displayComplexResults(allResults, departure, destination, containerType);
 }
 
-function displayComplexResults(results, departure, destination, containerType) {
-    const resultsSection = document.getElementById('results');
-    const ratesTable = document.getElementById('rates-table');
-    
-    if (results.length === 0) {
-        ratesTable.innerHTML = `
-            <div class="status-message error">
-                Нет данных для выбранных параметров: ${departure} → ${destination}
-            </div>
-        `;
-        resultsSection.classList.remove('hidden');
+function formatSummaryRate(rate, currency) {
+    if (!rate || Number.isNaN(rate)) return '—';
+    const rounded = Math.round(Number(rate));
+    if (currency === 'RUB') return `${rounded.toLocaleString('ru-RU')} ₽`;
+    return `$${rounded.toLocaleString('ru-RU')}`;
+}
+
+function updateComplexSummary(results) {
+    const totalEl = document.getElementById('rb-summary-total');
+    const splitEl = document.getElementById('rb-summary-split');
+    const bestEl = document.getElementById('rb-summary-best');
+    const avgEl = document.getElementById('rb-summary-avg');
+    const noteEl = document.getElementById('rb-summary-note');
+
+    if (!totalEl || !splitEl || !bestEl || !avgEl || !noteEl) return;
+
+    const safeResults = Array.isArray(results) ? results : [];
+    totalEl.textContent = `${safeResults.length} ставок`;
+
+    if (!safeResults.length) {
+        splitEl.textContent = '—';
+        bestEl.textContent = '—';
+        avgEl.textContent = '—';
+        noteEl.textContent = 'Нет ставок по выбранным фильтрам.';
         return;
     }
-    
-    let tableHTML = `
-        <div class="complex-results-section">
-            <h4>Результаты для: ${normalizeCityName(departure)} → ${normalizeCityName(destination)}</h4>
-            <div class="sorting-info" style="margin-bottom: 10px; font-style: italic; color: #666;">
-                📊 Результаты отсортированы по возрастанию общей ставки
-            </div>
-            ${usdToRubRate ? `<div class="exchange-rate-info"><small>Курс ЦБ РФ: 1 USD = ${usdToRubRate} RUB</small></div>` : ''}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Тип перевозки</th>
-                        <th>Ставка море</th>
-                        <th>Ставка ЖД</th>
-                        <th>Общая ставка</th>
-                        <th>Дополнительная информация</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
-    results.forEach((result, index) => {
-        const transportTypeClass = `transport-type-${result.transportType}`;
-        
-        // Определяем, является ли это самой выгодной ставкой (первая в отсортированном списке)
-        const isBestRate = index === 0;
-        const bestRateClass = isBestRate ? 'best-rate-row' : '';
-        
-        let seaRate = '';
-        let railRate = '';
-        let totalRate = '';
-        let additionalInfo = '';
-        
-        if (result.transportType === 'direct_rail') {
-            seaRate = '-';
-            railRate = `$${result.rate}`;
-            totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
-            additionalInfo = `Станция прибытия: ${result.data.arrivalStation || 'Не указана'}`;
-        } else if (result.transportType === 'direct_sea') {
-            seaRate = `$${result.rate}`;
-            railRate = '-';
-            totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
-            additionalInfo = `ETD: ${result.data.etd || 'Не указан'}`;
-        } else if (result.transportType === 'sea') {
-            seaRate = `$${result.rate}`;
-            railRate = '-';
-            totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
-            additionalInfo = `DROP OFF AREA: ${result.data.dropOffArea || 'Не указан'}`;
-        } else if (result.transportType === 'rail') {
-            seaRate = '-';
-            railRate = `${result.rate} RUB`;
-            totalRate = `${result.rate} RUB`;
-            additionalInfo = `Агент: ${result.data.agent || 'Не указан'}`;
-        } else if (result.transportType === 'sea_rail') {
-            // Комплексная ставка: море в USD, ЖД в RUB
-            const seaRateUSD = result.data.seaRate || 0;
-            const railRateRUB = result.data.railRate || 0;
-            
-            seaRate = `$${seaRateUSD}`;
-            railRate = `${railRateRUB} RUB`;
-            
-            // Отображаем общую ставку в зависимости от валюты сортировки
-            if (result.currency === 'RUB') {
-                // Уже конвертировано в RUB
-                totalRate = `${result.rate} RUB`;
-            } else {
-                // Используем USD для сортировки (только морская часть)
-                totalRate = `$${result.rate}`;
-            }
-            
-            additionalInfo = result.data.connection || 'Комплексная перевозка Море+ЖД';
-            // Добавляем информацию о ВТТ, если он включен
-            if (result.data.vttIncluded) {
-                additionalInfo += ` + ВТТ: ${result.data.vttRate} RUB`;
-            }
-        }
-        
-        tableHTML += `
-            <tr class="${bestRateClass}" ondblclick="openMarginModal(${index})" style="cursor: pointer;">
-                <td>
-                    <span class="transport-type-badge ${transportTypeClass}">
-                        ${result.transportName}
-                        ${isBestRate ? ' 🏆' : ''}
-                    </span>
-                </td>
-                <td>${seaRate}</td>
-                <td>${railRate}</td>
-                <td><strong>${totalRate}</strong></td>
-                <td>${additionalInfo}</td>
-            </tr>
-        `;
+
+    const split = safeResults.reduce((acc, item) => {
+        const key = item.transportName || item.transportType || 'Другое';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
+
+    splitEl.textContent = Object.entries(split)
+        .map(([label, count]) => `${count} ${label.toLowerCase()}`)
+        .join(' · ');
+
+    const sorted = [...safeResults].sort((a, b) => {
+        let rateA = a.rate || 0;
+        let rateB = b.rate || 0;
+        if (a.currency === '$' && usdToRubRate) rateA = rateA * usdToRubRate;
+        if (b.currency === '$' && usdToRubRate) rateB = rateB * usdToRubRate;
+        return rateA - rateB;
     });
-    
-    tableHTML += `
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    ratesTable.innerHTML = tableHTML;
-    resultsSection.classList.remove('hidden');
+
+    bestEl.textContent = formatSummaryRate(sorted[0].rate, sorted[0].currency);
+    avgEl.textContent = '—';
+    noteEl.textContent = 'Выберите строку, чтобы увидеть детали выбранной ставки.';
 }
+
+
+function applyComplexCalculation() {
+    const departure = document.getElementById('complex-departure')?.value?.trim();
+    const destination = document.getElementById('complex-destination')?.value?.trim();
+    const containerType = document.getElementById('complex-container-type')?.value;
+
+    if (!departure || !destination || !containerType) {
+        if (window.Utils && typeof window.Utils.showStatus === 'function') {
+            window.Utils.showStatus('Заполните маршрут и тип контейнера', 'warning');
+        } else {
+            alert('Заполните маршрут и тип контейнера');
+        }
+        updateComplexSummary([]);
+        return;
+    }
+
+    calculateAllRates(departure, destination, containerType);
+}
+
+function saveAuthTokenSimple() {
+    const input = document.getElementById('complex-auth');
+    if (!input) return;
+    const value = input.value.trim();
+    if (value) {
+        localStorage.setItem('auth_token', value);
+        if (window.Utils && typeof window.Utils.showStatus === 'function') {
+            window.Utils.showStatus('Токен сохранен', 'success');
+        }
+    } else {
+        localStorage.removeItem('auth_token');
+        if (window.Utils && typeof window.Utils.showStatus === 'function') {
+            window.Utils.showStatus('Токен очищен', 'warning');
+        }
+    }
+}
+
+async function loadApiData() {
+    try {
+        await loadDatabaseData();
+    } catch (error) {
+        console.warn('❌ Ошибка загрузки данных из API:', error);
+    }
+    const apiStatus = document.getElementById('rb-summary-api');
+    if (apiStatus) {
+        const now = new Date();
+        apiStatus.textContent = `Обновлено: ${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+}
+
+async function refreshComplexData() {
+    try {
+        await loadExchangeRate();
+        await loadDatabaseData();
+    } catch (error) {
+        console.warn('❌ Ошибка обновления данных для комплексных ставок:', error);
+    }
+
+    const apiStatus = document.getElementById('rb-summary-api');
+    if (apiStatus) {
+        const now = new Date();
+        apiStatus.textContent = `Обновлено: ${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    const departure = document.getElementById('complex-departure')?.value?.trim();
+    const destination = document.getElementById('complex-destination')?.value?.trim();
+    const containerType = document.getElementById('complex-container-type')?.value;
+
+    if (departure && destination && containerType) {
+        calculateAllRates(departure, destination, containerType);
+    }
+}
+
+function exportComplexResults() {
+    const results = window.displayedResults || window.allResults || [];
+    if (!results.length) {
+        if (window.Utils && typeof window.Utils.showStatus === 'function') {
+            window.Utils.showStatus('Нет данных для экспорта', 'warning');
+        } else {
+            alert('Нет данных для экспорта');
+        }
+        return;
+    }
+
+    const header = [
+        'Тип',
+        'Маршрут',
+        'Ставка',
+        'Валюта',
+        'Линия',
+        'Агент',
+        'Доп.инфо'
+    ];
+
+    const lines = [
+        header.join(';'),
+        ...results.map(result => {
+            const route = result.data?.connection || `${result.data?.sea?.pol || result.data?.pol || '-'} → ${result.data?.rail?.destination || result.data?.pod || '-'}`;
+            const line = result.data?.sea?.carrier || result.data?.carrier || '-';
+            const agent = result.data?.rail?.agent || result.data?.agent || '-';
+            const info = result.transportName || '-';
+            return [
+                result.transportName || '',
+                route,
+                result.rate || '',
+                result.currency || '',
+                line,
+                agent,
+                info
+            ].map(value => `"${String(value).replace(/\"/g, '\"\"')}"`).join(';');
+        })
+    ];
+
+    const blob = new Blob([lines.join('\\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `complex_rates_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+window.updateComplexSummary = updateComplexSummary;
 
 function showCorrectFields() {
     const seaFields = document.getElementById('sea-fields');
@@ -1693,6 +1827,10 @@ async function loadExchangeRate() {
             localStorage.setItem('usd_to_rub_rate_date', new Date().toISOString());
             
             Utils.showStatus(`Курс ЦБ РФ загружен: 1 USD = ${usdToRubRate} RUB`, 'success');
+            const exchangeEl = document.getElementById('exchange-rate-value');
+            if (exchangeEl) {
+                exchangeEl.textContent = usdToRubRate || '-';
+            }
             return true;
         } else {
             throw new Error(data.error || 'Не удалось получить курс');
@@ -1706,33 +1844,26 @@ async function loadExchangeRate() {
 
 // Обновляет отображение курса в интерфейсе
 function updateExchangeRateDisplay() {
-    const exchangeRateLabel = document.querySelector('.exchange-rate-display label');
-    if (exchangeRateLabel) {
-        const savedDate = localStorage.getItem('usd_to_rub_rate_date');
-        const dateInfo = savedDate ? ` (обновлен ${new Date(savedDate).toLocaleDateString('ru-RU')})` : '';
-        exchangeRateLabel.textContent = `Курс ЦБ РФ: 1 USD = ${usdToRubRate} RUB${dateInfo}`;
-    }
-}
-
-// Добавляем отображение текущего курса
-function addExchangeRateDisplay() {
-    const salesInterface = document.getElementById('sales-interface');
-    if (salesInterface && !document.querySelector('.exchange-rate-display')) {
-        const savedDate = localStorage.getItem('usd_to_rub_rate_date');
-        const dateInfo = savedDate ? ` (обновлен ${new Date(savedDate).toLocaleDateString('ru-RU')})` : '';
-        
-        const exchangeRateHTML = `
-            <div class="exchange-rate-display" style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                <label>Курс ЦБ РФ: 1 USD = ${usdToRubRate || 'Не загружен'} RUB${dateInfo}</label>
-            </div>
-        `;
-        salesInterface.insertAdjacentHTML('afterbegin', exchangeRateHTML);
+    const exchangeEl = document.getElementById('exchange-rate-value');
+    if (exchangeEl) {
+        exchangeEl.textContent = usdToRubRate || '-';
     }
 }
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Приложение логистики инициализировано');
+
+    // 🔧 Очищаем поле с подсказками при повторном клике, чтобы показать полный список
+    document.addEventListener('mousedown', event => {
+        const target = event.target;
+        if (target instanceof HTMLInputElement && target.getAttribute('list')) {
+            if (target.value.trim() !== '') {
+                target.value = '';
+                target.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+    });
     
     // Инициализация системы аутентификации
     ServerAuth.initialize();
@@ -1760,6 +1891,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // НЕ загружаем данные с сервера при запуске - ждем авторизации
     // Данные будут загружены при выборе роли или базы данных
     console.log('⏳ Ожидание авторизации для загрузки данных с сервера');
+
+    updateMainHeaderFromState();
     
     // Проверяем наличие библиотеки XLSX
     if (typeof XLSX === 'undefined') {
@@ -1768,323 +1901,5 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // Добавляем отображение текущего курса
-    addExchangeRateDisplay();
-});
-
-// Глобальные переменные для модального окна маржинальности
-let currentResultForMargin = null;
-let currentResultsArray = [];
-
-// Функция открытия модального окна маржинальности
-function openMarginModal(resultIndex) {
-    if (!window.allResults || !window.allResults[resultIndex]) {
-        console.error('Результат не найден');
-        return;
-    }
-    
-    currentResultForMargin = window.allResults[resultIndex];
-    currentResultsArray = window.allResults;
-    
-    const modal = document.getElementById('margin-modal');
-    if (modal) {
-        modal.style.display = 'flex';
-        modal.classList.remove('hidden');
-        
-        // Заполняем информацию о себестоимости
-        populateCostDetails(currentResultForMargin);
-        
-        // Создаем поля для ввода маржинальности
-        createMarginInputs(currentResultForMargin);
-        
-        // Рассчитываем и отображаем результат
-        calculateAndDisplayMargin();
-        
-        // Добавляем обработчик для закрытия при клике вне модального окна
-        document.addEventListener('click', handleModalOutsideClick);
-    }
-}
-
-// Обработчик клика вне модального окна
-function handleModalOutsideClick(event) {
-    const modal = document.getElementById('margin-modal');
-    const modalContent = document.querySelector('.modal-content');
-    
-    // Если клик был вне содержимого модального окна, закрываем его
-    if (modal && modalContent && !modalContent.contains(event.target)) {
-        closeMarginModal();
-    }
-}
-
-// Функция закрытия модального окна
-function closeMarginModal() {
-    const modal = document.getElementById('margin-modal');
-    if (modal) {
-        modal.style.display = 'none';
-        modal.classList.add('hidden');
-        // Удаляем обработчик клика вне модального окна
-        document.removeEventListener('click', handleModalOutsideClick);
-    }
-    currentResultForMargin = null;
-    currentResultsArray = [];
-}
-
-// Заполнение информации о себестоимости
-function populateCostDetails(result) {
-    const costDetails = document.getElementById('cost-details');
-    
-    let costHTML = '';
-    
-    // Добавляем маршрут для всех типов перевозок
-    let routeInfo = '';
-    if (result.transportType === 'direct_rail') {
-        routeInfo = `${result.data.fob || 'Не указан'} → ${result.data.arrivalCity || 'Не указан'}`;
-    } else if (result.transportType === 'direct_sea') {
-        routeInfo = `${result.data.pol || 'Не указан'} → ${result.data.pod || 'Не указан'}`;
-    } else if (result.transportType === 'sea') {
-        routeInfo = `${result.data.pol || 'Не указан'} → ${result.data.pod || 'Не указан'}`;
-    } else if (result.transportType === 'rail') {
-        routeInfo = `${result.data.city || 'Не указан'} → ${result.data.destination || 'Не указан'}`;
-    } else if (result.transportType === 'sea_rail') {
-        routeInfo = result.data.connection || 'Комплексный маршрут';
-    }
-    
-    costHTML += `
-        <div class="cost-item">
-            <span class="cost-label">Маршрут:</span>
-            <span>${routeInfo}</span>
-        </div>
-    `;
-    
-    if (result.transportType === 'direct_rail') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость ЖД перевозки:</span>
-                <span class="cost-value">$${result.rate}</span>
-            </div>
-        `;
-    } else if (result.transportType === 'direct_sea') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость фрахта:</span>
-                <span class="cost-value">$${result.rate}</span>
-            </div>
-        `;
-    } else if (result.transportType === 'sea') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость фрахта:</span>
-                <span class="cost-value">$${result.rate}</span>
-            </div>
-        `;
-    } else if (result.transportType === 'rail') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость ЖД перевозки:</span>
-                <span class="cost-value">${result.rate} RUB</span>
-            </div>
-        `;
-    } else if (result.transportType === 'sea_rail') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость фрахта:</span>
-                <span class="cost-value">$${result.data.seaRate}</span>
-            </div>
-            <div class="cost-item">
-                <span class="cost-label">Стоимость ЖД перевозки:</span>
-                <span class="cost-value">${result.data.railRate} RUB</span>
-            </div>
-        `;
-        
-        // Добавляем информацию о ВТТ, если он включен
-        if (result.data.vttIncluded) {
-            costHTML += `
-                <div class="cost-item">
-                    <span class="cost-label">Стоимость ВТТ:</span>
-                    <span class="cost-value">${result.data.vttRate} RUB</span>
-                </div>
-            `;
-        }
-        
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Общая стоимость:</span>
-                <span class="cost-value">${result.rate} ${result.currency}</span>
-            </div>
-        `;
-    }
-    
-    costDetails.innerHTML = costHTML;
-}
-
-// Создание полей для ввода маржинальности
-function createMarginInputs(result) {
-    const marginInputsContainer = document.getElementById('margin-inputs-container');
-    
-    let marginHTML = '';
-    
-    if (result.transportType === 'direct_rail' || result.transportType === 'rail') {
-        marginHTML = `
-            <div class="margin-input-group">
-                <label for="rail-margin">Накрутка на ЖД (${result.transportType === 'rail' ? 'RUB' : '$'}):</label>
-                <input type="number" id="rail-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
-            </div>
-        `;
-    } else if (result.transportType === 'direct_sea' || result.transportType === 'sea') {
-        marginHTML = `
-            <div class="margin-input-group">
-                <label for="sea-margin">Накрутка на фрахт ($):</label>
-                <input type="number" id="sea-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
-            </div>
-        `;
-    } else if (result.transportType === 'sea_rail') {
-        marginHTML = `
-            <div class="margin-input-group">
-                <label for="sea-margin">Накрутка на море ($):</label>
-                <input type="number" id="sea-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
-            </div>
-            <div class="margin-input-group">
-                <label for="rail-margin">Накрутка на ЖД (RUB):</label>
-                <input type="number" id="rail-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
-            </div>
-        `;
-    }
-    
-    marginInputsContainer.innerHTML = marginHTML;
-}
-
-// Расчет и отображение результата с накруткой
-function calculateAndDisplayMargin() {
-    if (!currentResultForMargin) return;
-    
-    const resultContainer = document.getElementById('margin-result-container');
-    let resultHTML = '';
-    
-    // Добавляем маршрут для всех типов перевозок
-    let routeInfo = '';
-    if (currentResultForMargin.transportType === 'direct_rail') {
-        routeInfo = `${currentResultForMargin.data.fob || 'Не указан'} → ${currentResultForMargin.data.arrivalCity || 'Не указан'}`;
-    } else if (currentResultForMargin.transportType === 'direct_sea') {
-        routeInfo = `${currentResultForMargin.data.pol || 'Не указан'} → ${currentResultForMargin.data.pod || 'Не указан'}`;
-    } else if (currentResultForMargin.transportType === 'sea') {
-        routeInfo = `${currentResultForMargin.data.pol || 'Не указан'} → ${currentResultForMargin.data.pod || 'Не указан'}`;
-    } else if (currentResultForMargin.transportType === 'rail') {
-        routeInfo = `${currentResultForMargin.data.city || 'Не указан'} → ${currentResultForMargin.data.destination || 'Не указан'}`;
-    } else if (currentResultForMargin.transportType === 'sea_rail') {
-        routeInfo = currentResultForMargin.data.connection || 'Комплексный маршрут';
-    }
-    
-    resultHTML += `
-        <div class="result-section">
-            <h4>Маршрут:</h4>
-            <div class="cost-item">
-                <span>${routeInfo}</span>
-            </div>
-        </div>
-    `;
-    
-    if (currentResultForMargin.transportType === 'direct_rail' || currentResultForMargin.transportType === 'rail') {
-        const margin = parseFloat(document.getElementById('rail-margin').value) || 0;
-        const baseRate = currentResultForMargin.rate;
-        const finalRate = baseRate + margin;
-        
-        resultHTML += `
-            <div class="result-section">
-                <h4>Стоимость ЖД перевозки:</h4>
-                <div class="final-rate">${finalRate} ${currentResultForMargin.transportType === 'rail' ? 'RUB' : '$'}</div>
-            </div>
-        `;
-    } else if (currentResultForMargin.transportType === 'direct_sea' || currentResultForMargin.transportType === 'sea') {
-        const margin = parseFloat(document.getElementById('sea-margin').value) || 0;
-        const baseRate = currentResultForMargin.rate;
-        const finalRate = baseRate + margin;
-        
-        resultHTML += `
-            <div class="result-section">
-                <h4>Стоимость фрахта:</h4>
-                <div class="final-rate">$${finalRate}</div>
-            </div>
-        `;
-    } else if (currentResultForMargin.transportType === 'sea_rail') {
-        const seaMargin = parseFloat(document.getElementById('sea-margin').value) || 0;
-        const railMargin = parseFloat(document.getElementById('rail-margin').value) || 0;
-        
-        const seaBaseRate = currentResultForMargin.data.seaRate;
-        const railBaseRate = currentResultForMargin.data.railRate;
-        
-        const seaFinalRate = seaBaseRate + seaMargin;
-        const railFinalRate = railBaseRate + railMargin;
-        
-        // Конвертируем морскую ставку в RUB для сложения
-        const seaFinalRateRUB = usdToRubRate ? Math.round(seaFinalRate * usdToRubRate) : seaFinalRate;
-        const totalFinalRate = seaFinalRateRUB + railFinalRate;
-        
-        resultHTML += `
-            <div class="result-section">
-                <h4>Стоимость фрахта:</h4>
-                <div class="final-rate">$${seaFinalRate}</div>
-            </div>
-            <div class="result-section">
-                <h4>Стоимость ЖД перевозки:</h4>
-                <div class="final-rate">${railFinalRate} RUB</div>
-            </div>
-        `;
-        
-        // Добавляем информацию о ВТТ, если он включен
-        if (currentResultForMargin.data.vttIncluded) {
-            resultHTML += `
-                <div class="result-section">
-                    <h4>Стоимость ВТТ:</h4>
-                    <div class="final-rate">${currentResultForMargin.data.vttRate} RUB</div>
-                </div>
-            `;
-        }
-        
-        resultHTML += `
-            <div class="result-section">
-                <h4>Общая стоимость:</h4>
-                <div class="final-rate">${totalFinalRate} RUB</div>
-            </div>
-        `;
-    }
-    
-    resultContainer.innerHTML = resultHTML;
-}
-
-// Функция копирования результата
-function copyMarginResult() {
-    const resultContainer = document.getElementById('margin-result-container');
-    const textToCopy = resultContainer.innerText;
-    
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        const copyButton = document.getElementById('copy-result');
-        const originalText = copyButton.textContent;
-        copyButton.textContent = '✅ Скопировано!';
-        
-        setTimeout(() => {
-            copyButton.textContent = originalText;
-        }, 2000);
-    }).catch(err => {
-        console.error('Ошибка копирования:', err);
-        alert('Не удалось скопировать текст');
-    });
-}
-
-// Сохраняем результаты в глобальную переменную для доступа из модального окна
-window.allResults = [];
-
-// Привязка обработчика кнопки "История загрузок" для отладки
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 DOM загружен, ищем кнопку истории загрузок');
-    const historyButton = document.querySelector('button[onclick*="redirectToTariffHistory"]');
-    if (historyButton) {
-        console.log('✅ Кнопка истории загрузок найдена:', historyButton);
-        // Добавляем дополнительный обработчик для отладки
-        historyButton.addEventListener('click', function(e) {
-            console.log('🔍 Клик по кнопке истории загрузок (через addEventListener)');
-            // Вызываем оригинальную функцию
-            redirectToTariffHistory();
-        });
-    } else {
-        console.warn('⚠️ Кнопка истории загрузок не найдена');
-    }
+    updateExchangeRateDisplay();
 });

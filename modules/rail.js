@@ -5,6 +5,7 @@ const RailModule = {
     // 🎯 НАСТРОЙКА ЦЕПОЧКИ ОБНОВЛЕНИЯ ДЛЯ ЖД ПЕРЕВОЗОК
     setupEnhancedRailChainUpdate: function(data) {
         console.log('🚂 Настройка цепочки обновления для ЖД перевозок');
+        this.isActive = () => window.currentDatabase === 'rail';
         
         const cityInput = document.getElementById('rail-city');
         const destinationInput = document.getElementById('rail-destination');
@@ -33,6 +34,7 @@ const RailModule = {
         const containerTypeSelect = document.getElementById('rail-container-type');
         if (containerTypeSelect) {
             containerTypeSelect.addEventListener('change', () => {
+                if (!this.isActive()) return;
                 console.log('✅ Изменение типа контейнера ЖД:', containerTypeSelect.value);
                 
                 if (containerTypeSelect.value) {
@@ -70,6 +72,7 @@ const RailModule = {
     
     // 🎯 ОБРАБОТКА ВВОДА ГОРОДА
     handleCityInput: function(e) {
+        if (this.isActive && !this.isActive()) return;
         const city = e.target.value.toLowerCase();
         const data = this.railData;
         
@@ -104,6 +107,7 @@ const RailModule = {
     
     // 🎯 ОБРАБОТКА ВВОДА ПУНКТА НАЗНАЧЕНИЯ
     handleDestinationInput: function(e) {
+        if (this.isActive && !this.isActive()) return;
         const destination = e.target.value.toLowerCase();
         const city = document.getElementById('rail-city').value;
         const data = this.railData;

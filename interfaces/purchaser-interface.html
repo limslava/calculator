@@ -4,21 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор ставок - Менеджер по закупкам</title>
-    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/sidebar.css">
+    <link rel="stylesheet" href="../styles/tariff-admin.css">
+    <link rel="stylesheet" href="../styles/history-uploaded.css">
+    <link rel="stylesheet" href="../styles/filters-scrollfix.css">
+    <link rel="stylesheet" href="../styles/redesign.css">
     <!-- Библиотека для работы с Excel файлами -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Библиотека для работы с иконками -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
+    <div class="app-shell">
+        <aside class="sidebar" id="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-title">Менеджер по закупкам</div>
+                <div class="brand-subtitle" id="sidebar-user-email">Внесение данных</div>
+            </div>
+            <nav class="sidebar-nav">
+                <details class="menu-group" data-purchaser-group="purchaser" open>
+                    <summary>
+                        <span>Внесение данных</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </summary>
+                    <div class="menu-items">
+                        <button type="button" class="menu-item" data-purchaser-db="sea" onclick="selectDatabase('sea')">Море</button>
+                        <button type="button" class="menu-item" data-purchaser-db="rail" onclick="selectDatabase('rail')">ЖД</button>
+                        <button type="button" class="menu-item" data-purchaser-db="direct_rail" onclick="selectDatabase('direct_rail')">Прямое ЖД</button>
+                        <button type="button" class="menu-item" data-purchaser-db="direct_sea" onclick="selectDatabase('direct_sea')">Прямое море</button>
+                        <button type="button" class="menu-item" data-purchaser-db="tariff" onclick="selectDatabase('tariff')">Тариф</button>
+                    </div>
+                </details>
+
+                <details class="menu-group">
+                    <summary>
+                        <span>Настройки</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </summary>
+                    <div class="menu-items">
+                        <button type="button" class="menu-item" onclick="openChangePassword()">Изменение пароля</button>
+                    </div>
+                </details>
+
+                <button type="button" class="menu-item menu-item-danger" onclick="logoutUser()">Выход</button>
+            </nav>
+        </aside>
+
+        <div class="app-content">
+            <div class="container">
         <header>
             <h1>Калькулятор ставок</h1>
         </header>
 
         <main>
             <!-- Выбор типа базы данных -->
-            <section id="database-selection" class="section">
+            <section id="database-selection" class="section legacy-menu">
                 <div class="section-header">
                     <h2>Выберите тип базы данных</h2>
                     <button class="btn-secondary" onclick="logoutUser()">
@@ -53,7 +94,7 @@
             <section id="purchaser-interface" class="section hidden">
                 <div class="section-header">
                     <h2>Загрузка базы данных</h2>
-                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                    <button class="btn-back legacy-menu" onclick="goBack()">← Назад</button>
                 </div>
                 <div class="calculator-header">
                     <div id="last-update-purchaser" class="last-update"></div>
@@ -124,7 +165,7 @@
             <section id="tariff-interface" class="section hidden">
                 <div class="section-header">
                     <h2>Ввод тарифных ставок</h2>
-                    <button class="btn-back" onclick="goBack()">← Назад</button>
+                    <button class="btn-back legacy-menu" onclick="goBack()">← Назад</button>
                 </div>
                 <div class="calculator-header">
                     <div id="last-update-tariff" class="last-update"></div>
@@ -336,6 +377,8 @@
                 </div>
             </div>
         </main>
+    </div>
+        </div>
     </div>
 
     <!-- Загружаем модули в правильном порядке -->

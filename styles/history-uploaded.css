@@ -1,0 +1,1203 @@
+/* ============================== */
+/* СТИЛИ ДЛЯ ИНТЕРФЕЙСА ИСТОРИИ ЗАГРУЗКИ ТАРИФОВ */
+/* ============================== */
+
+body.history-embedded {
+    margin: 0;
+    background: linear-gradient(180deg, #f6f6f2 0%, #efefea 100%);
+    color: #1b1b1a;
+}
+
+.history-embedded .container {
+    max-width: 100%;
+    padding: 16px;
+}
+
+.history-shell {
+    background: #f7f7f4;
+    border: 1px solid #d7d6d0;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    display: grid;
+    gap: 14px;
+}
+
+.history-topbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid #d7d6d0;
+    padding-bottom: 10px;
+}
+
+.history-title {
+    display: grid;
+    gap: 6px;
+}
+
+.history-title h2 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+    color: #1b1b1a;
+}
+
+.history-subtitle {
+    font-size: 12px;
+    color: #6e6e6a;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+
+.history-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.history-btn {
+    border: 1px solid #1b1b1a;
+    background: transparent;
+    color: #1b1b1a;
+    padding: 8px 14px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.history-btn.primary {
+    background: #1b1b1a;
+    color: #fff;
+}
+
+.history-btn:hover {
+    background: #1b1b1a;
+    color: #fff;
+}
+
+.history-filters {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    align-items: end;
+    background: #f7f7f4;
+    border: 1px solid #d7d6d0;
+    padding: 12px;
+}
+
+.history-filters .form-group {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+}
+
+.history-filters label {
+    font-size: 11px;
+    color: #6e6e6a;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.history-filter-actions {
+    grid-column: 5 / -1;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.history-table-card {
+    background: #f7f7f4;
+    border: 1px solid #d7d6d0;
+    padding: 12px;
+    display: grid;
+    gap: 12px;
+}
+
+.history-table-wrap {
+    border: 1px solid #d7d6d0;
+    background: #f7f7f4;
+    overflow: auto;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.history-table th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #6e6e6a;
+    background: #f0f0ec;
+    padding: 10px 12px;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid #d7d6d0;
+}
+
+.history-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #d7d6d0;
+    vertical-align: top;
+    color: #1b1b1a;
+}
+
+.history-table tr:hover {
+    background: #ecece6;
+}
+
+.history-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    font-size: 12px;
+    color: #6e6e6a;
+}
+
+.loading-cell {
+    text-align: center;
+    color: #6e6e6a;
+}
+
+.data-type-badge {
+    border-radius: 12px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid #d7d6d0;
+    background: #fff;
+    color: #1b1b1a;
+}
+
+.history-embedded .modal-content {
+    background: #f7f7f4;
+    border: 1px solid #d7d6d0;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.history-embedded .modal-header {
+    border-bottom: 1px solid #d7d6d0;
+    background: #f0f0ec;
+}
+
+@media (max-width: 1100px) {
+    .history-topbar {
+        grid-template-columns: 1fr;
+    }
+
+    .history-actions {
+        justify-content: flex-start;
+    }
+
+    .history-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .history-filter-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 720px) {
+    .history-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .history-filter-actions {
+        justify-content: flex-start;
+    }
+}
+
+.tariff-history-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.tariff-history-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+}
+
+.tariff-history-section h2 {
+    color: #2c3e50;
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+.tariff-history-section h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+/* Фильтры и управление */
+.history-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0;
+}
+
+.filter-select, .filter-input {
+    padding: 7px 9px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 12px;
+    background-color: white;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+.filter-select:focus, .filter-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+/* Таблица истории */
+.history-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 12px;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.history-table th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 9px 10px;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.history-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #f1f3f4;
+    color: #495057;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.history-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.history-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Бейджи для типов данных */
+.data-type-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.badge-sea {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge-rail {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.badge-direct-sea {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.badge-direct-rail {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+/* Пагинация */
+.history-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.pagination-btn {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #f8f9fa;
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #6c757d;
+    margin: 0 10px;
+}
+
+/* Модальное окно деталей загрузки */
+.upload-details-modal .modal-content {
+    max-width: 1000px;
+    max-height: 85vh;
+}
+
+.upload-details-modal .modal-header {
+    background: #3498db;
+    color: white;
+}
+
+.upload-details {
+    padding: 20px;
+}
+
+.upload-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 8px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.meta-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 0;
+}
+
+.meta-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.preview-data-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 9px 10px;
+    background: #f8f9fa;
+}
+
+.preview-data-container h4 {
+    color: #495057;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.preview-table th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 13px;
+}
+
+.preview-table td {
+    padding: 7px 9px;
+    border-bottom: 1px solid #f1f3f4;
+    color: #495057;
+    font-size: 13px;
+}
+
+.preview-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Сообщения о загрузке и ошибках */
+.loading-message {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.loading-message i {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    color: #dee2e6;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 9px 10px;
+    border-radius: 6px;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+/* Кнопки действий */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-view-details {
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-view-details:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.btn-refresh {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-refresh:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.btn-export {
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-export:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* Адаптивность для интерфейса истории */
+@media (max-width: 768px) {
+    .tariff-history-container {
+        padding: 9px 10px;
+    }
+    
+    .tariff-history-section {
+        padding: 20px;
+    }
+    
+    .history-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        min-width: 100%;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .filter-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .history-table th,
+    .history-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .upload-meta {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tariff-history-section {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Пустое состояние */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 12px;
+    color: #dee2e6;
+}
+
+.empty-state h4 {
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#history-table.section {
+    padding-top: 0 !important;
+    margin-top: -40px !important;
+}
+
+/* ============================== */
+/* УЛУЧШЕННАЯ КОМПОНОВКА СТРАНИЦЫ ИСТОРИИ ЗАГРУЗОК */
+/* ============================== */
+
+/* Фильтры в одну строку на больших экранах */
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 10px;
+}
+
+.filters-grid .form-group {
+    margin-bottom: 0;
+}
+
+.filters-grid .filter-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.filters-grid .filter-actions button {
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+/* Уменьшение вертикальных отступов между секциями */
+#filters.section {
+    padding: 0 !important;
+    margin-bottom: 8px !important;
+    min-height: auto !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+#history-table.section {
+    padding: 0 !important;
+    margin-top: 6px !important;
+    min-height: auto !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+#filters .section-header,
+#history-table .section-header {
+    display: none !important;
+}
+
+/* Улучшение заголовка таблицы с кнопками */
+#history-table .section-header {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#history-table .header-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Адаптивность для фильтров */
+@media (max-width: 1200px) {
+    .filters-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .filters-grid .filter-actions {
+        grid-column: span 3;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .filters-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .filters-grid .filter-actions {
+        grid-column: span 1;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .filters-grid .filter-actions button {
+        width: 100%;
+    }
+    
+    #history-table .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    #history-table .header-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Улучшение таблицы истории */
+.table-container {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.data-table {
+    margin-bottom: 0;
+}
+
+.data-table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.data-table td {
+    border-bottom: 1px solid #f1f3f4;
+}
+
+/* Пагинация */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.pagination button {
+    min-width: 100px;
+}
+
+/* Улучшение модального окна деталей */
+.wide-modal {
+    max-width: 1000px;
+}
+
+.detail-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.detail-row {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0;
+}
+
+.detail-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.detail-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+/* Общие улучшения */
+.section-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #2c3e50;
+}
+
+.subtitle {
+    color: #6c757d;
+    font-size: 1rem;
+    margin-top: 5px;
+}
+
+/* Уменьшение общего вертикального пространства */
+.container {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+header {
+    margin-bottom: 12px;
+}
+
+/* ============================== */
+/* СТИЛИ ДЛЯ ОТОБРАЖЕНИЯ ЗАГРУЖЕННЫХ СТАВОК */
+/* ============================== */
+
+#uploaded-rates-section {
+    margin-top: 40px;
+    padding: 25px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+#uploaded-rates-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #3498db;
+}
+
+#uploaded-rates-section h3 {
+    color: #2c3e50;
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+#refresh-rates {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#refresh-rates:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* Фильтры */
+.filter-section {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 12px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    flex: 1;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0;
+}
+
+.filter-select, .filter-input {
+    padding: 7px 9px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 12px;
+    background-color: white;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+.filter-select:focus, .filter-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.filter-group button {
+    margin-top: 5px;
+}
+
+/* Таблица ставок */
+#rates-table-container {
+    min-height: 200px;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 12px;
+}
+
+.placeholder-text {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 40px;
+    font-size: 16px;
+}
+
+.rates-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rates-table th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 9px 10px;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.rates-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f3f4;
+    color: #495057;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.rates-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.rates-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Бейджи для типов данных в таблице ставок */
+.rate-type-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.badge-sea {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge-rail {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.badge-direct-sea {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.badge-direct-rail {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.badge-tariff {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.badge-agent-tariff {
+    background: #e8eaf6;
+    color: #3949ab;
+}
+
+/* Пагинация */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.btn-pagination {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: #f8f9fa;
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#page-info {
+    font-size: 12px;
+    color: #6c757d;
+    margin: 0 10px;
+}
+
+/* Адаптивность для отображения ставок */
+@media (max-width: 768px) {
+    #uploaded-rates-section {
+        padding: 9px 10px;
+        margin-top: 30px;
+    }
+    
+    #uploaded-rates-section .section-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    #refresh-rates {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .filter-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .filter-group {
+        min-width: 100%;
+    }
+    
+    .filter-group button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .rates-table th,
+    .rates-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+    
+    .pagination {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn-pagination {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Анимации */
+@keyframes fadeInRates {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#uploaded-rates-section {
+    animation: fadeInRates 0.5s ease-out;
+}
+html.history-embedded,
+html.history-embedded body {
+    overflow: hidden !important;
+    background: transparent !important;
+}
+
+html.history-embedded .container {
+    width: 100%;
+    padding: 0;
+    min-height: auto;
+}

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { sequelize, testConnection, syncDatabase } = require('../config/database');
 const { User, SeaData, RailData, DirectRailData, DirectSeaData, TariffData } = require('../models');
 const bcrypt = require('bcryptjs');

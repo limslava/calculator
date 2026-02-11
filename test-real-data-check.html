@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Комплексные ставки — макет</title>
+    <style>
+        :root {
+            --bg: #f2f2ef;
+            --surface: #f7f7f4;
+            --ink: #1b1b1a;
+            --muted: #6e6e6a;
+            --line: #d7d6d0;
+            --accent: #1f4b3a;
+            --accent-weak: #dfe7e2;
+            --warn: #c0542f;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "IBM Plex Sans", "Segoe UI", Tahoma, sans-serif;
+            color: var(--ink);
+            background: linear-gradient(180deg, #f6f6f2 0%, #efefea 100%);
+        }
+
+        .page {
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            gap: 14px;
+            padding: 18px 20px 24px;
+        }
+
+        .topbar {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 12px;
+        }
+
+        .title {
+            display: grid;
+            gap: 6px;
+        }
+
+        .title h1 {
+            margin: 0;
+            font-size: 20px;
+            letter-spacing: 0.4px;
+            font-weight: 600;
+        }
+
+        .title .subtitle {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            border: 1px solid var(--ink);
+            background: transparent;
+            color: var(--ink);
+            padding: 8px 14px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+        }
+
+        .btn.primary {
+            background: var(--ink);
+            color: #fff;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: 1.1fr 1.1fr 1fr 1fr 1fr 1fr 1fr auto auto;
+            gap: 10px;
+            align-items: end;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            padding: 12px;
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .field input,
+        .field select {
+            border: 1px solid var(--line);
+            background: #fff;
+            padding: 8px 10px;
+            font-size: 13px;
+            color: var(--ink);
+        }
+
+        .filters .btn {
+            height: 36px;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 16px;
+        }
+
+        .table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            background: #f0f0ec;
+            padding: 10px 12px;
+            position: sticky;
+            top: 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        tbody td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        tbody tr:hover {
+            background: #ecece6;
+        }
+
+        tbody tr.is-active {
+            background: #e6ebe7;
+        }
+
+        .rate {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 2px 6px;
+            border: 1px solid var(--line);
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .status.warn {
+            border-color: var(--warn);
+            color: var(--warn);
+        }
+
+        .summary {
+            border: 1px solid var(--line);
+            background: var(--surface);
+            padding: 12px;
+            display: grid;
+            gap: 12px;
+            max-height: calc(100vh - 260px);
+            overflow: auto;
+            position: sticky;
+            top: 12px;
+        }
+
+        .summary h3 {
+            margin: 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+        }
+
+        .summary .value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .summary .block {
+            border-top: 1px solid var(--line);
+            padding-top: 10px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .note {
+            border-left: 2px solid var(--accent);
+            padding-left: 8px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border: 1px solid var(--line);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--line);
+            padding: 4px 8px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .pill .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--muted);
+        }
+
+        .pill.ok .dot {
+            background: var(--accent);
+        }
+
+        .pill.warn .dot {
+            background: var(--warn);
+        }
+
+        .statusbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--muted);
+            border-top: 1px solid var(--line);
+            padding-top: 10px;
+        }
+
+        @media (max-width: 1100px) {
+            .filters {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+            }
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .topbar {
+                grid-template-columns: 1fr;
+            }
+            .filters {
+                grid-template-columns: 1fr;
+            }
+            .actions {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <div class="title">
+                <div class="subtitle">Комплексные ставки</div>
+                <h1>Аналитический обзор и подбор ставок</h1>
+            </div>
+            <div class="actions">
+                <button class="btn" id="btn-reset">Сброс</button>
+                <button class="btn" id="btn-refresh">Обновить</button>
+                <button class="btn" id="btn-load-api">Загрузить API</button>
+                <button class="btn primary" id="btn-export">Экспорт</button>
+            </div>
+        </header>
+
+        <section class="filters">
+            <div class="field">
+                <label>Откуда</label>
+                <input type="text" id="filter-from" placeholder="POL / FOB / Город" list="from-suggestions" />
+                <datalist id="from-suggestions"></datalist>
+            </div>
+            <div class="field">
+                <label>Куда</label>
+                <input type="text" id="filter-to" placeholder="POD / Назначение" list="to-suggestions" />
+                <datalist id="to-suggestions"></datalist>
+            </div>
+            <div class="field">
+                <label>Тип ставки</label>
+                <select id="filter-type">
+                    <option value="all">Все</option>
+                    <option value="sea_rail">Море + ЖД</option>
+                    <option value="sea">Море</option>
+                    <option value="rail">ЖД</option>
+                    <option value="direct_sea">Прямое море</option>
+                    <option value="direct_rail">Прямое ЖД</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Контейнер</label>
+                <select id="filter-container">
+                    <option value="">Не выбран</option>
+                    <option value="hc_40">40'HC</option>
+                    <option value="dc_20">20'DC</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Линия</label>
+                <select id="filter-line">
+                    <option value="">Все</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Агент</label>
+                <select id="filter-agent">
+                    <option value="">Все</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Auth token</label>
+                <input type="password" id="auth-token-input" placeholder="Bearer token" />
+            </div>
+            <button class="btn" id="btn-save-token">Сохранить</button>
+            <button class="btn primary" id="btn-apply">Применить</button>
+        </section>
+
+        <section class="content">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Маршрут</th>
+                            <th>Тип</th>
+                            <th>Линия</th>
+                            <th>Агент</th>
+                            <th>Срок</th>
+                            <th>Ставка</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rates-body"></tbody>
+                </table>
+            </div>
+
+            <aside class="summary">
+                <div>
+                    <h3>Сводка</h3>
+                    <div class="value" id="summary-total">0 ставок</div>
+                    <div class="muted" id="summary-split">—</div>
+                </div>
+                <div class="block">
+                    <div class="muted">Быстрый вход</div>
+                    <div class="field">
+                        <label>Email</label>
+                        <input type="email" id="login-email" placeholder="user@example.com" />
+                    </div>
+                    <div class="field">
+                        <label>Пароль</label>
+                        <input type="password" id="login-password" placeholder="••••••••" />
+                    </div>
+                    <button class="btn" id="btn-login">Войти</button>
+                </div>
+                <div class="block">
+                    <div>
+                        <div class="muted">Лучшая ставка</div>
+                        <div class="rate" id="summary-best">—</div>
+                    </div>
+                    <div>
+                        <div class="muted">Средний срок</div>
+                        <div class="rate" id="summary-average">—</div>
+                    </div>
+                </div>
+                <div class="block">
+                    <div class="note" id="summary-note">Выберите строку, чтобы увидеть детали выбранной ставки.</div>
+                </div>
+                <div class="block">
+                    <div class="muted">Статус API</div>
+                    <div class="muted" id="api-status">—</div>
+                </div>
+            </aside>
+        </section>
+
+        <footer class="footer">
+            <div class="statusbar">
+                <div id="filters-applied">Фильтры не применены</div>
+                <span class="pill" id="db-sea"><span class="dot"></span>Sea</span>
+                <span class="pill" id="db-rail"><span class="dot"></span>Rail</span>
+                <span class="pill" id="db-direct-sea"><span class="dot"></span>Direct Sea</span>
+                <span class="pill" id="db-direct-rail"><span class="dot"></span>Direct Rail</span>
+            </div>
+            <div id="last-update">Обновлено: —</div>
+        </footer>
+    </div>
+
+    <script>
+        const database = {
+            sea: [],
+            rail: [],
+            direct_sea: [],
+            direct_rail: []
+        };
+
+        const filterElements = {
+            from: document.getElementById('filter-from'),
+            to: document.getElementById('filter-to'),
+            type: document.getElementById('filter-type'),
+            container: document.getElementById('filter-container'),
+            line: document.getElementById('filter-line'),
+            agent: document.getElementById('filter-agent')
+        };
+
+        const summaryElements = {
+            total: document.getElementById('summary-total'),
+            split: document.getElementById('summary-split'),
+            best: document.getElementById('summary-best'),
+            average: document.getElementById('summary-average'),
+            note: document.getElementById('summary-note')
+        };
+        const apiStatus = document.getElementById('api-status');
+
+        const ratesBody = document.getElementById('rates-body');
+        const filtersApplied = document.getElementById('filters-applied');
+        const lastUpdate = document.getElementById('last-update');
+        const dbPills = {
+            sea: document.getElementById('db-sea'),
+            rail: document.getElementById('db-rail'),
+            direct_sea: document.getElementById('db-direct-sea'),
+            direct_rail: document.getElementById('db-direct-rail')
+        };
+        const fromDatalist = document.getElementById('from-suggestions');
+        const toDatalist = document.getElementById('to-suggestions');
+        const authTokenInput = document.getElementById('auth-token-input');
+        const loginEmail = document.getElementById('login-email');
+        const loginPassword = document.getElementById('login-password');
+        let currentRows = [];
+
+        function setPillState(pill, state) {
+            if (!pill) return;
+            pill.classList.remove('ok', 'warn');
+            if (state === 'ok') pill.classList.add('ok');
+            if (state === 'warn') pill.classList.add('warn');
+        }
+
+        function updateDbIndicators() {
+            Object.entries(dbPills).forEach(([key, pill]) => {
+                const length = (database[key] || []).length;
+                if (length > 0) {
+                    pill.title = `${key}: ${length}`;
+                    setPillState(pill, 'ok');
+                } else {
+                    pill.title = `${key}: 0`;
+                    setPillState(pill, 'warn');
+                }
+            });
+        }
+
+        function normalizeValue(value) {
+            return (value || '').toString().trim().toLowerCase();
+        }
+
+        function parseExcelDate(value) {
+            if (!value && value !== 0) return null;
+            if (value instanceof Date) return value;
+            if (typeof value === 'number') {
+                return new Date(Math.round((value - 25569) * 86400 * 1000));
+            }
+            if (typeof value === 'string') {
+                const trimmed = value.trim();
+                const ruMatch = trimmed.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+                if (ruMatch) {
+                    const day = Number(ruMatch[1]);
+                    const month = Number(ruMatch[2]) - 1;
+                    const year = Number(ruMatch[3]);
+                    return new Date(year, month, day);
+                }
+                const parsed = new Date(trimmed);
+                if (!Number.isNaN(parsed.getTime())) return parsed;
+            }
+            return null;
+        }
+
+        function formatDate(value) {
+            const date = parseExcelDate(value);
+            if (!date) return '—';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return `${day}.${month}.${date.getFullYear()}`;
+        }
+
+        function getStatus(dateValue) {
+            const date = parseExcelDate(dateValue);
+            if (!date) return { label: '—', warn: false };
+            const now = new Date();
+            const diff = date.getTime() - now.getTime();
+            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            if (days < 0) return { label: 'Истекла', warn: true };
+            if (days <= 14) return { label: 'Истекает', warn: true };
+            return { label: 'Актуальна', warn: false };
+        }
+
+        function loadDatabase() {
+            if (window.database) {
+                Object.assign(database, window.database);
+            }
+
+            const storageKeys = {
+                sea: 'logistics_db_sea',
+                rail: 'logistics_db_rail',
+                direct_sea: 'logistics_db_direct_sea',
+                direct_rail: 'logistics_db_direct_rail'
+            };
+
+            Object.keys(storageKeys).forEach(key => {
+                if (database[key] && database[key].length > 0) return;
+                const raw = localStorage.getItem(storageKeys[key]);
+                if (!raw) return;
+                try {
+                    database[key] = JSON.parse(raw) || [];
+                } catch (error) {
+                    console.warn(`Не удалось прочитать ${storageKeys[key]}`, error);
+                }
+            });
+        }
+
+        async function loadFromApi() {
+            const dbTypes = ['sea', 'rail', 'direct_sea', 'direct_rail'];
+            const token = localStorage.getItem('auth_token');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            let unauthorized = false;
+            let successCount = 0;
+            let errorCount = 0;
+            apiStatus.textContent = 'Загрузка...';
+            for (const dbType of dbTypes) {
+                try {
+                    const response = await fetch(`/api/data/${dbType}`, { headers });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const payload = await response.json();
+                    database[dbType] = payload.data || [];
+                    successCount += 1;
+                } catch (error) {
+                    if (String(error).includes('HTTP 401')) {
+                        unauthorized = true;
+                    }
+                    errorCount += 1;
+                    console.warn(`API ${dbType} error`, error);
+                }
+            }
+            if (unauthorized) {
+                summaryElements.note.textContent = 'Нет доступа: требуется авторизация (auth_token).';
+            }
+            if (!token) {
+                summaryElements.note.textContent = 'Токен не найден. Войдите или вставьте auth_token.';
+            }
+            apiStatus.textContent = `Успешно: ${successCount} · Ошибки: ${errorCount}`;
+        }
+
+        function getUniqueValues(items) {
+            return [...new Set(items.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        }
+
+        function populateSelect(select, values) {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Все</option>';
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                select.appendChild(option);
+            });
+            if (currentValue) select.value = currentValue;
+        }
+
+        function populateDatalist(datalist, values) {
+            if (!datalist) return;
+            datalist.innerHTML = '';
+            values.slice(0, 200).forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                datalist.appendChild(option);
+            });
+        }
+
+        function updateSuggestions(inputValue, values, datalist) {
+            const query = normalizeValue(inputValue);
+            if (!query) {
+                populateDatalist(datalist, values.slice(0, 80));
+                return;
+            }
+            const filtered = values.filter(value => normalizeValue(value).includes(query)).slice(0, 80);
+            populateDatalist(datalist, filtered);
+        }
+
+        function filterRowsForOptions(ignoreKey = null) {
+            const containerType = filterElements.container.value;
+            const typeValue = filterElements.type.value;
+            let rows = buildRows(containerType);
+            if (typeValue !== 'all') {
+                rows = rows.filter(row => row.type === typeValue);
+            }
+            return rows.filter(row => {
+                if (ignoreKey !== 'from' && filterElements.from.value && !normalizeValue(row.from).includes(normalizeValue(filterElements.from.value))) return false;
+                if (ignoreKey !== 'to' && filterElements.to.value && !normalizeValue(row.to).includes(normalizeValue(filterElements.to.value))) return false;
+                if (ignoreKey !== 'line' && filterElements.line.value && !normalizeValue(row.line).includes(normalizeValue(filterElements.line.value))) return false;
+                if (ignoreKey !== 'agent' && filterElements.agent.value && !normalizeValue(row.agent).includes(normalizeValue(filterElements.agent.value))) return false;
+                return true;
+            });
+        }
+
+        function refreshSuggestions() {
+            const fromRows = filterRowsForOptions('from');
+            const toRows = filterRowsForOptions('to');
+            const fromValues = getUniqueValues(fromRows.map(row => row.from));
+            const toValues = getUniqueValues(toRows.map(row => row.to));
+            updateSuggestions(filterElements.from.value, fromValues, fromDatalist);
+            updateSuggestions(filterElements.to.value, toValues, toDatalist);
+        }
+
+        function refreshSelectOptions() {
+            const lineRows = filterRowsForOptions('line');
+            const agentRows = filterRowsForOptions('agent');
+            const lineValues = getUniqueValues(lineRows.map(row => row.line).filter(value => value && value !== '-'));
+            const agentValues = getUniqueValues(agentRows.map(row => row.agent).filter(value => value && value !== '-'));
+
+            populateSelect(filterElements.line, lineValues);
+            populateSelect(filterElements.agent, agentValues);
+
+            if (filterElements.line.value && !lineValues.includes(filterElements.line.value)) {
+                filterElements.line.value = '';
+            }
+            if (filterElements.agent.value && !agentValues.includes(filterElements.agent.value)) {
+                filterElements.agent.value = '';
+            }
+        }
+
+        function getSeaRate(item, containerType) {
+            if (!containerType) return 0;
+            if (containerType === 'dc_20') return Number(item.dc20 || item.soc20 || 0);
+            return Number(item.hc40 || item.soc40 || 0);
+        }
+
+        function getRailRate(item, containerType) {
+            if (!containerType) return 0;
+            if (containerType === 'dc_20') return Number(item.container20Under24 || item.container20Over24 || 0);
+            return Number(item.container40 || 0);
+        }
+
+        function getDirectRailRate(item, containerType) {
+            if (!containerType) return 0;
+            if (containerType !== 'hc_40') return 0;
+            return Number(item.fob40hc || 0);
+        }
+
+        function formatRate(value, currency) {
+            if (!value || Number.isNaN(value)) return '—';
+            const rounded = Math.round(Number(value));
+            if (currency === 'RUB') return `${rounded.toLocaleString('ru-RU')} ₽`;
+            return `$${rounded.toLocaleString('ru-RU')}`;
+        }
+
+        function buildRows(containerType) {
+            const rows = [];
+
+            database.sea.forEach(item => {
+                const rate = getSeaRate(item, containerType);
+                if (!rate) return;
+                rows.push({
+                    type: 'sea',
+                    typeLabel: 'Море',
+                    from: item.pol,
+                    to: item.pod,
+                    hint: `POL: ${item.pol || '-'} · POD: ${item.pod || '-'}`,
+                    line: item.carrier,
+                    agent: item.agent,
+                    term: item.dateOfValidity || item.etd,
+                    rate: rate,
+                    currency: '$',
+                    status: getStatus(item.dateOfValidity)
+                });
+            });
+
+            database.direct_sea.forEach(item => {
+                const rate = getSeaRate(item, containerType);
+                if (!rate) return;
+                rows.push({
+                    type: 'direct_sea',
+                    typeLabel: 'Прямое море',
+                    from: item.pol,
+                    to: item.pod,
+                    hint: `POL: ${item.pol || '-'} · POD: ${item.pod || '-'}`,
+                    line: item.carrier,
+                    agent: item.agent,
+                    term: item.dateOfValidity || item.etd,
+                    rate: rate,
+                    currency: '$',
+                    status: getStatus(item.dateOfValidity)
+                });
+            });
+
+            database.rail.forEach(item => {
+                const rate = getRailRate(item, containerType);
+                if (!rate) return;
+                rows.push({
+                    type: 'rail',
+                    typeLabel: 'ЖД',
+                    from: item.city,
+                    to: item.destination,
+                    hint: `Станция: ${item.city || '-'} → ${item.destination || '-'}`,
+                    line: item.carrier || '-',
+                    agent: item.agent,
+                    term: item.validity,
+                    rate: rate,
+                    currency: 'RUB',
+                    status: getStatus(item.validity)
+                });
+            });
+
+            database.direct_rail.forEach(item => {
+                const rate = getDirectRailRate(item, containerType);
+                if (!rate) return;
+                rows.push({
+                    type: 'direct_rail',
+                    typeLabel: 'Прямое ЖД',
+                    from: item.fob,
+                    to: item.arrivalCity,
+                    hint: `FOB: ${item.fob || '-'} · Город: ${item.arrivalCity || '-'}`,
+                    line: '-',
+                    agent: item.agent,
+                    term: item.quoteDate || item.etd,
+                    rate: rate,
+                    currency: '$',
+                    status: getStatus(item.quoteDate)
+                });
+            });
+
+            const usdToRubRate = Number(localStorage.getItem('usd_to_rub_rate')) || window.usdToRubRate || null;
+            if (usdToRubRate) {
+                database.sea.forEach(seaItem => {
+                    const seaRate = getSeaRate(seaItem, containerType);
+                    if (!seaRate) return;
+                    database.rail.forEach(railItem => {
+                        if (!seaItem.city || !railItem.city || !seaItem.dropOffArea || !railItem.destination) return;
+                        if (normalizeValue(seaItem.city) !== normalizeValue(railItem.city)) return;
+                        if (normalizeValue(seaItem.dropOffArea) !== normalizeValue(railItem.destination)) return;
+                        const railRate = getRailRate(railItem, containerType);
+                        if (!railRate) return;
+                        const total = Math.round(seaRate * usdToRubRate) + railRate;
+                        rows.push({
+                            type: 'sea_rail',
+                            typeLabel: 'Море + ЖД',
+                            from: seaItem.pol,
+                            to: railItem.destination,
+                            hint: `Море: ${seaItem.pol || '-'} → ${seaItem.pod || '-'} · ЖД: ${railItem.city || '-'} → ${railItem.destination || '-'}`,
+                            line: seaItem.carrier,
+                            agent: railItem.agent || seaItem.agent,
+                            term: seaItem.dateOfValidity || railItem.validity,
+                            rate: total,
+                            currency: 'RUB',
+                            status: getStatus(seaItem.dateOfValidity || railItem.validity)
+                        });
+                    });
+                });
+            }
+
+            return rows;
+        }
+
+        function applyFilters(rows) {
+            const fromValue = normalizeValue(filterElements.from.value);
+            const toValue = normalizeValue(filterElements.to.value);
+            const typeValue = filterElements.type.value;
+            const containerValue = filterElements.container.value;
+            const lineValue = normalizeValue(filterElements.line.value);
+            const agentValue = normalizeValue(filterElements.agent.value);
+
+            const filtered = rows.filter(row => {
+                if (typeValue !== 'all' && row.type !== typeValue) return false;
+                if (fromValue && !normalizeValue(row.from).includes(fromValue)) return false;
+                if (toValue && !normalizeValue(row.to).includes(toValue)) return false;
+                if (lineValue && !normalizeValue(row.line).includes(lineValue)) return false;
+                if (agentValue && !normalizeValue(row.agent).includes(agentValue)) return false;
+                if (containerValue === 'dc_20' && row.type === 'direct_rail') return false;
+                return true;
+            });
+
+            return filtered;
+        }
+
+        function renderTable(rows) {
+            ratesBody.innerHTML = '';
+            if (!rows.length) {
+                ratesBody.innerHTML = '<tr><td colspan="7" class="muted">Нет данных для выбранных параметров</td></tr>';
+                return;
+            }
+
+            rows.forEach((row, index) => {
+                const status = row.status || { label: '—', warn: false };
+                const tr = document.createElement('tr');
+                tr.dataset.index = index;
+
+                tr.innerHTML = `
+                    <td>
+                        ${row.from || '—'} → ${row.to || '—'}
+                        <div class="muted">${row.hint || ''}</div>
+                    </td>
+                    <td><span class="tag">${row.typeLabel}</span></td>
+                    <td>${row.line || '—'}</td>
+                    <td>${row.agent || '—'}</td>
+                    <td>${formatDate(row.term)}</td>
+                    <td class="rate">${formatRate(row.rate, row.currency)}</td>
+                    <td><span class="status ${status.warn ? 'warn' : ''}">${status.label}</span></td>
+                `;
+
+                tr.addEventListener('click', () => {
+                    document.querySelectorAll('tbody tr').forEach(row => row.classList.remove('is-active'));
+                    tr.classList.add('is-active');
+                    summaryElements.note.textContent = `${row.typeLabel}: ${row.from || '—'} → ${row.to || '—'} · ${row.agent || 'без агента'} · ${formatRate(row.rate, row.currency)}`;
+                });
+
+                ratesBody.appendChild(tr);
+            });
+        }
+
+        function renderSummary(rows) {
+            summaryElements.total.textContent = `${rows.length} ставок`;
+
+            const split = rows.reduce((acc, row) => {
+                acc[row.typeLabel] = (acc[row.typeLabel] || 0) + 1;
+                return acc;
+            }, {});
+
+            summaryElements.split.textContent = Object.entries(split)
+                .map(([label, count]) => `${count} ${label.toLowerCase()}`)
+                .join(' · ') || '—';
+
+            if (!rows.length) {
+                summaryElements.best.textContent = '—';
+                summaryElements.average.textContent = '—';
+                return;
+            }
+
+            const sorted = [...rows].sort((a, b) => {
+                const rateA = a.currency === 'RUB' ? a.rate : a.rate * 100;
+                const rateB = b.currency === 'RUB' ? b.rate : b.rate * 100;
+                return rateA - rateB;
+            });
+
+            summaryElements.best.textContent = formatRate(sorted[0].rate, sorted[0].currency);
+
+            const termDays = rows
+                .map(row => {
+                    const date = parseExcelDate(row.term);
+                    if (!date) return null;
+                    const now = new Date();
+                    return Math.max(0, Math.round((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+                })
+                .filter(value => value !== null);
+
+            if (termDays.length) {
+                const avg = Math.round(termDays.reduce((sum, v) => sum + v, 0) / termDays.length);
+                summaryElements.average.textContent = `${avg} дней`;
+            } else {
+                summaryElements.average.textContent = '—';
+            }
+        }
+
+        function updateFiltersUI() {
+            refreshSelectOptions();
+            refreshSuggestions();
+        }
+
+        function render() {
+            const containerType = filterElements.container.value;
+            const rows = buildRows(containerType);
+            const filtered = applyFilters(rows);
+
+            currentRows = filtered;
+            renderTable(filtered);
+            renderSummary(filtered);
+            refreshSuggestions();
+            refreshSelectOptions();
+
+            if (!containerType) {
+                summaryElements.note.textContent = 'Выберите тип контейнера, чтобы увидеть ставки.';
+            } else if (filterElements.type.value === 'sea_rail' && !localStorage.getItem('usd_to_rub_rate') && !window.usdToRubRate) {
+                summaryElements.note.textContent = 'Для «Море + ЖД» нужен курс USD→RUB (usd_to_rub_rate).';
+            } else if (filtered.length === 0) {
+                summaryElements.note.textContent = 'Нет ставок по выбранным фильтрам. Попробуйте снять часть фильтров.';
+            }
+
+            filtersApplied.textContent = `Фильтры: ${filterElements.type.options[filterElements.type.selectedIndex].text}`;
+            const now = new Date();
+            lastUpdate.textContent = `Обновлено: ${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
+        function resetFilters() {
+            filterElements.from.value = '';
+            filterElements.to.value = '';
+            filterElements.type.value = 'all';
+            filterElements.container.value = '';
+            filterElements.line.value = '';
+            filterElements.agent.value = '';
+        }
+
+        function saveAuthToken() {
+            const value = authTokenInput.value.trim();
+            if (value) {
+                localStorage.setItem('auth_token', value);
+                summaryElements.note.textContent = 'Токен сохранен. Повторите загрузку из API.';
+            } else {
+                localStorage.removeItem('auth_token');
+                summaryElements.note.textContent = 'Токен очищен.';
+            }
+        }
+
+        async function loginAndSaveToken() {
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value;
+            if (!email || !password) {
+                summaryElements.note.textContent = 'Введите email и пароль.';
+                return;
+            }
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const result = await response.json();
+                if (result.success && result.token) {
+                    localStorage.setItem('auth_token', result.token);
+                    authTokenInput.value = result.token;
+                    summaryElements.note.textContent = 'Вход выполнен. Токен сохранен.';
+                } else {
+                    summaryElements.note.textContent = result.error || 'Ошибка входа.';
+                }
+            } catch (error) {
+                summaryElements.note.textContent = 'Ошибка соединения с сервером.';
+                console.warn('Login error', error);
+            }
+        }
+
+        function exportCsv() {
+            if (!currentRows.length) return;
+            const header = [
+                'Тип',
+                'Откуда',
+                'Куда',
+                'Линия',
+                'Агент',
+                'Срок',
+                'Ставка',
+                'Валюта'
+            ];
+            const lines = [
+                header.join(';'),
+                ...currentRows.map(row => ([
+                    row.typeLabel || '',
+                    row.from || '',
+                    row.to || '',
+                    row.line || '',
+                    row.agent || '',
+                    formatDate(row.term),
+                    row.rate || '',
+                    row.currency || ''
+                ].map(value => `"${String(value).replace(/\"/g, '\"\"')}"`).join(';')))
+            ];
+            const blob = new Blob([lines.join('\\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `complex_rates_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('btn-apply').addEventListener('click', render);
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            resetFilters();
+            render();
+        });
+        document.getElementById('btn-refresh').addEventListener('click', () => {
+            loadDatabase();
+            updateFiltersUI();
+            updateDbIndicators();
+            render();
+        });
+        document.getElementById('btn-save-token').addEventListener('click', saveAuthToken);
+        document.getElementById('btn-login').addEventListener('click', loginAndSaveToken);
+        document.getElementById('btn-load-api').addEventListener('click', async () => {
+            await loadFromApi();
+            updateFiltersUI();
+            updateDbIndicators();
+            render();
+        });
+        document.getElementById('btn-export').addEventListener('click', exportCsv);
+
+        Object.values(filterElements).forEach(element => {
+            element.addEventListener('change', render);
+        });
+        filterElements.from.addEventListener('input', refreshSuggestions);
+        filterElements.to.addEventListener('input', refreshSuggestions);
+        filterElements.from.addEventListener('focus', refreshSuggestions);
+        filterElements.to.addEventListener('focus', refreshSuggestions);
+
+        loadDatabase();
+        authTokenInput.value = localStorage.getItem('auth_token') || '';
+        updateFiltersUI();
+        updateDbIndicators();
+        render();
+    </script>
+</body>
+</html>

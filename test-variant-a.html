@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вариант A — Таблица + раскрытие</title>
+    <link rel="stylesheet" href="styles/redesign.css">
+    <link rel="stylesheet" href="styles/variants.css">
+</head>
+<body>
+    <div class="demo-shell">
+        <header class="demo-header">
+            <h1 class="demo-title">Вариант A — Таблица + раскрытие</h1>
+            <p class="demo-subtitle">В таблице только ключевые поля, детали открываются кликом по строке.</p>
+        </header>
+
+        <div class="variant-a">
+            <table id="variant-a-table">
+                <thead>
+                    <tr>
+                        <th style="width:14%;">Тип</th>
+                        <th style="width:12%;">Море</th>
+                        <th style="width:12%;">ЖД</th>
+                        <th style="width:14%;">Общая</th>
+                        <th style="width:16%;">Агент</th>
+                        <th style="width:16%;">Перевозчик</th>
+                        <th style="width:16%;">ETD</th>
+                    </tr>
+                </thead>
+                <tbody id="variant-a-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const sampleRows = [
+            { type: 'Море + ЖД', sea: '$1950', rail: '185000 ₽', total: '336418 ₽', agent: 'Санско', carrier: 'Sinokor', etd: 'см на сайте', date: '30.11.2025', station: 'Vladivostok', border: '—', note: '—' },
+            { type: 'Море + ЖД', sea: '$1950', rail: '189500 ₽', total: '340918 ₽', agent: 'Санско', carrier: 'Sinokor', etd: 'см на сайте', date: '30.11.2025', station: 'Vladivostok', border: '—', note: '—' },
+            { type: 'Море + ЖД', sea: '$1950', rail: '193128 ₽', total: '344546 ₽', agent: 'Санско', carrier: 'Sinokor', etd: 'см на сайте', date: '30.11.2025', station: 'Vladivostok', border: '—', note: '—' }
+        ];
+
+        const body = document.getElementById('variant-a-body');
+        sampleRows.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = 'row-main';
+            tr.dataset.index = idx;
+            tr.innerHTML = `
+                <td><span class="tag">${row.type}</span></td>
+                <td>${row.sea}</td>
+                <td>${row.rail}</td>
+                <td><strong>${row.total}</strong></td>
+                <td>${row.agent}</td>
+                <td>${row.carrier}</td>
+                <td>${row.etd}</td>
+            `;
+            const detail = document.createElement('tr');
+            detail.className = 'row-details';
+            detail.style.display = 'none';
+            detail.innerHTML = `
+                <td colspan="7">
+                    Дата действия: ${row.date} · Станция: ${row.station} · Погран переход: ${row.border} · Примечание: ${row.note}
+                </td>
+            `;
+            tr.addEventListener('click', () => {
+                detail.style.display = detail.style.display === 'none' ? 'table-row' : 'none';
+            });
+            body.appendChild(tr);
+            body.appendChild(detail);
+        });
+    </script>
+</body>
+</html>

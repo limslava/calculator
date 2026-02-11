@@ -1,7 +1,6 @@
 // 🎯 ОСНОВНОЙ ФАЙЛ ДЛЯ МЕНЕДЖЕРА ПО ПРОДАЖАМ
 
 // Глобальные переменные
-let currentRole = 'sales';
 let currentDatabase = '';
 let currentCalculationType = 'separate'; // 'separate' или 'complex'
 let database = {
@@ -21,29 +20,62 @@ let is20ftOver24Tons = false;
 
 // Флаг для триггера ВТТ (море POD = жд агент)
 let isVTTTrigger = false;
+function escapeHtml(value) {
+    return (window.Utils && typeof Utils.escapeHtml === 'function')
+        ? Utils.escapeHtml(value)
+        : String(value ?? '');
+}
+
+function setSalesMenuState(calcType, dbType = '') {
+    const salesGroup = document.querySelector('[data-sales-group="sales"]');
+    if (salesGroup) {
+        salesGroup.classList.toggle('is-active', Boolean(calcType));
+        if (salesGroup.tagName === 'DETAILS') {
+            salesGroup.open = Boolean(calcType);
+        }
+    }
+
+    const separateGroup = document.querySelector('[data-sales-calc="separate"]');
+    if (separateGroup && separateGroup.tagName === 'DETAILS') {
+        separateGroup.open = calcType === 'separate';
+    }
+    if (separateGroup) {
+        separateGroup.classList.toggle('is-active', calcType === 'separate');
+    }
+
+    const complexButton = document.querySelector('[data-sales-calc="complex"]');
+    if (complexButton) {
+        complexButton.classList.toggle('is-active', calcType === 'complex');
+    }
+
+    const dbButtons = document.querySelectorAll('[data-sales-db]');
+    dbButtons.forEach((button) => {
+        button.classList.toggle('is-active', calcType === 'separate' && button.dataset.salesDb === dbType);
+    });
+}
 
 // Функция для нормализации названий городов
 function normalizeCityName(city) {
     if (!city) return city;
-    
+
     const normalized = city.trim().toUpperCase();
-    
+
     // Нормализация для Санкт-Петербурга
     if (normalized === 'STP' || normalized === 'SPB' || normalized === 'ST.PETERSBURG' ||
         normalized === 'SAINT PETERSBURG' || normalized === 'ST. PETERSBURG') {
         return 'St. Petersburg';
     }
-    
+
     // Нормализация для Москвы
     if (normalized === 'MOW' || normalized === 'MSK') {
         return 'Moscow';
     }
-    
+
     // Нормализация для Тольятти
     if (normalized === 'ТОЛЬЯТТИ' || normalized === 'TOLYATTI') {
         return 'Tolyatti';
     }
-    
+
     // Возвращаем оригинальное название с правильным регистром
     return city.charAt(0).toUpperCase() + city.slice(1).toLowerCase();
 }
@@ -213,7 +245,11 @@ function selectCalculationType(type) {
         // Показываем выбор типа базы данных для отдельных ставок
         document.getElementById('calculation-type-selection').classList.add('hidden');
         document.getElementById('database-selection').classList.remove('hidden');
+        setSalesMenuState('separate', currentDatabase);
     } else {
+        currentDatabase = '';
+        window.currentDatabase = '';
+        setSalesMenuState('complex');
         // Показываем интерфейс комплексного расчета
         document.getElementById('calculation-type-selection').classList.add('hidden');
         document.getElementById('sales-interface').classList.remove('hidden');
@@ -223,26 +259,55 @@ function selectCalculationType(type) {
     }
 }
 
-function selectDatabase(dbType) {
+function openSeparateDatabase(dbType) {
+    selectCalculationType('separate');
+    selectDatabase(dbType);
+}
+
+async function openChangePassword() {
+    try {
+        const user = window.currentUser || await ServerAuth.getCurrentUser();
+        if (!user || !user.email) {
+            Utils.showStatus('Не удалось получить email пользователя', 'error');
+            return;
+        }
+        window.location.href = `../index.html?action=change-password&email=${encodeURIComponent(user.email)}`;
+    } catch (error) {
+        console.error('❌ Ошибка перехода к смене пароля:', error);
+        Utils.showStatus('Ошибка перехода к смене пароля', 'error');
+    }
+}
+
+function openSalesDatabaseView() {
+    console.log('🔧 Открываем интерфейс продаж для менеджера');
+    document.getElementById('sales-separate-interface').classList.remove('hidden');
+    resetCalculatorForm();
+    setupCalculator();
+    Utils.showLastUpdate(currentDatabase, 'last-update-separate');
+}
+
+function selectDatabase(dbType, options = {}) {
     currentDatabase = dbType;
+    window.currentDatabase = dbType;
     console.log('🎯 Выбран тип базы данных:', dbType);
+    setSalesMenuState('separate', dbType);
     
     document.getElementById('database-selection').classList.add('hidden');
     
-    // Синхронизируем данные с сервером при каждом входе
-    loadDatabaseData().then(() => {
-        console.log('🔧 Открываем интерфейс продаж для менеджера');
-        document.getElementById('sales-separate-interface').classList.remove('hidden');
-        resetCalculatorForm();
-        setupCalculator();
-        Utils.showLastUpdate(currentDatabase, 'last-update-separate');
+    if (options.skipLoad) {
+        openSalesDatabaseView();
+    } else {
+        // Синхронизируем данные с сервером при каждом входе
+        loadDatabaseData().then(() => {
+            openSalesDatabaseView();
+        });
+    }
+    console.log('📊 Проверка структуры tariff данных:', {
+        hasTariffData: !!database.tariff,
+        tariffLength: database.tariff?.length || 0,
+        tariffStructure: database.tariff?.slice(0, 3) || 'нет данных',
+        firstTariff: database.tariff?.[0] || 'нет данных'
     });
-    onsole.log('📊 Проверка структуры tariff данных:', {
-    hasTariffData: !!database.tariff,
-    tariffLength: database.tariff?.length || 0,
-    tariffStructure: database.tariff?.slice(0, 3) || 'нет данных',
-    firstTariff: database.tariff?.[0] || 'нет данных'
-});
 }
 
 function goBack() {
@@ -253,6 +318,7 @@ function goBack() {
         console.log('🔙 Возврат из отдельных ставок к выбору типа базы данных');
         resetCalculatorForm();
         currentDatabase = '';
+        window.currentDatabase = '';
         document.getElementById('sales-separate-interface').classList.add('hidden');
         document.getElementById('database-selection').classList.remove('hidden');
     } else if (currentCalculationType === 'complex') {
@@ -273,6 +339,7 @@ function goBack() {
     }
     
     console.log('✅ После нажатия "Назад":', { currentDatabase, currentCalculationType });
+    setSalesMenuState(currentCalculationType, currentDatabase);
 }
 
 function resetCalculatorForm() {
@@ -306,29 +373,145 @@ function resetCalculatorForm() {
         dropdown.classList.remove('active');
         dropdown.innerHTML = '';
     });
+
+    const multiselects = document.querySelectorAll('.trd-multiselect');
+    multiselects.forEach(select => {
+        select.dataset.selected = '[]';
+        select.classList.remove('is-open');
+        const trigger = select.querySelector('.trd-ms-trigger');
+        if (trigger) trigger.textContent = 'Все';
+        select.querySelectorAll('input[type=\"checkbox\"]').forEach(input => {
+            input.checked = false;
+        });
+        const search = select.querySelector('.trd-ms-search');
+        if (search) search.value = '';
+    });
     
     // Сбрасываем флаги
     is20ftOver24Tons = false;
     isVTTTrigger = false;
 }
 
-function resetComplexForm() {
-    document.getElementById('complex-departure').value = '';
-    document.getElementById('complex-destination').value = '';
-    document.getElementById('complex-container-type').value = '';
-    document.getElementById('weight-over-24').checked = false;
-    document.getElementById('vtt-trigger').checked = false;
-    is20ftOver24Tons = false;
-    isVTTTrigger = false;
-    
-    document.getElementById('results').classList.add('hidden');
-    document.getElementById('rates-table').innerHTML = '';
-    
-    const dropdowns = document.querySelectorAll('.custom-dropdown');
-    dropdowns.forEach(dropdown => {
-        dropdown.classList.remove('active');
-        dropdown.innerHTML = '';
-    });
+async function refreshComplexData() {
+    try {
+        await loadExchangeRate();
+        await loadDatabaseData();
+    } catch (error) {
+        console.warn('❌ Ошибка обновления данных для комплексных ставок:', error);
+    }
+
+    const apiStatus = document.getElementById('rb-summary-api');
+    if (apiStatus) {
+        const now = new Date();
+        apiStatus.textContent = `Обновлено: ${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    const departure = document.getElementById('complex-departure')?.value?.trim();
+    const destination = document.getElementById('complex-destination')?.value?.trim();
+    const containerType = document.getElementById('complex-container-type')?.value;
+
+    if (departure && destination && containerType) {
+        calculateAllRates(departure, destination, containerType);
+    }
+}
+
+function saveAuthTokenSimple() {
+    const input = document.getElementById('complex-auth');
+    if (!input) return;
+    const value = input.value.trim();
+    if (value) {
+        localStorage.setItem('auth_token', value);
+        if (window.Utils && typeof window.Utils.showStatus === 'function') {
+            window.Utils.showStatus('Токен сохранен', 'success');
+        }
+    } else {
+        localStorage.removeItem('auth_token');
+        if (window.Utils && typeof window.Utils.showStatus === 'function') {
+            window.Utils.showStatus('Токен очищен', 'warning');
+        }
+    }
+}
+
+async function loadApiData() {
+    try {
+        await loadDatabaseData();
+    } catch (error) {
+        console.warn('❌ Ошибка загрузки данных из API:', error);
+    }
+    const apiStatus = document.getElementById('rb-summary-api');
+    if (apiStatus) {
+        const now = new Date();
+        apiStatus.textContent = `Обновлено: ${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+}
+
+function applyComplexCalculation() {
+    const departure = document.getElementById('complex-departure')?.value?.trim();
+    const destination = document.getElementById('complex-destination')?.value?.trim();
+    const containerType = document.getElementById('complex-container-type')?.value;
+
+    if (!departure || !destination || !containerType) {
+        if (window.Utils && typeof window.Utils.showStatus === 'function') {
+            window.Utils.showStatus('Заполните маршрут и тип контейнера', 'warning');
+        } else {
+            alert('Заполните маршрут и тип контейнера');
+        }
+        updateComplexSummary([]);
+        return;
+    }
+
+    calculateAllRates(departure, destination, containerType);
+}
+
+function exportComplexResults() {
+    const results = window.displayedResults || window.allResults || [];
+    if (!results.length) {
+        if (window.Utils && typeof window.Utils.showStatus === 'function') {
+            window.Utils.showStatus('Нет данных для экспорта', 'warning');
+        } else {
+            alert('Нет данных для экспорта');
+        }
+        return;
+    }
+
+    const header = [
+        'Тип',
+        'Маршрут',
+        'Ставка',
+        'Валюта',
+        'Линия',
+        'Агент',
+        'Доп.инфо'
+    ];
+
+    const lines = [
+        header.join(';'),
+        ...results.map(result => {
+            const route = result.data?.connection || `${result.data?.sea?.pol || result.data?.pol || '-'} → ${result.data?.rail?.destination || result.data?.pod || '-'}`;
+            const line = result.data?.sea?.carrier || result.data?.carrier || '-';
+            const agent = result.data?.rail?.agent || result.data?.agent || '-';
+            const info = result.transportName || '-';
+            return [
+                result.transportName || '',
+                route,
+                result.rate || '',
+                result.currency || '',
+                line,
+                agent,
+                info
+            ].map(value => `"${String(value).replace(/\"/g, '\"\"')}"`).join(';');
+        })
+    ];
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `complex_rates_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
 }
 
 // Функции для менеджера по продажам
@@ -628,13 +811,14 @@ function setupSeparateRatesHandlers(databaseType) {
         if (containerTypeSelect) {
             containerTypeSelect.addEventListener('change', function() {
                 const pol = document.getElementById('sea-pol').value;
+                const city = document.getElementById('sea-city').value;
                 const pod = document.getElementById('sea-pod').value;
                 const dropOffArea = document.getElementById('sea-drop-off-area').value;
                 const containerType = this.value;
                 
-                if (pol && pod && dropOffArea && containerType) {
-                    console.log('🎯 Расчет морских ставок:', { pol, pod, dropOffArea, containerType });
-                    const result = searchSeaRates(pol, pod, dropOffArea, containerType);
+                if (pol && city && pod && dropOffArea && containerType) {
+                    console.log('🎯 Расчет морских ставок:', { pol, city, pod, dropOffArea, containerType });
+                    const result = searchSeaRates(pol, city, pod, dropOffArea, containerType);
                     if (result.success) {
                         displaySeaRates(result.data, containerType);
                     } else {
@@ -775,12 +959,12 @@ function displaySeaRates(results, containerType) {
                 <thead>
                     <tr>
                         <th>POL</th>
+                        <th>Город</th>
                         <th>POD</th>
                         <th>DROP OFF AREA</th>
                         <th>Тип контейнера</th>
                         <th>Ставка ($)</th>
-                        <th>Ставка (RUB)</th>
-                        <th>Перевозчик</th>
+                        <th>Линия</th>
                         <th>Агент</th>
                         <th>Дата действия</th>
                     </tr>
@@ -803,11 +987,11 @@ function displaySeaRates(results, containerType) {
         tableHTML += `
             <tr style="cursor: pointer;">
                 <td>${result.pol || '-'}</td>
+                <td>${result.city || '-'}</td>
                 <td>${result.pod || '-'}</td>
                 <td>${result.dropOffArea || '-'}</td>
                 <td>${containerTypeDisplay}</td>
                 <td>$${rate}</td>
-                <td>${rateInRub > 0 ? rateInRub + ' RUB' : '-'}</td>
                 <td>${result.carrier || '-'}</td>
                 <td>${result.agent || '-'}</td>
                 <td>${result.dateOfValidity || '-'}</td>
@@ -948,13 +1132,15 @@ function displayDirectRailRates(results) {
             <table>
                 <thead>
                     <tr>
-                        <th>FOB</th>
+                        <th>Город погрузки</th>
                         <th>Город прибытия</th>
                         <th>Погран переход</th>
                         <th>Агент</th>
                         <th>Тип контейнера</th>
-                        <th>Ставка</th>
-                        <th>Ставка в RUB</th>
+                        <th>Ставка FOB</th>
+                        <th>Ставка EXW/FCA</th>
+                        <th>ETD</th>
+                        <th>Конвертация</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -977,7 +1163,9 @@ function displayDirectRailRates(results) {
                 <td>${result.agent || '-'}</td>
                 <td>40'HC</td>
                 <td>$${rate}</td>
-                <td>${rateInRub > 0 ? rateInRub + ' RUB' : '-'}</td>
+                <td>${result.exwFca40hc ? '$' + result.exwFca40hc : '-'}</td>
+                <td>${result.etd || '-'}</td>
+                <td>${result.conversion || '-'}</td>
             </tr>
         `;
     });
@@ -1039,8 +1227,7 @@ function displayDirectSeaRates(results, containerType) {
                         <th>POD</th>
                         <th>Тип контейнера</th>
                         <th>Ставка ($)</th>
-                        <th>Ставка (RUB)</th>
-                        <th>Перевозчик</th>
+                        <th>Линия</th>
                         <th>Агент</th>
                         <th>Remark</th>
                         <th>ETD</th>
@@ -1071,7 +1258,6 @@ function displayDirectSeaRates(results, containerType) {
                 <td>${result.pod || '-'}</td>
                 <td>${containerTypeDisplay}</td>
                 <td>$${rate}</td>
-                <td>${rateInRub > 0 ? rateInRub + ' RUB' : '-'}</td>
                 <td>${result.carrier || '-'}</td>
                 <td>${result.agent || '-'}</td>
                 <td>${result.remarks || '-'}</td>
@@ -1102,9 +1288,9 @@ function getDirectSeaContainerTypeDisplayName(containerType) {
     }
 }
 
-// 🎯 ФУНКЦИЯ ДЛЯ ПОИСКА СТАВОК ДЛЯ МОРЯ
-function searchSeaRates(pol, pod, dropOffArea, containerType) {
-    console.log('🔍 Поиск морских ставок с параметрами:', { pol, pod, dropOffArea, containerType });
+// 🎯 ФУНКЦИЯ ДЛЯ ПОИСКА СТАВОК ДЛЯ МОРЯ (с поддержкой города)
+function searchSeaRates(pol, city, pod, dropOffArea, containerType) {
+    console.log('🔍 Поиск морских ставок с параметрами:', { pol, city, pod, dropOffArea, containerType });
     
     const data = database.sea;
     
@@ -1115,7 +1301,7 @@ function searchSeaRates(pol, pod, dropOffArea, containerType) {
     // Используем поисковый движок из модуля моря
     if (window.SeaModule && window.SeaModule.EnhancedSeaSearchEngine) {
         const searchEngine = new window.SeaModule.EnhancedSeaSearchEngine(data);
-        const rates = searchEngine.getRatesForRoute(pol, pod, dropOffArea, containerType);
+        const rates = searchEngine.getRatesForRoute(pol, city, pod, dropOffArea, containerType);
         
         if (rates.length === 0) {
             return { error: 'Ставки не найдены для выбранного маршрута' };
@@ -1124,9 +1310,10 @@ function searchSeaRates(pol, pod, dropOffArea, containerType) {
         return { success: true, data: rates };
     } else {
         // Резервный поиск если модуль недоступен
-        const filteredData = data.filter(item => 
-            item.pol === pol && 
-            item.pod === pod && 
+        const filteredData = data.filter(item =>
+            item.pol === pol &&
+            item.city === city &&
+            item.pod === pod &&
             item.dropOffArea === dropOffArea &&
             getSeaRateByContainerType(item, containerType) > 0
         );
@@ -1319,8 +1506,31 @@ function setupComplexAutocomplete() {
     console.log('🔧 Комплексные ставки - пункты отправления:', departureValues);
     console.log('🔧 Комплексные ставки - пункты назначения:', destinationValues);
     
-    Utils.setupCustomDropdown('complex-departure', departureValues);
-    Utils.setupCustomDropdown('complex-destination', destinationValues);
+    const departureList = document.getElementById('complex-departure-list');
+    const destinationList = document.getElementById('complex-destination-list');
+
+    const populateDatalist = (listEl, values) => {
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        values.slice(0, 200).forEach(value => {
+            const option = document.createElement('option');
+            option.value = value;
+            listEl.appendChild(option);
+        });
+    };
+
+    const updateSuggestions = (inputValue, values, listEl) => {
+        const query = normalizeCityName(inputValue || '');
+        if (!query) {
+            populateDatalist(listEl, values.slice(0, 80));
+            return;
+        }
+        const filtered = values.filter(value => normalizeCityName(value).includes(query)).slice(0, 80);
+        populateDatalist(listEl, filtered);
+    };
+
+    populateDatalist(departureList, departureValues);
+    populateDatalist(destinationList, destinationValues);
     
     // Добавляем обработчики для автоматического расчета
     const departureInput = document.getElementById('complex-departure');
@@ -1336,6 +1546,181 @@ function setupComplexAutocomplete() {
             calculateAllRates(departure, destination, containerType);
         }
     };
+
+    if (departureInput) {
+        departureInput.addEventListener('input', () => updateSuggestions(departureInput.value, departureValues, departureList));
+        departureInput.addEventListener('focus', () => updateSuggestions(departureInput.value, departureValues, departureList));
+    }
+    if (destinationInput) {
+        destinationInput.addEventListener('input', () => updateSuggestions(destinationInput.value, destinationValues, destinationList));
+        destinationInput.addEventListener('focus', () => updateSuggestions(destinationInput.value, destinationValues, destinationList));
+    }
+
+    // Line / Agent / Terminal selects (same idea as test-real-data-check)
+    const lineSelect = document.getElementById('complex-line');
+    const agentSelect = document.getElementById('complex-agent');
+    const terminalSelect = document.getElementById('complex-terminal');
+    const rateTypeSelect = document.getElementById('complex-rate-type');
+    const lineMultiInput = document.getElementById('complex-line-multi');
+    const agentMultiInput = document.getElementById('complex-agent-multi');
+    const terminalMultiInput = document.getElementById('complex-terminal-multi');
+
+    const isMeaningfulTerminal = value => {
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'boolean') return false;
+        if (value === 0 || value === 1) return false;
+        const normalized = String(value).trim().toLowerCase();
+        if (!normalized) return false;
+        if (/^(да|нет|true|false|yes|no|0|1)$/i.test(normalized)) return false;
+        return true;
+    };
+    const uniqueSorted = values => [...new Set(values.filter(isMeaningfulTerminal))].sort((a, b) => a.localeCompare(b));
+    const updateTriggerLabel = (container) => {
+        const trigger = container.querySelector('.trd-ms-trigger');
+        const selected = container.dataset.selected ? JSON.parse(container.dataset.selected) : [];
+        if (!trigger) return;
+        if (selected.length === 0) {
+            trigger.textContent = 'Все';
+        } else if (selected.length === 1) {
+            trigger.textContent = selected[0];
+        } else {
+            trigger.textContent = `Выбрано: ${selected.length}`;
+        }
+    };
+
+    const fillSelect = (container, values) => {
+        if (!container) return;
+        const filtered = container.id === 'complex-terminal'
+            ? values.filter(isMeaningfulTerminal)
+            : values;
+        const optionsContainer = container.querySelector('.trd-ms-options');
+        if (!optionsContainer) return;
+        if (!container.dataset.selected) container.dataset.selected = '[]';
+        const selected = JSON.parse(container.dataset.selected || '[]');
+        optionsContainer.innerHTML = '';
+        filtered.forEach(value => {
+            const option = document.createElement('label');
+            option.className = 'trd-ms-option';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = value;
+            if (selected.includes(value)) checkbox.checked = true;
+            const span = document.createElement('span');
+            span.textContent = value;
+            option.appendChild(checkbox);
+            option.appendChild(span);
+            optionsContainer.appendChild(option);
+        });
+        updateTriggerLabel(container);
+    };
+
+    const lineValues = uniqueSorted([
+        ...database.sea.map(item => item.carrier),
+        ...database.direct_sea.map(item => item.carrier)
+    ]);
+    const agentValues = uniqueSorted([
+        ...database.sea.map(item => item.agent),
+        ...database.direct_sea.map(item => item.agent),
+        ...database.direct_rail.map(item => item.agent)
+    ]);
+    const terminalValues = uniqueSorted([
+        ...database.rail.map(item => item.agent || item.city || item.destination),
+        ...database.direct_rail.map(item => item.departureStation || item.city || item.destination)
+    ]);
+
+    fillSelect(lineSelect, lineValues);
+    fillSelect(agentSelect, agentValues);
+    fillSelect(terminalSelect, terminalValues);
+
+    // мульти-чипы отключены
+
+    const refreshComplexView = () => {
+        if (!window.allResults) return;
+        const departure = departureInput?.value;
+        const destination = destinationInput?.value;
+        const containerType = containerTypeSelect?.value;
+        if (departure && destination && containerType) {
+            displayComplexResults(window.allResults, departure, destination, containerType);
+        }
+    };
+
+    const setupMultiSelect = (container) => {
+        if (!container) return;
+        const trigger = container.querySelector('.trd-ms-trigger');
+        const panel = container.querySelector('.trd-ms-panel');
+        const optionsContainer = container.querySelector('.trd-ms-options');
+        const searchInput = container.querySelector('.trd-ms-search');
+        const actions = container.querySelector('.trd-ms-actions');
+        if (!trigger || !panel || !optionsContainer) return;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            container.classList.toggle('is-open');
+        });
+
+        optionsContainer.addEventListener('change', (e) => {
+            const checkbox = e.target.closest('input[type=\"checkbox\"]');
+            if (!checkbox) return;
+            const selected = container.dataset.selected ? JSON.parse(container.dataset.selected) : [];
+            if (checkbox.checked) {
+                if (!selected.includes(checkbox.value)) selected.push(checkbox.value);
+            } else {
+                const idx = selected.indexOf(checkbox.value);
+                if (idx !== -1) selected.splice(idx, 1);
+            }
+            container.dataset.selected = JSON.stringify(selected);
+            updateTriggerLabel(container);
+            refreshComplexView();
+        });
+
+        if (actions) {
+            actions.addEventListener('click', (e) => {
+                const actionBtn = e.target.closest('.trd-ms-action');
+                if (!actionBtn) return;
+                const action = actionBtn.dataset.action;
+                let selected = container.dataset.selected ? JSON.parse(container.dataset.selected) : [];
+                const allValues = Array.from(optionsContainer.querySelectorAll('input[type=\"checkbox\"]')).map(input => input.value);
+                if (action === 'all') {
+                    selected = [...new Set(allValues)];
+                    optionsContainer.querySelectorAll('input[type=\"checkbox\"]').forEach(input => {
+                        input.checked = true;
+                    });
+                }
+                if (action === 'clear') {
+                    selected = [];
+                    optionsContainer.querySelectorAll('input[type=\"checkbox\"]').forEach(input => {
+                        input.checked = false;
+                    });
+                }
+                container.dataset.selected = JSON.stringify(selected);
+                updateTriggerLabel(container);
+                refreshComplexView();
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.trim().toLowerCase();
+                optionsContainer.querySelectorAll('.trd-ms-option').forEach(option => {
+                    const text = option.textContent.toLowerCase();
+                    option.style.display = text.includes(query) ? 'flex' : 'none';
+                });
+            });
+        }
+    };
+
+    [lineSelect, agentSelect, terminalSelect].forEach(setupMultiSelect);
+
+    document.addEventListener('click', (e) => {
+        [lineSelect, agentSelect, terminalSelect].forEach(container => {
+            if (!container) return;
+            if (!container.contains(e.target)) container.classList.remove('is-open');
+        });
+    });
+
+    if (rateTypeSelect) {
+        rateTypeSelect.addEventListener('change', refreshComplexView);
+    }
     
     // Обновляем типы контейнеров для комплексных ставок
     updateContainerTypesForComplex(containerTypeSelect);
@@ -1598,183 +1983,70 @@ function calculateAllRates(departure, destination, containerType) {
     console.log('📊 Отсортированные результаты комплексного расчета:',
         allResults.map(r => ({ type: r.transportType, rate: r.rate, name: r.transportName, currency: r.currency })));
 
-    // Сохраняем результаты в глобальную переменную для доступа из модального окна
+    // Сохраняем результаты в глобальную переменную для доступа из модального окна и фильтров
     window.allResults = allResults;
+    window.displayedResults = allResults;
+
+    // Обновляем доступные значения фильтров на основе текущего набора результатов
+    if (typeof window.refreshLinkedFilterOptions === 'function') {
+        window.refreshLinkedFilterOptions(window.allResults);
+    }
     
     // Отображаем результаты
     displayComplexResults(allResults, departure, destination, containerType);
 }
 
-function displayComplexResults(results, departure, destination, containerType) {
-    const resultsSection = document.getElementById('results');
-    const ratesTable = document.getElementById('rates-table');
-    
-    // 🔧 ДОПОЛНИТЕЛЬНАЯ ОТЛАДКА ДЛЯ ПРОВЕРКИ СОРТИРОВКИ
-    console.log('🔧 Отладочная информация перед отображением:');
-    results.forEach((result, index) => {
-        // 🔧 Показываем конвертированные значения для сортировки
-        let rateForSorting = result.rate;
-        if (result.currency === '$' && usdToRubRate) {
-            rateForSorting = Math.round(result.rate * usdToRubRate);
-        }
-        console.log(`  ${index + 1}. ${result.transportName}: ${result.rate} ${result.currency} (${rateForSorting} RUB для сортировки)`);
-    });
-    
-    if (results.length === 0) {
-        ratesTable.innerHTML = `
-            <div class="status-message error">
-                Нет данных для выбранных параметров: ${departure} → ${destination}
-            </div>
-        `;
-        resultsSection.classList.remove('hidden');
+function formatSummaryRate(rate, currency) {
+    if (!rate || Number.isNaN(rate)) return '—';
+    const rounded = Math.round(Number(rate));
+    if (currency === 'RUB') return `${rounded.toLocaleString('ru-RU')} ₽`;
+    return `$${rounded.toLocaleString('ru-RU')}`;
+}
+
+function updateComplexSummary(results) {
+    const totalEl = document.getElementById('rb-summary-total');
+    const splitEl = document.getElementById('rb-summary-split');
+    const bestEl = document.getElementById('rb-summary-best');
+    const avgEl = document.getElementById('rb-summary-avg');
+    const noteEl = document.getElementById('rb-summary-note');
+
+    if (!totalEl || !splitEl || !bestEl || !avgEl || !noteEl) return;
+
+    const safeResults = Array.isArray(results) ? results : [];
+    totalEl.textContent = `${safeResults.length} ставок`;
+
+    if (!safeResults.length) {
+        splitEl.textContent = '—';
+        bestEl.textContent = '—';
+        avgEl.textContent = '—';
+        noteEl.textContent = 'Нет ставок по выбранным фильтрам.';
         return;
     }
-    
-    let tableHTML = `
-        <div class="complex-results-section">
-            <h4>Результаты для: ${normalizeCityName(departure)} → ${normalizeCityName(destination)}</h4>
-            <div class="sorting-info" style="margin-bottom: 10px; font-style: italic; color: #666;">
-                📊 Результаты отсортированы по возрастанию общей ставки
-            </div>
-            ${usdToRubRate ? `<div class="exchange-rate-info"><small>Курс ЦБ РФ: 1 USD = ${usdToRubRate} RUB</small></div>` : ''}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Тип перевозки</th>
-                        <th>Ставка море</th>
-                        <th>Агент</th>
-                        <th>Перевозчик</th>
-                        <th>ETD</th>
-                        <th>Дата действия</th>
-                        <th>Ставка ЖД</th>
-                        <th>Станция отправления</th>
-                        <th>Погран переход</th>
-                        <th>Общая ставка</th>
-                        <th>Дополнительная информация</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
-    results.forEach((result, index) => {
-        const transportTypeClass = `transport-type-${result.transportType}`;
-        
-        // Определяем, является ли это самой выгодной ставкой (первая в отсортированном списке)
-        const isBestRate = index === 0;
-        const bestRateClass = isBestRate ? 'best-rate-row' : '';
-        
-        let seaRate = '';
-        let railRate = '';
-        let totalRate = '';
-        let carrier = '-';
-        let agent = '-';
-        let etd = '-';
-        let dateOfValidity = '-';
-        let departureStation = '-';
-        let borderCrossing = '-';
-        let additionalInfo = '';
-        
-        if (result.transportType === 'direct_rail') {
-            seaRate = '-';
-            railRate = `$${result.rate}`;
-            totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
-            carrier = '-';
-            agent = result.data.agent || '-';
-            etd = result.data.etd || '-';
-            dateOfValidity = '-';
-            departureStation = result.data.departureStation || '-';
-            borderCrossing = result.data.borderCrossing || '-';
-            additionalInfo = `Станция прибытия: ${result.data.arrivalStation || 'Не указана'}`;
-        } else if (result.transportType === 'direct_sea') {
-            seaRate = `$${result.rate}`;
-            railRate = '-';
-            totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
-            carrier = result.data.carrier || '-';
-            agent = result.data.agent || '-';
-            etd = result.data.etd || '-';
-            dateOfValidity = result.data.dateOfValidity || '-';
-            departureStation = '-';
-            borderCrossing = '-';
-            additionalInfo = `Агент: ${result.data.agent || 'Не указан'}`;
-        } else if (result.transportType === 'sea') {
-            seaRate = `$${result.rate}`;
-            railRate = '-';
-            totalRate = usdToRubRate ? `${Math.round(result.rate * usdToRubRate)} RUB` : `$${result.rate}`;
-            carrier = result.data.carrier || '-';
-            agent = result.data.agent || '-';
-            etd = result.data.etd || '-';
-            dateOfValidity = result.data.dateOfValidity || '-';
-            departureStation = '-';
-            borderCrossing = '-';
-            additionalInfo = `DROP OFF AREA: ${result.data.dropOffArea || 'Не указан'}`;
-        } else if (result.transportType === 'rail') {
-            seaRate = '-';
-            railRate = `${result.rate} RUB`;
-            totalRate = `${result.rate} RUB`;
-            carrier = '-';
-            agent = result.data.agent || '-';
-            etd = '-';
-            dateOfValidity = '-';
-            departureStation = '-';
-            borderCrossing = '-';
-            additionalInfo = `Агент: ${result.data.agent || 'Не указан'}`;
-        } else if (result.transportType === 'sea_rail') {
-            // Комплексная ставка: море в USD, ЖД в RUB
-            const seaRateUSD = result.data.seaRate || 0;
-            const railRateRUB = result.data.railRate || 0;
-            
-            seaRate = `$${seaRateUSD}`;
-            railRate = `${railRateRUB} RUB`;
-            
-            // Для комплексных ставок Море+ЖД всегда отображаем в RUB
-            // (курс ЦБ РФ всегда должен быть загружен)
-            totalRate = `${result.rate} RUB`;
-            
-            // Для комплексных ставок берем данные из морской части
-            carrier = result.data.sea.carrier || '-';
-            agent = result.data.sea.agent || '-';
-            etd = result.data.sea.etd || '-';
-            dateOfValidity = result.data.sea.dateOfValidity || '-';
-            departureStation = '-';
-            borderCrossing = '-';
-            
-            additionalInfo = result.data.connection || 'Комплексная перевозка Море+ЖД';
-            // Добавляем информацию о ВТТ, если он включен
-            if (result.data.vttIncluded) {
-                additionalInfo += ` + ВТТ: ${result.data.vttRate} RUB`;
-            }
-        }
-        
-        tableHTML += `
-            <tr class="${bestRateClass}" ondblclick="openMarginModal(${index})" style="cursor: pointer;">
-                <td>
-                    <span class="transport-type-badge ${transportTypeClass}">
-                        ${result.transportName}
-                    </span>
-                </td>
-                <td>${seaRate}</td>
-                <td>${agent}</td>
-                <td>${carrier}</td>
-                <td>${etd}</td>
-                <td>${dateOfValidity}</td>
-                <td>${railRate}</td>
-                <td>${departureStation}</td>
-                <td>${borderCrossing}</td>
-                <td><strong>${totalRate}</strong></td>
-                <td>${additionalInfo}</td>
-            </tr>
-        `;
+
+    const split = safeResults.reduce((acc, item) => {
+        const key = item.transportName || item.transportType || 'Другое';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
+
+    splitEl.textContent = Object.entries(split)
+        .map(([label, count]) => `${count} ${label.toLowerCase()}`)
+        .join(' · ');
+
+    const sorted = [...safeResults].sort((a, b) => {
+        let rateA = a.rate || 0;
+        let rateB = b.rate || 0;
+        if (a.currency === '$' && usdToRubRate) rateA = rateA * usdToRubRate;
+        if (b.currency === '$' && usdToRubRate) rateB = rateB * usdToRubRate;
+        return rateA - rateB;
     });
-    
-    tableHTML += `
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    ratesTable.innerHTML = tableHTML;
-    resultsSection.classList.remove('hidden');
+
+    bestEl.textContent = formatSummaryRate(sorted[0].rate, sorted[0].currency);
+    avgEl.textContent = '—';
+    noteEl.textContent = 'Выберите строку, чтобы увидеть детали выбранной ставки.';
 }
+
+window.updateComplexSummary = updateComplexSummary;
 
 // Функция для проверки авторизации с сервера
 async function checkAuth() {
@@ -1793,11 +2065,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Проверяем авторизацию с сервера
     const currentUser = await checkAuth();
+    window.currentUser = currentUser;
     if (!currentUser || (currentUser.role !== 'sales' && currentUser.role !== 'admin')) {
         // Если пользователь не авторизован или не имеет прав доступа, перенаправляем на главную
         console.log('❌ Неавторизованный доступ, перенаправление на главную');
         window.location.href = '../index.html';
         return;
+    }
+
+    document.body.classList.add('sidebar-visible');
+
+    const sidebarEmail = document.getElementById('sidebar-user-email');
+    if (sidebarEmail && currentUser?.email) {
+        sidebarEmail.textContent = currentUser.email;
     }
     
     console.log('✅ Пользователь авторизован:', currentUser.email, 'Роль:', currentUser.role);
@@ -1812,8 +2092,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Добавляем отображение текущего курса
     addExchangeRateDisplay();
     
-    // Показываем выбор типа расчета
-    document.getElementById('calculation-type-selection').classList.remove('hidden');
+    // Инициализируем систему фильтров
+    initializeFilters();
+    
+    // Пытаемся применить deep-link из URL
+    const deepLinkApplied = applySalesDeepLink();
+    
+    // Показываем выбор типа расчета только если deep-link не применен
+    if (!deepLinkApplied) {
+        document.getElementById('calculation-type-selection').classList.remove('hidden');
+    }
 });
 
 // Функции для загрузки данных и курса валют
@@ -1874,6 +2162,47 @@ async function loadDatabaseData() {
     // 🔧 ЭКСПОРТИРУЕМ ДАННЫЕ В ГЛОБАЛЬНУЮ ОБЛАСТЬ ДЛЯ МОДУЛЕЙ
     window.database = database;
     console.log('🌐 Данные экспортированы в window.database для модулей');
+    
+    // 🔧 ОБНОВЛЯЕМ ПРЕДЛОЖЕНИЯ ДЛЯ ФИЛЬТРОВ ПОСЛЕ ЗАГРУЗКИ ДАННЫХ
+    if (typeof collectFilterSuggestions === 'function') {
+        collectFilterSuggestions();
+        
+        // Если фильтры уже инициализированы, обновляем автозаполнение
+        if (typeof setupFilterInputs === 'function') {
+            setTimeout(() => {
+                setupFilterInputs();
+                console.log('✅ Предложения для фильтров обновлены после загрузки данных');
+            }, 100);
+        }
+    }
+}
+
+function applySalesDeepLink() {
+    const params = new URLSearchParams(window.location.search);
+    const calcType = params.get('calc');
+    const dbType = params.get('db');
+    
+    if (!calcType) {
+        return false;
+    }
+    
+    if (calcType === 'complex') {
+        selectCalculationType('complex');
+        return true;
+    }
+    
+    if (calcType === 'separate') {
+        selectCalculationType('separate');
+        if (dbType) {
+            const allowed = ['sea', 'rail', 'direct_rail', 'direct_sea'];
+            if (allowed.includes(dbType)) {
+                selectDatabase(dbType, { skipLoad: true });
+            }
+        }
+        return true;
+    }
+    
+    return false;
 }
 
 // Функция для парсинга курса ЦБ РФ через прокси
@@ -1909,6 +2238,13 @@ async function loadExchangeRate() {
         console.error('❌ Ошибка загрузки курса ЦБ РФ:', error);
         Utils.showStatus('❌ ОШИБКА: Не удалось загрузить курс ЦБ РФ. Комплексные ставки не будут работать!', 'error');
         return false;
+    }
+}
+
+function updateExchangeRateDisplay() {
+    const exchangeEl = document.getElementById('exchange-rate-value');
+    if (exchangeEl) {
+        exchangeEl.textContent = usdToRubRate || '-';
     }
 }
 
@@ -1976,922 +2312,3 @@ function addExchangeRateDisplay() {
         salesSeparateInterface.insertAdjacentHTML('afterbegin', exchangeRateHTML);
     }
 }
-
-// Глобальные переменные для модального окна маржинальности
-let currentResultForMargin = null;
-let currentResultsArray = [];
-
-// Функция открытия модального окна маржинальности
-function openMarginModal(resultIndex) {
-    if (!window.allResults || !window.allResults[resultIndex]) {
-        console.error('Результат не найден');
-        return;
-    }
-    
-    currentResultForMargin = window.allResults[resultIndex];
-    currentResultsArray = window.allResults;
-    
-    const modal = document.getElementById('margin-modal');
-    if (modal) {
-        modal.style.display = 'flex';
-        modal.classList.remove('hidden');
-        
-        // Заполняем информацию о себестоимости
-        populateCostDetails(currentResultForMargin);
-        
-        // Создаем поля для ввода маржинальности
-        createMarginInputs(currentResultForMargin);
-        
-        // Рассчитываем и отображаем результат
-        calculateAndDisplayMargin();
-        
-        // Добавляем обработчик для закрытия при клике вне модального окна
-        document.addEventListener('click', handleModalOutsideClick);
-    }
-}
-
-// Обработчик клика вне модального окна
-function handleModalOutsideClick(event) {
-    const modal = document.getElementById('margin-modal');
-    const modalContent = document.querySelector('.modal-content');
-    
-    // Если клик был вне содержимого модального окна, закрываем его
-    if (modal && modalContent && !modalContent.contains(event.target)) {
-        closeMarginModal();
-    }
-}
-
-// Функция закрытия модального окна
-function closeMarginModal() {
-    const modal = document.getElementById('margin-modal');
-    if (modal) {
-        modal.style.display = 'none';
-        modal.classList.add('hidden');
-        // Удаляем обработчик клика вне модального окна
-        document.removeEventListener('click', handleModalOutsideClick);
-    }
-    currentResultForMargin = null;
-    currentResultsArray = [];
-}
-
-// Заполнение информации о себестоимости
-function populateCostDetails(result) {
-    const costDetails = document.getElementById('cost-details');
-    
-    let costHTML = '';
-    
-    // Добавляем маршрут для всех типов перевозок
-    let routeInfo = '';
-    if (result.transportType === 'direct_rail') {
-        routeInfo = `${result.data.fob || 'Не указан'} → ${result.data.arrivalCity || 'Не указан'}`;
-    } else if (result.transportType === 'direct_sea') {
-        routeInfo = `${result.data.pol || 'Не указан'} → ${result.data.pod || 'Не указан'}`;
-    } else if (result.transportType === 'sea') {
-        routeInfo = `${result.data.pol || 'Не указан'} → ${result.data.pod || 'Не указан'}`;
-    } else if (result.transportType === 'rail') {
-        routeInfo = `${result.data.city || 'Не указан'} → ${result.data.destination || 'Не указан'}`;
-    } else if (result.transportType === 'sea_rail') {
-        routeInfo = result.data.connection || 'Комплексный маршрут';
-    }
-    
-    costHTML += `
-        <div class="cost-item">
-            <span class="cost-label">Маршрут:</span>
-            <span>${routeInfo}</span>
-        </div>
-    `;
-    
-    if (result.transportType === 'direct_rail') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость ЖД перевозки:</span>
-                <span class="cost-value">$${result.rate}</span>
-            </div>
-        `;
-    } else if (result.transportType === 'direct_sea') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость фрахта:</span>
-                <span class="cost-value">$${result.rate}</span>
-            </div>
-        `;
-    } else if (result.transportType === 'sea') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость фрахта:</span>
-                <span class="cost-value">$${result.rate}</span>
-            </div>
-        `;
-    } else if (result.transportType === 'rail') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость ЖД перевозки:</span>
-                <span class="cost-value">${result.rate} RUB</span>
-            </div>
-        `;
-    } else if (result.transportType === 'sea_rail') {
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Стоимость фрахта:</span>
-                <span class="cost-value">$${result.data.seaRate}</span>
-            </div>
-            <div class="cost-item">
-                <span class="cost-label">Стоимость ЖД перевозки:</span>
-                <span class="cost-value">${result.data.railRate} RUB</span>
-            </div>
-        `;
-        
-        // Добавляем информацию о ВТТ, если он включен
-        if (result.data.vttIncluded) {
-            costHTML += `
-                <div class="cost-item">
-                    <span class="cost-label">Стоимость ВТТ:</span>
-                    <span class="cost-value">${result.data.vttRate} RUB</span>
-                </div>
-            `;
-        }
-        
-        costHTML += `
-            <div class="cost-item">
-                <span class="cost-label">Общая стоимость:</span>
-                <span class="cost-value">${result.rate} ${result.currency}</span>
-            </div>
-        `;
-    }
-    
-    costDetails.innerHTML = costHTML;
-}
-
-// Создание полей для ввода маржинальности
-function createMarginInputs(result) {
-    const marginInputsContainer = document.getElementById('margin-inputs-container');
-    
-    let marginHTML = '';
-    
-    if (result.transportType === 'direct_rail' || result.transportType === 'rail') {
-        marginHTML = `
-            <div class="margin-input-group">
-                <label for="rail-margin">Накрутка на ЖД (${result.transportType === 'rail' ? 'RUB' : '$'}):</label>
-                <input type="number" id="rail-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
-            </div>
-        `;
-    } else if (result.transportType === 'direct_sea' || result.transportType === 'sea') {
-        marginHTML = `
-            <div class="margin-input-group">
-                <label for="sea-margin">Накрутка на фрахт ($):</label>
-                <input type="number" id="sea-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
-            </div>
-        `;
-    } else if (result.transportType === 'sea_rail') {
-        marginHTML = `
-            <div class="margin-input-group">
-                <label for="sea-margin">Накрутка на море ($):</label>
-                <input type="number" id="sea-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
-            </div>
-            <div class="margin-input-group">
-                <label for="rail-margin">Накрутка на ЖД (RUB):</label>
-                <input type="number" id="rail-margin" class="margin-input" value="0" min="0" step="1" oninput="calculateAndDisplayMargin()">
-            </div>
-        `;
-    }
-    
-    marginInputsContainer.innerHTML = marginHTML;
-}
-
-// Расчет и отображение результата с накруткой в виде таблицы
-// Расчет и отображение результата с накруткой в виде таблицы
-function calculateAndDisplayMargin() {
-    if (!currentResultForMargin) return;
-    
-    const resultContainer = document.getElementById('margin-result-container');
-    let resultHTML = '';
-    
-    let transportType = currentResultForMargin.transportType;
-    let data = currentResultForMargin.data;
-    
-    // Определяем компоненты в зависимости от типа перевозки
-    const components = [];
-    let storageInfo = null; // Информация о хранении из тарифов
-    let terminalInfo = null; // Информация о терминале
-    
-    if (transportType === 'direct_rail' || transportType === 'rail') {
-        // ЖД перевозки
-        const containerTypeDisplay = getContainerTypeDisplayName(data.containerType || 'container40');
-        const terminalName = data.agent || data.city || '';
-        
-        // Получаем информацию о терминале из тарифов
-        terminalInfo = getTerminalInfo(terminalName);
-        if (terminalInfo) {
-            storageInfo = getStorageInfoForContainer(terminalInfo, 'rail', containerTypeDisplay);
-        }
-        
-        components.push({
-            name: 'ЖД',
-            baseRate: currentResultForMargin.rate,
-            margin: parseFloat(document.getElementById('rail-margin').value) || 0,
-            currency: transportType === 'rail' ? 'RUB' : 'USD',
-            isRail: true,
-            description: transportType === 'direct_rail' 
-                ? `ЖД перевозки FOB ${data.fob || ''} - ${data.arrivalCity || ''}, ${containerTypeDisplay}`
-                : `ЖД перевозки ${data.city || ''} - ${data.destination || ''}, ${containerTypeDisplay}`,
-            terminalName: terminalName
-        });
-    } else if (transportType === 'direct_sea' || transportType === 'sea') {
-        // Морские перевозки
-        const containerTypeDisplay = getContainerTypeDisplayName(data.containerType || 'hc_40');
-        const terminalName = data.pod || data.agent || '';
-        
-        // Получаем информацию о терминале из тарифов
-        terminalInfo = getTerminalInfo(terminalName);
-        if (terminalInfo) {
-            storageInfo = getStorageInfoForContainer(terminalInfo, 'sea', containerTypeDisplay);
-        }
-        
-        components.push({
-            name: 'Море',
-            baseRate: currentResultForMargin.rate,
-            margin: parseFloat(document.getElementById('sea-margin').value) || 0,
-            currency: 'USD',
-            isSea: true,
-            description: `Морской фрахт FOB ${data.pol || ''} - ${data.pod || ''}, ${containerTypeDisplay}`,
-            terminalName: terminalName
-        });
-    } else if (transportType === 'sea_rail') {
-        // Комплексные перевозки Море+ЖД
-        const seaMargin = parseFloat(document.getElementById('sea-margin').value) || 0;
-        const railMargin = parseFloat(document.getElementById('rail-margin').value) || 0;
-        
-        const seaContainerType = getContainerTypeDisplayName(data.sea?.containerType || 'hc_40');
-        const railContainerType = getContainerTypeDisplayName(data.rail?.containerType || 'container40');
-        
-        const seaTerminalName = data.sea?.pod || data.sea?.agent || '';
-        const railTerminalName = data.rail?.agent || data.rail?.city || '';
-        
-        // Получаем информацию о терминалах из тарифов
-        // Используем морской терминал для информации о хранении
-        terminalInfo = getTerminalInfo(seaTerminalName);
-        if (terminalInfo) {
-            storageInfo = getStorageInfoForContainer(terminalInfo, 'sea', seaContainerType);
-        }
-        
-        components.push({
-            name: 'Море',
-            baseRate: data.seaRate,
-            margin: seaMargin,
-            currency: 'USD',
-            isSea: true,
-            description: `Морской фрахт FOB ${data.sea?.pol || ''} - ${data.sea?.pod || ''}, ${seaContainerType}`,
-            terminalName: seaTerminalName
-        });
-        components.push({
-            name: 'ЖД',
-            baseRate: data.railRate,
-            margin: railMargin,
-            currency: 'RUB',
-            isRail: true,
-            description: `ЖД перевозки ${data.rail?.city || ''} - ${data.rail?.destination || ''}, ${railContainerType}`,
-            terminalName: railTerminalName
-        });
-        // ВТТ не включаем в таблицу, будет отдельно
-    }
-    
-    // Генерируем таблицу в зависимости от типа перевозки
-    let tableHTML = '';
-    let textTable = ''; // текстовое представление для копирования
-    
-    // Общая логика для всех типов перевозок
-    if (components.length === 2) { // Комплексные перевозки (Море+ЖД)
-        const seaFinal = components[0].baseRate + components[0].margin;
-        const railFinal = components[1].baseRate + components[1].margin;
-        
-        tableHTML = `
-            <table class="margin-table">
-                <thead>
-                    <tr>
-                        <th>Услуга</th>
-                        <th>Стоимость услуг</th>
-                        <th>Валюта</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>${components[0].description}</td>
-                        <td>${seaFinal}</td>
-                        <td>${components[0].currency}</td>
-                    </tr>
-                    <tr>
-                        <td>${components[1].description}</td>
-                        <td>${railFinal}</td>
-                        <td>${components[1].currency}</td>
-                    </tr>
-                </tbody>
-            </table>
-        `;
-        
-        textTable = `Услуга\tСтоимость услуг\tВалюта\n`;
-        textTable += `${components[0].description}\t${seaFinal}\t${components[0].currency}\n`;
-        textTable += `${components[1].description}\t${railFinal}\t${components[1].currency}`;
-        
-    } else if (components.length === 1) { // Отдельные перевозки
-        const finalRate = components[0].baseRate + components[0].margin;
-        
-        tableHTML = `
-            <table class="margin-table">
-                <thead>
-                    <tr>
-                        <th>Услуга</th>
-                        <th>Стоимость услуг</th>
-                        <th>Валюта</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>${components[0].description}</td>
-                        <td>${finalRate}</td>
-                        <td>${components[0].currency}</td>
-                    </tr>
-                </tbody>
-            </table>
-        `;
-        
-        textTable = `Услуга\tСтоимость услуг\tВалюта\n`;
-        textTable += `${components[0].description}\t${finalRate}\t${components[0].currency}`;
-    }
-    
-    resultHTML = tableHTML;
-    
-    // Добавляем информацию о ВТТ отдельно, если это комплексная ставка и ВТТ включен
-if (transportType === 'sea_rail' && data.vttIncluded) {
-    const vttText = `ВТТ : ${data.vttRate} RUB`;
-    resultHTML += `
-        <div class="vtt-section" style="margin-top: 13px;">
-            <p style="font-weight: bold; font-size: 12px; margin-bottom: 5px; color: #333;">
-                ${vttText}
-            </p>
-        </div>
-    `;
-    textTable += `\nВТТ\t${data.vttRate}\tRUB`;
-}
-    
-    // Добавляем блок дополнительной информации с динамическими данными
-    let infoHTML = generateAdditionalInfo(transportType, data, storageInfo, terminalInfo, components);
-    resultHTML += infoHTML;
-    
-    resultContainer.innerHTML = resultHTML;
-    
-    // Сохраняем текстовое представление в глобальной переменной для копирования
-    window.marginTableText = textTable;
-}
-
-// 🔧 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-
-// Получение информации о терминале из тарифов
-function getTerminalInfo(terminalName) {
-    console.log('🔍 getTerminalInfo вызвана с terminalName:', terminalName);
-    
-    if (!terminalName || !database.tariff || database.tariff.length === 0) {
-        console.log('❌ Недостаточно данных: terminalName отсутствует или база тарифов пуста');
-        return null;
-    }
-    
-    const normalizedTerminal = terminalName.trim().toLowerCase();
-    console.log('🔍 Нормализованное имя терминала:', normalizedTerminal);
-    
-    // Отладочный вывод всех терминалов
-    console.log('📋 Все доступные терминалы в базе:');
-    database.tariff.forEach((t, i) => {
-        if (t.terminal) {
-            console.log(`  ${i}. "${t.terminal}" -> нормализовано: "${t.terminal.trim().toLowerCase()}"`);
-        }
-    });
-    
-    // Ищем точное совпадение
-    let terminal = database.tariff.find(t =>
-        t.terminal && t.terminal.trim().toLowerCase() === normalizedTerminal
-    );
-    
-    if (terminal) {
-        console.log('✅ Найден терминал точным совпадением:', terminal.terminal);
-        console.log('📊 Структура найденного терминала:', {
-            terminal: terminal.terminal,
-            hasStorage: !!terminal.storage,
-            storageLength: terminal.storage?.length || 0,
-            storage: terminal.storage
-        });
-    } else {
-        console.log('⚠️ Не найдено точного совпадения, ищем частичное');
-        
-        // Ищем частичное совпадение
-        terminal = database.tariff.find(t =>
-            t.terminal && t.terminal.trim().toLowerCase().includes(normalizedTerminal)
-        );
-        
-        if (terminal) {
-            console.log('✅ Найден терминал частичным совпадением:', terminal.terminal);
-        } else {
-            console.log('⚠️ Не найдено частичного совпадения, ищем "Общий"');
-            
-            // Используем общий тариф
-            terminal = database.tariff.find(t =>
-                t.terminal && t.terminal.trim().toLowerCase() === 'общий'
-            );
-            
-            if (terminal) {
-                console.log('✅ Используем общий терминал:', terminal.terminal);
-            } else {
-                console.log('❌ Не найден даже общий терминал');
-                return null;
-            }
-        }
-    }
-    
-    return terminal;
-}
-
-// Получение информации о хранении для контейнера
-function getStorageInfoForContainer(terminalInfo, transportType, containerType) {
-    if (!terminalInfo || !terminalInfo.storage || terminalInfo.storage.length === 0) {
-        return null;
-    }
-    
-    // Определяем, используем ли ставки для 20' или 40' контейнера
-    const is20ft = containerType.includes('20');
-    const is40ft = containerType.includes('40');
-    
-    // Ищем первый диапазон хранения (самый дешевый/бесплатный)
-    const firstStorageRange = terminalInfo.storage[0];
-    
-    if (firstStorageRange) {
-        // Определяем бесплатные дни (с 0 по X дней)
-        // Количество свободных дней = from_days - 1
-        const freeDays = firstStorageRange.from_days - 1;
-        // Платное хранение начинается с from_days суток
-        const paidStorageStarts = firstStorageRange.from_days;
-        
-        // Получаем ставку за хранение
-        let storageRate = 0;
-        if (is20ft && firstStorageRange.rate20 > 0) {
-            storageRate = firstStorageRange.rate20;
-        } else if (is40ft && firstStorageRange.rate40 > 0) {
-            storageRate = firstStorageRange.rate40;
-        }
-        
-        return {
-            freeDays: freeDays,
-            paidStorageStarts: paidStorageStarts,
-            storageRate: storageRate,
-            containerType: containerType
-        };
-    }
-    
-    return null;
-}
-
-// Генерация дополнительной информации с динамическими данными
-function generateAdditionalInfo(transportType, data, storageInfo, terminalInfo, components) {
-    console.log('🔍 Генерация дополнительной информации:', {
-        transportType,
-        hasData: !!data,
-        hasStorageInfo: !!storageInfo,
-        hasTerminalInfo: !!terminalInfo,
-        storageInfo: storageInfo,
-        terminalInfo: terminalInfo ? {
-            name: terminalInfo.terminal,
-            hasStorage: !!terminalInfo.storage,
-            storageLength: terminalInfo.storage?.length || 0
-        } : 'нет'
-    });
-    let containerTypeDisplay = '';
-    if (transportType === 'sea_rail') {
-        containerTypeDisplay = getContainerTypeDisplayName(data.sea?.containerType || 'hc_40');
-    } else if (transportType === 'direct_sea' || transportType === 'sea') {
-        containerTypeDisplay = getContainerTypeDisplayName(data.containerType || 'hc_40');
-    } else if (transportType === 'direct_rail' || transportType === 'rail') {
-        containerTypeDisplay = getContainerTypeDisplayName(data.containerType || 'container40');
-    }
-    
-    // Определяем бесплатные дни хранения
-    const freeStorageDays = storageInfo ? storageInfo.freeDays : 7; // По умолчанию 7 дней (from_days - 1)
-    const paidStorageStart = storageInfo ? storageInfo.paidStorageStarts : 8; // По умолчанию с 8-х суток (from_days)
-    const storageRate = storageInfo ? storageInfo.storageRate : 0;
-    
-    // Определяем ставку за сверхнормативное пользование контейнером
-    const containerOvertimeRate = containerTypeDisplay.includes('40') ? 20 : 10; // $20 для 40', $10 для 20'
-    
-    // Получаем информацию о СНП для морских перевозок
-    let agentInfo = null;
-    if (transportType === 'sea_rail') {
-        agentInfo = getAgentInfo('sea', data.sea || data);
-        console.log('🔍 Информация о СНП для моря+жд:', agentInfo);
-    } else if (transportType === 'direct_sea' || transportType === 'sea') {
-        agentInfo = getAgentInfo(transportType, data);
-        console.log('🔍 Информация о СНП для моря:', agentInfo);
-    } else if (transportType === 'direct_rail' || transportType === 'rail') {
-        agentInfo = getAgentInfo(transportType, data);
-        console.log('🔍 Информация о СНП для жд:', agentInfo);
-    }
-    
-    let infoHTML = '';
-    
-    if (transportType === 'sea_rail') {
-        // Добавляем пункт "Оформление ВТТ" если ВТТ включен
-        const vttIncluded = data.vttIncluded || false;
-        const vttItem = vttIncluded ? '<li>Оформление ВТТ.</li>' : '';
-        
-        infoHTML = `
-            <div class="additional-info" style="margin-top: 20px; font-size: 12px; color: #555;">
-                <p><strong>Ставка применима для неопасного груза, весом не более 1500 кг/место</strong></p>
-                <p><strong>В ставки включено:</strong></p>
-                <ul>
-                    <li>Предоставление порожнего в порту отправления</li>
-                    <li>Морской фрахт FILO ${data.sea?.pol || ''} - ${data.sea?.pod || ''}</li>
-                    <li>Терминальные услуги в порту прибытия (ПРР с моря на ЖД)</li>
-                    <li>${freeStorageDays} дней хранения в порту.</li>
-                    ${vttItem}
-                    <li>ЖД перевозка ${data.rail?.city || ''} - ${data.rail?.destination || ''}</li>
-                </ul>
-                <p><strong>В ставки не включено:</strong></p>
-                <ul>
-                    <li>Таможенное оформление в порту прибытия</li>
-                    <li>Доп расходы в порту, вызванные требованиями таможни (МИДК, взвешивание, досмотр груза)</li>
-                    <li>Сверхнормативное хранение в порту по тарифам порта, в зависимости от направления выдачи (с ${paidStorageStart} суток)</li>
-                    <li>Охрана в пути следования по ЖД</li>
-                </ul>
-                <p><strong>Примечания:</strong></p>
-                <ul>
-                    <li>Ставка фиксируется на дату выхода судна</li>
-                    <li>Ставка по ЖД фиксируется на дату отправки контейнера по ЖД (НДС 0%)</li>
-                    <li>Ставки даны для неопасного груза${data.sea?.dateOfValidity ? `, Валидность по ${data.sea.dateOfValidity}` : ''}</li>
-                    ${agentInfo && agentInfo.snp ? `<li>СНП (сверхнормативное пользование контейнером): ${agentInfo.snp}</li>` : ''}
-                </ul>
-            </div>
-        `;
-    } else if (transportType === 'direct_sea' || transportType === 'sea') {
-        infoHTML = `
-            <div class="additional-info" style="margin-top: 20px; font-size: 12px; color: #555;">
-                <p><strong>Ставка применима для неопасного груза, весом не более 1500 кг/место</strong></p>
-                <p><strong>В ставки включено:</strong></p>
-                <ul>
-                    <li>Предоставление порожнего в порту отправления</li>
-                    <li>Морской фрахт FILO ${data.pol || ''} - ${data.pod || ''}</li>
-                    <li>Терминальные услуги в порту прибытия</li>
-                    <li>${freeStorageDays} дней хранения в порту (в зависимости от тарифа на хранение в порту). Т.е. если у нас хранение для данного типа контейнера в данном порту начинается с ${paidStorageStart} суток, то ${freeStorageDays} дней хранения бесплатных</li>
-                    <li>Пользование контейнером 40 сут с момента прибытия в порт назначения</li>
-                </ul>
-                <p><strong>В ставки не включено:</strong></p>
-                <ul>
-                    <li>Таможенное оформление в порту прибытия</li>
-                    <li>Доп расходы в порту, вызванные требованиями таможни (МИДК, взвешивание, досмотр груза)</li>
-                    <li>Сверхнормативное хранение в порту по тарифам порта, в зависимости от направления выдачи (с ${paidStorageStart} суток)</li>
-                    <li>Сверхнормативное пользование контейнером с 41-х суток</li>
-                </ul>
-                <p><strong>Примечания:</strong></p>
-                <ul>
-                    <li>Ставка фиксируется на дату выхода судна</li>
-                    <li>Ставки даны для неопасного груза${data.dateOfValidity ? `, Валидность по ${data.dateOfValidity}` : ''}</li>
-                    ${agentInfo && agentInfo.snp ? `<li>СНП (сверхнормативное пользование контейнером): ${agentInfo.snp}</li>` : ''}
-                </ul>
-            </div>
-        `;
-    } else if (transportType === 'direct_rail' || transportType === 'rail') {
-        infoHTML = `
-            <div class="additional-info" style="margin-top: 20px; font-size: 12px; color: #555;">
-                <p><strong>Ставка применима для неопасного груза, весом не более 1500 кг/место</strong></p>
-                <p><strong>В ставки включено:</strong></p>
-                <ul>
-                    <li>Предоставление порожнего в пункте отправления</li>
-                    <li>ЖД перевозка ${transportType === 'direct_rail' ? data.fob || '' : data.city || ''} - ${transportType === 'direct_rail' ? data.arrivalCity || '' : data.destination || ''}</li>
-                    <li>Терминальные услуги в пункте прибытия</li>
-                </ul>
-                <p><strong>В ставки не включено:</strong></p>
-                <ul>
-                    <li>Таможенное оформление</li>
-                    <li>Доп расходы, вызванные требованиями таможни (МИДК, взвешивание, досмотр груза)</li>
-                    <li>Сверхнормативное хранение</li>
-                    <li>Охрана в пути следования по ЖД</li>
-                </ul>
-                <p><strong>Примечания:</strong></p>
-                <ul>
-                    <li>Ставка по ЖД фиксируется на дату отправки контейнера по ЖД (НДС 0%)</li>
-                    <li>Ставки даны для неопасного груза${data.dateOfValidity || data.validity ? `, Валидность по ${data.dateOfValidity || data.validity || ''}` : ''}</li>
-                    ${agentInfo && agentInfo.snp ? `<li>СНП (сверхнормативное пользование контейнером): ${agentInfo.snp}</li>` : ''}
-                </ul>
-            </div>
-        `;
-    }
-    
-    return infoHTML;
-}
-
-// 🔧 ДОПОЛНИТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ УЛУЧШЕНИЯ ПОИСКА ТЕРМИНАЛА
-function normalizeTerminalName(terminalName) {
-    if (!terminalName) return '';
-    
-    // Приводим к нижнему регистру и удаляем лишние пробелы
-    const normalized = terminalName.trim().toLowerCase();
-    
-    // Удаляем общие слова, которые могут мешать поиску
-    const commonWords = ['terminal', 'терминал', 'порт', 'port', 'станция', 'station'];
-    let result = normalized;
-    
-    commonWords.forEach(word => {
-        result = result.replace(new RegExp(`\\b${word}\\b`, 'g'), '').trim();
-    });
-    
-    return result || normalized;
-}
-
-// 🔧 УЛУЧШЕННАЯ ФУНКЦИЯ КОПИРОВАНИЯ РЕЗУЛЬТАТА (БЕЗ ДЕТАЛЕЙ СТОИМОСТИ)
-function copyMarginResult() {
-    try {
-        // 1. Получаем все элементы для копирования
-        const marginResultContainer = document.getElementById('margin-result-container');
-        
-        if (!marginResultContainer) {
-            throw new Error('Контейнер результатов не найден');
-        }
-        
-        // 2. Подготавливаем данные в нескольких форматах
-        const content = prepareMarginContentForCopy(marginResultContainer);
-        
-        // 3. Пробуем скопировать с HTML форматом (сохраняет таблицы)
-        copyWithHTMLFormat(content.html).then(() => {
-            showCopySuccess('copy-result');
-        }).catch(async (htmlError) => {
-            console.log('HTML копирование не удалось, пробуем plain text:', htmlError);
-            
-            // 4. Fallback: копируем как plain text
-            try {
-                await navigator.clipboard.writeText(content.text);
-                showCopySuccess('copy-result');
-            } catch (textError) {
-                console.log('Clipboard API не доступен, используем fallback:', textError);
-                
-                // 5. Старый способ копирования
-                copyWithFallbackMethod(content.text, 'copy-result');
-            }
-        });
-        
-    } catch (error) {
-        console.error('Ошибка копирования:', error);
-        showCopyError('copy-result');
-    }
-}
-
-// 🔧 ПОДГОТОВКА КОНТЕНТА ДЛЯ КОПИРОВАНИЯ (БЕЗ ИНФОРМАЦИИ О СТОИМОСТИ)
-function prepareMarginContentForCopy(resultContainer) {
-    // 1. Подготавливаем таблицу (только услуги и ставки)
-    const tableElement = resultContainer.querySelector('table.margin-table');
-    let tableHTML = '';
-    let tableText = '';
-    
-    if (tableElement) {
-        // HTML версия таблицы (сохраняет форматирование)
-        tableHTML = cleanTableHTML(tableElement.outerHTML);
-        
-        // Текстовая версия с табуляцией (для Excel)
-        tableText = convertTableToTabDelimited(tableElement);
-    }
-    
-    // 2. Подготавливаем дополнительную информацию (условия, примечания)
-    const additionalInfo = resultContainer.querySelector('.additional-info');
-    let additionalHTML = '';
-    let additionalText = '';
-    
-    if (additionalInfo) {
-        // Убираем возможные дублирующиеся заголовки из дополнительной информации
-        additionalHTML = cleanAdditionalInfoHTML(additionalInfo.innerHTML);
-        additionalText = cleanAdditionalInfoText(additionalInfo.innerText);
-    }
-    
-    // 3. Подготавливаем ВТТ информацию (если есть)
-    const vttSection = resultContainer.querySelector('.vtt-section');
-    let vttHTML = '';
-    let vttText = '';
-    
-    if (vttSection) {
-        vttHTML = vttSection.innerHTML;
-        vttText = vttSection.innerText;
-    }
-    
-    // 4. Формируем полный HTML контент (только таблица и условия)
-    const fullHTML = `
-        <div style="font-family: Arial, sans-serif; font-size: 12px; max-width: 800px;">
-            ${tableHTML ? `
-            <div style="margin: 10px 0; overflow-x: auto;">
-                ${tableHTML}
-            </div>
-            ` : ''}
-            
-            ${vttHTML ? `
-            <div style="margin: 10px 0; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
-                ${vttHTML}
-            </div>
-            ` : ''}
-            
-            ${additionalHTML ? `
-            <div style="margin-top: 15px; padding: 12px; background-color: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
-                ${additionalHTML}
-            </div>
-            ` : ''}
-            
-            <div style="margin-top: 15px; padding-top: 8px; border-top: 1px dashed #ccc; color: #6c757d; font-size: 11px;">
-                <p>Курс ЦБ РФ: 1 USD = ${usdToRubRate || 'Не загружен'} RUB</p>
-            </div>
-        </div>
-    `;
-    
-    // 5. Формируем текстовую версию (только таблица и условия)
-    const fullText = `
-${tableText ? tableText + '\n' : ''}
-${vttText ? vttText + '\n' : ''}
-${additionalText ? additionalText + '\n' : ''}
----
-Курс ЦБ РФ: 1 USD = ${usdToRubRate || 'Не загружен'} RUB
-    `.trim();
-    
-    // Сохраняем оба формата в глобальной переменной
-    window.marginTableText = fullText;
-    window.marginTableHTML = fullHTML;
-    
-    return {
-        html: fullHTML,
-        text: fullText
-    };
-}
-
-// 🔧 ОЧИСТКА HTML ТАБЛИЦЫ (убираем лишние стили и классы)
-function cleanTableHTML(tableHTML) {
-    // Упрощаем таблицу для копирования
-    return tableHTML
-        .replace(/class="[^"]*"/g, '') // Убираем классы
-        .replace(/style="[^"]*"/g, '') // Убираем inline стили
-        .replace(/<tbody>/g, '')
-        .replace(/<\/tbody>/g, '')
-        .replace(/<thead>/g, '')
-        .replace(/<\/thead>/g, '')
-        .replace(/\s+/g, ' ') // Убираем лишние пробелы
-        .trim();
-}
-
-// 🔧 ОЧИСТКА HTML ДОПОЛНИТЕЛЬНОЙ ИНФОРМАЦИИ
-function cleanAdditionalInfoHTML(html) {
-    // Убираем заголовки, которые уже есть в таблице
-    return html
-        .replace(/<strong>Ставка применима для неопасного груза, весом не более 1500 кг\/место<\/strong>/g, '')
-        .replace(/<p><strong>В ставки включено:<\/strong><\/p>/g, '<p><strong>В ставки включено:</strong></p>')
-        .replace(/<p><strong>В ставки не включено:<\/strong><\/p>/g, '<p><strong>В ставки не включено:</strong></p>')
-        .replace(/<p><strong>Примечания:<\/strong><\/p>/g, '<p><strong>Примечания:</strong></p>')
-        .trim();
-}
-
-// 🔧 ОЧИСТКА ТЕКСТА ДОПОЛНИТЕЛЬНОЙ ИНФОРМАЦИИ
-function cleanAdditionalInfoText(text) {
-    // Убираем возможные дублирующиеся строки
-    const lines = text.split('\n').filter(line => {
-        // Убираем пустые строки и строки с маршрутом/стоимостью
-        const trimmedLine = line.trim();
-        return trimmedLine.length > 0 && 
-               !trimmedLine.startsWith('Маршрут:') &&
-               !trimmedLine.startsWith('Стоимость фрахта:') &&
-               !trimmedLine.startsWith('Стоимость ЖД перевозки:') &&
-               !trimmedLine.startsWith('Общая стоимость:') &&
-               !trimmedLine.startsWith('Расчет стоимости перевозки');
-    });
-    
-    return lines.join('\n');
-}
-
-// 🔧 КОНВЕРТАЦИЯ ТАБЛИЦЫ В ТАБУЛИРОВАННЫЙ ТЕКСТ
-function convertTableToTabDelimited(tableElement) {
-    const rows = tableElement.querySelectorAll('tr');
-    let result = '';
-    
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td, th');
-        const rowData = Array.from(cells).map(cell => {
-            // Очищаем текст
-            let text = cell.textContent.trim();
-            text = text.replace(/\t/g, ' ') // Заменяем табы в тексте
-                      .replace(/\n/g, ' ')  // Заменяем переносы строк
-                      .replace(/\s+/g, ' '); // Убираем лишние пробелы
-            return text;
-        });
-        
-        // Добавляем строку, только если есть данные
-        if (rowData.some(cell => cell.length > 0)) {
-            result += rowData.join('\t') + '\n';
-        }
-    });
-    
-    return result.trim();
-}
-
-// 🔧 КОПИРОВАНИЕ С HTML ФОРМАТОМ (без изменений)
-function copyWithHTMLFormat(htmlContent) {
-    return new Promise((resolve, reject) => {
-        try {
-            // Создаем временный div
-            const tempDiv = document.createElement('div');
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.left = '-9999px';
-            tempDiv.innerHTML = htmlContent;
-            document.body.appendChild(tempDiv);
-            
-            // Выделяем содержимое
-            const range = document.createRange();
-            range.selectNode(tempDiv);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-            
-            // Пытаемся скопировать
-            const successful = document.execCommand('copy');
-            
-            // Очищаем
-            selection.removeAllRanges();
-            document.body.removeChild(tempDiv);
-            
-            if (successful) {
-                resolve();
-            } else {
-                reject(new Error('execCommand не сработал'));
-            }
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
-
-// 🔧 FALLBACK МЕТОД КОПИРОВАНИЯ (без изменений)
-function copyWithFallbackMethod(text, buttonId) {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    
-    try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-            showCopySuccess(buttonId);
-        } else {
-            showCopyError(buttonId);
-        }
-    } catch (err) {
-        console.error('Fallback копирование не удалось:', err);
-        showCopyError(buttonId);
-    } finally {
-        document.body.removeChild(textArea);
-    }
-}
-
-// 🔧 ПОКАЗАТЬ УСПЕШНОЕ КОПИРОВАНИЕ (без изменений)
-function showCopySuccess(buttonId) {
-    const copyButton = document.getElementById(buttonId);
-    if (!copyButton) return;
-    
-    const originalHTML = copyButton.innerHTML;
-    const originalBackground = copyButton.style.backgroundColor;
-    const originalColor = copyButton.style.color;
-    
-    // Временно меняем вид кнопки
-    copyButton.innerHTML = '✅ Скопировано!';
-    copyButton.style.backgroundColor = '#4CAF50';
-    copyButton.style.color = 'white';
-    copyButton.disabled = true;
-    
-    // Возвращаем исходный вид через 2 секунды
-    setTimeout(() => {
-        copyButton.innerHTML = originalHTML;
-        copyButton.style.backgroundColor = originalBackground;
-        copyButton.style.color = originalColor;
-        copyButton.disabled = false;
-    }, 2000);
-}
-
-// 🔧 ПОКАЗАТЬ ОШИБКУ КОПИРОВАНИЯ (без изменений)
-function showCopyError(buttonId) {
-    const copyButton = document.getElementById(buttonId);
-    if (!copyButton) return;
-    
-    const originalHTML = copyButton.innerHTML;
-    
-    copyButton.innerHTML = '❌ Ошибка!';
-    copyButton.style.backgroundColor = '#f44336';
-    copyButton.style.color = 'white';
-    copyButton.disabled = true;
-    
-    setTimeout(() => {
-        copyButton.innerHTML = originalHTML;
-        copyButton.style.backgroundColor = '';
-        copyButton.style.color = '';
-        copyButton.disabled = false;
-    }, 2000);
-}
-
-// Сохраняем результаты в глобальную переменную для доступа из модального окна
-window.allResults = [];

@@ -1,7 +1,6 @@
 // 🎯 ОСНОВНОЙ ФАЙЛ ДЛЯ МЕНЕДЖЕРА ПО ЗАКУПАМ
 
 // Глобальные переменные
-let currentRole = 'purchaser';
 let currentDatabase = '';
 let uploadedData = null;
 let database = {
@@ -14,6 +13,26 @@ let database = {
 };
 let editingTariffIndex = -1; // Индекс редактируемого тарифа в таблице
 let currentTariffType = 'terminal'; // 'terminal' или 'agent'
+function escapeHtml(value) {
+    return (window.Utils && typeof Utils.escapeHtml === 'function')
+        ? Utils.escapeHtml(value)
+        : String(value ?? '');
+}
+
+function setPurchaserMenuState(dbType = '') {
+    const purchaserGroup = document.querySelector('[data-purchaser-group="purchaser"]');
+    if (purchaserGroup) {
+        purchaserGroup.classList.toggle('is-active', Boolean(dbType));
+        if (purchaserGroup.tagName === 'DETAILS') {
+            purchaserGroup.open = Boolean(dbType);
+        }
+    }
+
+    const dbButtons = document.querySelectorAll('[data-purchaser-db]');
+    dbButtons.forEach((button) => {
+        button.classList.toggle('is-active', Boolean(dbType) && button.dataset.purchaserDb === dbType);
+    });
+}
 
 // Функция для проверки авторизации с сервера
 async function checkAuth() {
@@ -32,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Проверяем авторизацию с сервера
     const currentUser = await checkAuth();
+    window.currentUser = currentUser;
     if (!currentUser || (currentUser.role !== 'purchaser' && currentUser.role !== 'admin')) {
         // Если пользователь не авторизован или не имеет прав доступа, перенаправляем на главную
         console.log('❌ Неавторизованный доступ, перенаправление на главную');
@@ -48,50 +68,88 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Инициализируем модальное окно терминала
     initTerminalModal();
     
-    // Показываем выбор типа базы данных
-    document.getElementById('database-selection').classList.remove('hidden');
+    // Пытаемся применить deep-link из URL
+    const deepLinkApplied = applyPurchaserDeepLink();
+    
+    // Показываем выбор типа базы данных только если deep-link не применен
+    if (!deepLinkApplied) {
+        document.getElementById('database-selection').classList.remove('hidden');
+    }
+
+    document.body.classList.add('sidebar-visible');
+
+    const sidebarEmail = document.getElementById('sidebar-user-email');
+    if (sidebarEmail && currentUser?.email) {
+        sidebarEmail.textContent = currentUser.email;
+    }
+
+    setPurchaserMenuState(currentDatabase);
 });
 
 // Функции для управления интерфейсом
-function selectDatabase(dbType) {
+function openPurchaserDatabaseView(dbType) {
+    if (dbType === 'tariff') {
+        console.log('🔧 Открываем интерфейс тарифов для закупщика');
+        document.getElementById('tariff-interface').classList.remove('hidden');
+        // Показываем время обновления тарифов
+        Utils.showLastUpdate('tariff', 'last-update-tariff');
+        // Устанавливаем тип тарифов по умолчанию (терминалы)
+        currentTariffType = 'terminal';
+        // Загружаем данные для обоих типов
+        console.log('📥 Вызов loadTariffData...');
+        loadTariffData();
+        console.log('📥 Вызов loadAgentTariffData...');
+        loadAgentTariffData();
+        // Активируем кнопку терминалов
+        console.log('🔄 Активация типа terminal');
+        switchTariffType('terminal');
+    } else {
+        console.log('🔧 Открываем интерфейс загрузки файлов для закупщика:', dbType);
+        document.getElementById('purchaser-interface').classList.remove('hidden');
+        // Показываем время обновления текущей базы
+        Utils.showLastUpdate(dbType, 'last-update-purchaser');
+        // Очищаем предыдущие данные
+        document.getElementById('excel-file').value = '';
+        document.getElementById('process-file').disabled = true;
+        document.getElementById('data-preview').classList.add('hidden');
+        uploadedData = null;
+        // Инициализируем загрузку файлов
+        setupFileUpload();
+        // Инициализируем отображение загруженных ставок для выбранного типа
+        initUploadedRates(dbType);
+    }
+}
+
+function selectDatabase(dbType, options = {}) {
     currentDatabase = dbType;
     console.log('🎯 Выбран тип базы данных:', dbType);
+    setPurchaserMenuState(dbType);
     
     document.getElementById('database-selection').classList.add('hidden');
     
+    if (options.skipLoad) {
+        openPurchaserDatabaseView(dbType);
+        return;
+    }
+    
     // Синхронизируем данные с сервером при каждом входе
     loadDatabaseData().then(() => {
-        if (dbType === 'tariff') {
-            console.log('🔧 Открываем интерфейс тарифов для закупщика');
-            document.getElementById('tariff-interface').classList.remove('hidden');
-            // Показываем время обновления тарифов
-            Utils.showLastUpdate('tariff', 'last-update-tariff');
-            // Устанавливаем тип тарифов по умолчанию (терминалы)
-            currentTariffType = 'terminal';
-            // Загружаем данные для обоих типов
-            console.log('📥 Вызов loadTariffData...');
-            loadTariffData();
-            console.log('📥 Вызов loadAgentTariffData...');
-            loadAgentTariffData();
-            // Активируем кнопку терминалов
-            console.log('🔄 Активация типа terminal');
-            switchTariffType('terminal');
-        } else {
-            console.log('🔧 Открываем интерфейс загрузки файлов для закупщика:', dbType);
-            document.getElementById('purchaser-interface').classList.remove('hidden');
-            // Показываем время обновления текущей базы
-            Utils.showLastUpdate(dbType, 'last-update-purchaser');
-            // Очищаем предыдущие данные
-            document.getElementById('excel-file').value = '';
-            document.getElementById('process-file').disabled = true;
-            document.getElementById('data-preview').classList.add('hidden');
-            uploadedData = null;
-            // Инициализируем загрузку файлов
-            setupFileUpload();
-            // Инициализируем отображение загруженных ставок для выбранного типа
-            initUploadedRates(dbType);
-        }
+        openPurchaserDatabaseView(dbType);
     });
+}
+
+async function openChangePassword() {
+    try {
+        const user = window.currentUser || await ServerAuth.getCurrentUser();
+        if (!user || !user.email) {
+            Utils.showStatus('Не удалось получить email пользователя', 'error');
+            return;
+        }
+        window.location.href = `../index.html?action=change-password&email=${encodeURIComponent(user.email)}`;
+    } catch (error) {
+        console.error('❌ Ошибка перехода к смене пароля:', error);
+        Utils.showStatus('Ошибка перехода к смене пароля', 'error');
+    }
 }
 
 // Переключение типа тарифов (терминалы/агенты)
@@ -150,6 +208,21 @@ function goBack() {
     }
     
     console.log('✅ После нажатия "Назад":', { currentDatabase });
+    setPurchaserMenuState(currentDatabase);
+}
+
+function applyPurchaserDeepLink() {
+    const params = new URLSearchParams(window.location.search);
+    const dbType = params.get('db');
+    if (!dbType) {
+        return false;
+    }
+    const allowed = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff'];
+    if (!allowed.includes(dbType)) {
+        return false;
+    }
+    selectDatabase(dbType, { skipLoad: true });
+    return true;
 }
 
 // Функции для закупщика
@@ -172,7 +245,7 @@ function setupFileUpload() {
     fileNameDisplay.textContent = 'Файл не выбран';
     fileLabel.classList.remove('file-selected');
     
-    fileInput.addEventListener('change', function(e) {
+    fileInput.onchange = function(e) {
         if (e.target.files.length > 0) {
             const file = e.target.files[0];
             const fileName = file.name;
@@ -195,7 +268,7 @@ function setupFileUpload() {
             fileLabel.classList.remove('file-selected');
             processButton.disabled = true;
         }
-    });
+    };
     
     console.log('✅ Настройка загрузки файлов завершена');
 }
@@ -287,7 +360,7 @@ function showDataPreview(data) {
     const firstRow = data[0];
     if (firstRow) {
         Object.keys(firstRow).forEach(key => {
-            tableHTML += `<th>${key}</th>`;
+            tableHTML += `<th>${escapeHtml(key)}</th>`;
         });
     }
     
@@ -302,7 +375,7 @@ function showDataPreview(data) {
     previewData.forEach(row => {
         tableHTML += '<tr>';
         Object.values(row).forEach(value => {
-            tableHTML += `<td>${value || '-'}</td>`;
+            tableHTML += `<td>${escapeHtml(value || '-')}</td>`;
         });
         tableHTML += '</tr>';
     });
@@ -397,17 +470,17 @@ async function uploadDataToDatabase() {
 // Функция для загрузки данных с сервера
 async function loadDatabaseData() {
     const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff', 'agent_tariff'];
-    
+
+    const currentUser = window.currentUser || await ServerAuth.getCurrentUser();
+    if (!currentUser) {
+        console.warn('⚠️ Пользователь не авторизован, загружаем только локальные данные');
+        loadLocalDataOnly();
+        return;
+    }
+
     for (const dbType of dbTypes) {
         try {
-            // Получаем токен авторизации
-            const token = localStorage.getItem('auth_token');
-            
-            const response = await fetch(`/api/data/${dbType}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await ServerAuth.makeAuthRequest(`/api/data/${dbType}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -415,6 +488,21 @@ async function loadDatabaseData() {
             const serverData = await response.json();
             database[dbType] = serverData.data || [];
             console.log(`✅ Загружены данные с сервера для ${dbType}: ${database[dbType].length} записей`, dbType === 'tariff' ? serverData.data : '');
+
+            if (serverData.lastUpdate) {
+                const updateData = {
+                    timestamp: serverData.lastUpdate,
+                    formatted: new Date(serverData.lastUpdate).toLocaleString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    count: serverData.count || database[dbType].length
+                };
+                localStorage.setItem(`last_update_${dbType}`, JSON.stringify(updateData));
+            }
             
             // Если загружены тарифы и мы находимся в интерфейсе тарифов, показываем их
             if (dbType === 'tariff' && database.tariff.length > 0 && currentDatabase === 'tariff') {
@@ -424,15 +512,45 @@ async function loadDatabaseData() {
             
         } catch (error) {
             console.error(`❌ Ошибка загрузки данных с сервера для ${dbType}:`, error);
-            
-            console.warn(`⚠️ Нет данных на сервере для ${dbType}`);
-            database[dbType] = [];
+
+            const savedData = localStorage.getItem(`logistics_db_${dbType}`);
+            if (savedData) {
+                try {
+                    database[dbType] = JSON.parse(savedData);
+                    console.log(`✅ Загружены резервные данные из localStorage для ${dbType}: ${database[dbType].length} записей`);
+                } catch (localError) {
+                    console.error(`❌ Ошибка загрузки резервных данных для ${dbType}:`, localError);
+                    database[dbType] = [];
+                }
+            } else {
+                console.warn(`⚠️ Нет данных на сервере для ${dbType}`);
+                database[dbType] = [];
+            }
         }
     }
     
     // Экспортируем данные в глобальную область для модулей
     window.database = database;
     console.log('🌐 Данные экспортированы в window.database для модулей');
+}
+
+function loadLocalDataOnly() {
+    const dbTypes = ['sea', 'rail', 'direct_rail', 'direct_sea', 'tariff', 'agent_tariff'];
+    for (const dbType of dbTypes) {
+        const savedData = localStorage.getItem(`logistics_db_${dbType}`);
+        if (savedData) {
+            try {
+                database[dbType] = JSON.parse(savedData);
+            } catch (localError) {
+                console.error(`❌ Ошибка загрузки локальных данных для ${dbType}:`, localError);
+                database[dbType] = [];
+            }
+        } else {
+            database[dbType] = [];
+        }
+    }
+    window.database = database;
+    console.log('🌐 Локальные данные экспортированы в window.database для модулей');
 }
 
 // Функции для работы с тарифами (расширенные для терминалов)
@@ -452,8 +570,8 @@ function loadTariffData() {
     if (database.tariff && database.tariff.length > 0) {
         console.log(`📋 Загружаем ${database.tariff.length} тарифов в таблицу`);
         // Теперь database.tariff - это массив объектов
-        database.tariff.forEach((tariff, index) => {
-            addTariffRowToTable(tariff, index);
+        database.tariff.forEach((tariff) => {
+            addTariffRowToTable(tariff);
         });
         
         // Показываем предпросмотр всех тарифов
@@ -474,22 +592,22 @@ function addTariffRow(tariff = null) {
     const row = document.createElement('tr');
     row.innerHTML = `
         <td>
-            <input type="text" class="tariff-terminal" placeholder="Название терминала" value="${tariff?.terminal || ''}">
+            <input type="text" class="tariff-terminal" placeholder="Название терминала" value="${escapeHtml(tariff?.terminal || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-vtt" placeholder="0" min="0" step="1" value="${tariff?.vtt || ''}">
+            <input type="number" class="tariff-vtt" placeholder="0" min="0" step="1" value="${escapeHtml(tariff?.vtt || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-prr20" placeholder="0" min="0" step="1" value="${tariff?.prr20 || ''}">
+            <input type="number" class="tariff-prr20" placeholder="0" min="0" step="1" value="${escapeHtml(tariff?.prr20 || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-prr40" placeholder="0" min="0" step="1" value="${tariff?.prr40 || ''}">
+            <input type="number" class="tariff-prr40" placeholder="0" min="0" step="1" value="${escapeHtml(tariff?.prr40 || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-auto20" placeholder="0" min="0" step="1" value="${tariff?.auto20 || ''}">
+            <input type="number" class="tariff-auto20" placeholder="0" min="0" step="1" value="${escapeHtml(tariff?.auto20 || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${tariff?.auto40 || ''}">
+            <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${escapeHtml(tariff?.auto40 || '')}">
         </td>
         <td class="actions-cell">
             <button class="btn-small btn-edit" onclick="editTariffRow(this)" title="Редактировать"><i class="fas fa-edit"></i></button>
@@ -499,29 +617,29 @@ function addTariffRow(tariff = null) {
     tbody.appendChild(row);
 }
 
-function addTariffRowToTable(tariff, index) {
+function addTariffRowToTable(tariff) {
     const tbody = document.getElementById('tariff-table-body');
     if (!tbody) return;
     
     const row = document.createElement('tr');
     row.innerHTML = `
         <td>
-            <input type="text" class="tariff-terminal" placeholder="Название терминала" value="${tariff.terminal || ''}">
+            <input type="text" class="tariff-terminal" placeholder="Название терминала" value="${escapeHtml(tariff.terminal || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-vtt" placeholder="0" min="0" step="1" value="${tariff.vtt || ''}">
+            <input type="number" class="tariff-vtt" placeholder="0" min="0" step="1" value="${escapeHtml(tariff.vtt || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-prr20" placeholder="0" min="0" step="1" value="${tariff.prr20 || ''}">
+            <input type="number" class="tariff-prr20" placeholder="0" min="0" step="1" value="${escapeHtml(tariff.prr20 || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-prr40" placeholder="0" min="0" step="1" value="${tariff.prr40 || ''}">
+            <input type="number" class="tariff-prr40" placeholder="0" min="0" step="1" value="${escapeHtml(tariff.prr40 || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-auto20" placeholder="0" min="0" step="1" value="${tariff.auto20 || ''}">
+            <input type="number" class="tariff-auto20" placeholder="0" min="0" step="1" value="${escapeHtml(tariff.auto20 || '')}">
         </td>
         <td>
-            <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${tariff.auto40 || ''}">
+            <input type="number" class="tariff-auto40" placeholder="0" min="0" step="1" value="${escapeHtml(tariff.auto40 || '')}">
         </td>
         <td class="actions-cell">
             <button class="btn-small btn-edit" onclick="editTariffRow(this)" title="Редактировать"><i class="fas fa-edit"></i></button>
@@ -687,13 +805,13 @@ function showTariffPreview(tariffs) {
     tariffs.forEach(tariff => {
         tableHTML += `
             <tr>
-                <td>${tariff.terminal}</td>
-                <td>${tariff.vtt || '-'}</td>
-                <td>${tariff.prr20 || '-'}</td>
-                <td>${tariff.prr40 || '-'}</td>
-                <td>${tariff.auto20 || '-'}</td>
-                <td>${tariff.auto40 || '-'}</td>
-                <td>${new Date(tariff.timestamp).toLocaleDateString('ru-RU')}</td>
+                <td>${escapeHtml(tariff.terminal)}</td>
+                <td>${escapeHtml(tariff.vtt || '-')}</td>
+                <td>${escapeHtml(tariff.prr20 || '-')}</td>
+                <td>${escapeHtml(tariff.prr40 || '-')}</td>
+                <td>${escapeHtml(tariff.auto20 || '-')}</td>
+                <td>${escapeHtml(tariff.auto40 || '-')}</td>
+                <td>${escapeHtml(new Date(tariff.timestamp).toLocaleDateString('ru-RU'))}</td>
             </tr>
         `;
     });
@@ -894,10 +1012,10 @@ function showAgentDataPreview(data) {
     previewData.forEach(row => {
         tableHTML += `
             <tr>
-                <td>${row.carrier || '-'}</td>
-                <td>${row.pod || '-'}</td>
-                <td>${row.dropOffArea || '-'}</td>
-                <td>${row.snp || '-'}</td>
+                <td>${escapeHtml(row.carrier || '-')}</td>
+                <td>${escapeHtml(row.pod || '-')}</td>
+                <td>${escapeHtml(row.dropOffArea || '-')}</td>
+                <td>${escapeHtml(row.snp || '-')}</td>
             </tr>
         `;
     });
@@ -987,29 +1105,10 @@ function addAgentTariffRow(agent = null) {
     const row = document.createElement('tr');
     row.innerHTML = `
         <td>
-            <input type="text" class="agent-name" placeholder="Наименование агента" value="${agent?.name || ''}">
+            <input type="text" class="agent-name" placeholder="Наименование агента" value="${escapeHtml(agent?.name || '')}">
         </td>
         <td>
-            <input type="text" class="agent-snp" placeholder="Сверхнормативное пользование" value="${agent?.snp || ''}">
-        </td>
-        <td class="actions-cell">
-            <button class="btn-small btn-danger" onclick="removeAgentTariffRow(this)" title="Удалить"><i class="fas fa-trash"></i></button>
-        </td>
-    `;
-    tbody.appendChild(row);
-}
-
-function addAgentTariffRowToTable(agent, index) {
-    const tbody = document.getElementById('agent-tariff-table-body');
-    if (!tbody) return;
-    
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>
-            <input type="text" class="agent-name" placeholder="Наименование агента" value="${agent.name || ''}">
-        </td>
-        <td>
-            <input type="text" class="agent-snp" placeholder="Сверхнормативное пользование" value="${agent.snp || ''}">
+            <input type="text" class="agent-snp" placeholder="Сверхнормативное пользование" value="${escapeHtml(agent?.snp || '')}">
         </td>
         <td class="actions-cell">
             <button class="btn-small btn-danger" onclick="removeAgentTariffRow(this)" title="Удалить"><i class="fas fa-trash"></i></button>
@@ -1167,11 +1266,11 @@ function updateTariffPreview() {
                 
                 tableHTML += `
                     <tr>
-                        <td>${agent.carrier || agent.name || '-'}</td>
-                        <td>${agent.pod || '-'}</td>
-                        <td>${agent.dropOffArea || '-'}</td>
-                        <td>${agent.snp || '-'}</td>
-                        <td>${formattedDate}</td>
+                        <td>${escapeHtml(agent.carrier || agent.name || '-')}</td>
+                        <td>${escapeHtml(agent.pod || '-')}</td>
+                        <td>${escapeHtml(agent.dropOffArea || '-')}</td>
+                        <td>${escapeHtml(agent.snp || '-')}</td>
+                        <td>${escapeHtml(formattedDate)}</td>
                     </tr>
                 `;
             });
@@ -1327,10 +1426,10 @@ function addStorageRange(storageRange = null) {
     const rangeElement = document.createElement('div');
     rangeElement.className = 'storage-grid-row';
     rangeElement.innerHTML = `
-        <input type="number" class="storage-from" placeholder="0" min="0" step="1" value="${storageRange?.from || ''}">
-        <input type="number" class="storage-to" placeholder="30" min="0" step="1" value="${storageRange?.to || ''}">
-        <input type="number" class="storage-rate20" placeholder="0" min="0" step="1" value="${storageRange?.rate20 || ''}">
-        <input type="number" class="storage-rate40" placeholder="0" min="0" step="1" value="${storageRange?.rate40 || ''}">
+        <input type="number" class="storage-from" placeholder="0" min="0" step="1" value="${escapeHtml(storageRange?.from || '')}">
+        <input type="number" class="storage-to" placeholder="30" min="0" step="1" value="${escapeHtml(storageRange?.to || '')}">
+        <input type="number" class="storage-rate20" placeholder="0" min="0" step="1" value="${escapeHtml(storageRange?.rate20 || '')}">
+        <input type="number" class="storage-rate40" placeholder="0" min="0" step="1" value="${escapeHtml(storageRange?.rate40 || '')}">
         <button type="button" class="btn-small btn-danger" onclick="removeStorageRange(this)"><i class="fas fa-trash"></i></button>
     `;
     container.appendChild(rangeElement);
@@ -1546,7 +1645,6 @@ async function logoutUser() {
     }
     
     // Сбрасываем глобальные переменные
-    window.currentRole = '';
     window.currentDatabase = '';
     window.uploadedData = null;
     

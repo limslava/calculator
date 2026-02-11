@@ -4,6 +4,7 @@
 let currentPage = 1;
 let totalPages = 1;
 let currentFilters = {};
+let hasAppliedFilters = false;
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
@@ -12,8 +13,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Проверяем авторизацию и права администратора
     const currentUser = await checkAuth();
     if (!currentUser || currentUser.role !== 'admin') {
-        console.log('❌ Неавторизованный доступ или недостаточно прав, перенаправление на главную');
-        window.location.href = '../index.html';
+        console.log('❌ Неавторизованный доступ или недостаточно прав');
+        const container = document.querySelector('.container') || document.body;
+        container.innerHTML = `
+            <div class="section">
+                <h2>Недостаточно прав</h2>
+                <p>Раздел истории загрузок доступен только администраторам.</p>
+            </div>
+        `;
         return;
     }
     
@@ -27,13 +34,38 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('date-from').value = thirtyDaysAgo.toISOString().split('T')[0];
     document.getElementById('date-to').value = today.toISOString().split('T')[0];
     
-    // Загружаем историю и статистику
-    await loadHistory();
-    await loadStats();
-    
     // Настраиваем обработчики событий
     setupEventListeners();
+
+    showAwaitingFilters();
+    initHistoryHeightObserver();
 });
+
+function postHistoryHeight() {
+    if (!window.parent || window.parent === window) return;
+    const height = document.documentElement.scrollHeight;
+    window.parent.postMessage({ type: 'upload-history-height', height }, window.location.origin);
+}
+
+function initHistoryHeightObserver() {
+    let scheduled = false;
+    const schedulePost = () => {
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(() => {
+            scheduled = false;
+            postHistoryHeight();
+        });
+    };
+
+    schedulePost();
+
+    const observer = new MutationObserver(schedulePost);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+    window.addEventListener('resize', schedulePost);
+    window.addEventListener('load', schedulePost);
+}
 
 // Проверка авторизации с сервера
 async function checkAuth() {
@@ -55,18 +87,7 @@ function setupEventListeners() {
         }
     });
     
-    // Автоматическое применение фильтров при изменении дат
-    document.getElementById('date-from').addEventListener('change', function() {
-        applyFilters();
-    });
-    
-    document.getElementById('date-to').addEventListener('change', function() {
-        applyFilters();
-    });
-    
-    document.getElementById('data-type').addEventListener('change', function() {
-        applyFilters();
-    });
+    // Автоприменение отключено — только по кнопке "Применить фильтры"
 }
 
 // Загрузка истории загрузок
@@ -106,63 +127,6 @@ async function loadHistory() {
     } finally {
         showLoading(false);
     }
-}
-
-// Загрузка статистики
-async function loadStats() {
-    try {
-        const token = localStorage.getItem('auth_token');
-        const params = new URLSearchParams(currentFilters);
-        
-        const response = await fetch(`/api/upload-stats?${params}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            renderStats(result);
-            document.getElementById('stats').classList.remove('hidden');
-        }
-        
-    } catch (error) {
-        console.error('❌ Ошибка загрузки статистики:', error);
-        // Не показываем ошибку, если статистика не загрузилась
-    }
-}
-
-// Отображение статистики
-function renderStats(statsData) {
-    // Сбрасываем счетчики
-    document.getElementById('sea-count').textContent = '0';
-    document.getElementById('rail-count').textContent = '0';
-    document.getElementById('direct-sea-count').textContent = '0';
-    document.getElementById('direct-rail-count').textContent = '0';
-    
-    // Обновляем счетчики из данных
-    statsData.stats.forEach(stat => {
-        const count = stat.dataValues ? stat.dataValues.count : stat.count;
-        switch(stat.dataType) {
-            case 'sea':
-                document.getElementById('sea-count').textContent = count;
-                break;
-            case 'rail':
-                document.getElementById('rail-count').textContent = count;
-                break;
-            case 'direct_sea':
-                document.getElementById('direct-sea-count').textContent = count;
-                break;
-            case 'direct_rail':
-                document.getElementById('direct-rail-count').textContent = count;
-                break;
-        }
-    });
 }
 
 // Отображение таблицы истории
@@ -267,8 +231,8 @@ function applyFilters() {
     }
     
     currentPage = 1;
+    hasAppliedFilters = true;
     loadHistory();
-    loadStats();
 }
 
 // Сброс фильтров
@@ -282,12 +246,16 @@ function resetFilters() {
     document.getElementById('date-from').value = thirtyDaysAgo.toISOString().split('T')[0];
     document.getElementById('date-to').value = today.toISOString().split('T')[0];
     document.getElementById('user-filter').value = '';
-    
-    applyFilters();
+
+    currentFilters = {};
+    currentPage = 1;
+    hasAppliedFilters = false;
+    showAwaitingFilters();
 }
 
 // Изменение страницы
 function changePage(delta) {
+    if (!hasAppliedFilters) return;
     const newPage = currentPage + delta;
     if (newPage >= 1 && newPage <= totalPages) {
         currentPage = newPage;
@@ -297,8 +265,11 @@ function changePage(delta) {
 
 // Обновление истории
 function refreshHistory() {
+    if (!hasAppliedFilters) {
+        showAwaitingFilters();
+        return;
+    }
     loadHistory();
-    loadStats();
 }
 
 // Показать детали загрузки
@@ -663,6 +634,30 @@ function showLoading(show) {
             </tr>
         `;
     }
+}
+
+function showAwaitingFilters() {
+    const tbody = document.getElementById('history-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="empty-cell">
+                <div class="empty-state">
+                    <i class="fas fa-filter"></i>
+                    <p>Выберите параметры и нажмите «Применить фильтры»</p>
+                </div>
+            </td>
+        </tr>
+    `;
+
+    const pageInfo = document.getElementById('page-info');
+    if (pageInfo) pageInfo.textContent = 'Страница 0 из 0';
+
+    const prev = document.getElementById('prev-page');
+    const next = document.getElementById('next-page');
+    if (prev) prev.disabled = true;
+    if (next) next.disabled = true;
 }
 
 // Показать сообщение об ошибке

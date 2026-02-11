@@ -1,0 +1,210 @@
+/* Variant demo styles */
+:root {
+    --paper: #f7f7f4;
+    --line: #d7d6d0;
+    --ink: #1f1f1b;
+    --ink-soft: #6e6e6a;
+    --accent: #0d8fca;
+}
+
+.demo-shell {
+    max-width: 1200px;
+    margin: 24px auto 80px;
+    padding: 0 18px;
+}
+
+.demo-header {
+    margin-bottom: 16px;
+}
+
+.demo-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 6px;
+}
+
+.demo-subtitle {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0;
+}
+
+/* Variant A: table + expandable rows */
+.variant-a {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.variant-a table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.variant-a thead th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-soft);
+    background: #f0f0ec;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+}
+
+.variant-a td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--ink);
+    vertical-align: top;
+}
+
+.variant-a tr:nth-child(even) td {
+    background: #f3f2ec;
+}
+
+.variant-a .row-main {
+    cursor: pointer;
+}
+
+.variant-a .row-details td {
+    background: #faf9f5;
+    font-size: 11px;
+    color: var(--ink-soft);
+}
+
+.variant-a .tag {
+    display: inline-block;
+    border: 1px solid var(--line);
+    padding: 2px 6px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* Variant B: cards */
+.variant-b-list {
+    display: grid;
+    gap: 12px;
+}
+
+.variant-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1.2fr;
+    gap: 12px;
+}
+
+.variant-card__header {
+    display: grid;
+    gap: 4px;
+}
+
+.variant-card__title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+}
+
+.variant-card__price {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.variant-card__meta {
+    font-size: 11px;
+    color: var(--ink-soft);
+}
+
+.variant-card__block {
+    border-left: 1px dashed var(--line);
+    padding-left: 10px;
+    font-size: 12px;
+    color: var(--ink);
+}
+
+.variant-card__block strong {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+}
+
+/* Variant C: list with side summary */
+.variant-c-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.25fr) minmax(0, 1fr) minmax(220px, 0.28fr);
+    gap: 14px;
+}
+
+.variant-panel {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px;
+}
+
+.variant-panel h4 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+}
+
+.variant-panel .pill {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11px;
+    margin-bottom: 6px;
+    display: inline-block;
+}
+
+.variant-list {
+    display: grid;
+    gap: 10px;
+}
+
+.variant-row {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 10px;
+}
+
+.variant-row__title {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.variant-row__meta {
+    font-size: 11px;
+    color: var(--ink-soft);
+}
+
+.variant-row__price {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+@media (max-width: 1100px) {
+    .variant-card {
+        grid-template-columns: 1fr;
+    }
+    .variant-c-layout {
+        grid-template-columns: 1fr;
+    }
+}

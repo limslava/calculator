@@ -40,99 +40,147 @@ class EnhancedSeaSearchEngine {
         return polWithRates;
     }
 
-    // 2. POD - динамически фильтруется на основе выбранного POL и показывает где ставки > 0
-    getPODWithRatesForPOL(selectedPOL) {
-    if (!selectedPOL) return [];
+    // 2. City - динамически фильтруется на основе выбранного POL и показывает где ставки > 0
+    getCityWithRatesForPOL(selectedPOL) {
+        if (!selectedPOL) return [];
 
-    const cacheKey = `sea_pod_with_rates_for_${this.normalizeName(selectedPOL)}`;
-    if (this.cache.has(cacheKey)) {
-        return this.cache.get(cacheKey);
-    }
-
-    const normalizedPOL = this.normalizeName(selectedPOL);
-    
-    // 🔧 ИСПРАВЛЕНИЕ: Ищем частичные совпадения POL
-    const podWithRates = [...new Set(
-        this.data
-            .filter(item => {
-                const itemPOL = this.normalizeName(item.pol);
-                // Ищем частичные совпадения (вместо точного)
-                const matchesPOL = itemPOL.includes(normalizedPOL) || normalizedPOL.includes(itemPOL);
-                
-                return matchesPOL && (
-                    (item.soc20 && parseFloat(item.soc20) > 0) || 
-                    (item.soc40 && parseFloat(item.soc40) > 0) || 
-                    (item.dc20 && parseFloat(item.dc20) > 0) || 
-                    (item.hc40 && parseFloat(item.hc40) > 0)
-                );
-            })
-            .map(item => item.pod)
-            .filter(Boolean)
-    )].sort((a, b) => a.localeCompare(b));
-
-    this.cache.set(cacheKey, podWithRates);
-    console.log(`🌊 POD с ненулевыми ставками для "${selectedPOL}":`, podWithRates.length, podWithRates);
-    return podWithRates;
-}
-
-    // 3. DROP OFF AREA - динамически фильтруется на основе POL и POD (полное и частичное совпадение POD)
-    getDropOffAreasWithRates(selectedPOL, selectedPOD) {
-    if (!selectedPOL || !selectedPOD) return [];
-
-    const cacheKey = `sea_dropoff_with_rates_${this.normalizeName(selectedPOL)}_${this.normalizeName(selectedPOD)}`;
-    if (this.cache.has(cacheKey)) {
-        return this.cache.get(cacheKey);
-    }
-
-    const normalizedPOL = this.normalizeName(selectedPOL);
-    const normalizedPOD = this.normalizeName(selectedPOD);
-
-    const dropOffAreasWithRates = [...new Set(
-        this.data
-            .filter(item => {
-                const itemPOL = this.normalizeName(item.pol);
-                const itemPOD = this.normalizeName(item.pod);
-                
-                // 🔧 ИСПРАВЛЕНИЕ: Частичные совпадения для POL и POD
-                const matchesPOL = itemPOL.includes(normalizedPOL) || normalizedPOL.includes(itemPOL);
-                const matchesPOD = itemPOD.includes(normalizedPOD) || normalizedPOD.includes(itemPOD);
-                
-                return matchesPOL && matchesPOD && (
-                    (item.soc20 && parseFloat(item.soc20) > 0) ||
-                    (item.soc40 && parseFloat(item.soc40) > 0) ||
-                    (item.dc20 && parseFloat(item.dc20) > 0) ||
-                    (item.hc40 && parseFloat(item.hc40) > 0)
-                );
-            })
-            .map(item => item.dropOffArea)
-            .filter(Boolean)
-    )].sort((a, b) => a.localeCompare(b));
-
-    this.cache.set(cacheKey, dropOffAreasWithRates);
-    console.log(`🌊 DROP OFF AREA с ненулевыми ставками для "${selectedPOL} → ${selectedPOD}":`, dropOffAreasWithRates.length, dropOffAreasWithRates);
-    return dropOffAreasWithRates;
-}
-
-    // 4. ТИП КОНТЕЙНЕРА - показывается только после выбора POL + POD + DROP OFF AREA
-    getAvailableContainersWithRates(selectedPOL, selectedPOD, selectedDropOffArea) {
-        if (!selectedPOL || !selectedPOD || !selectedDropOffArea) {
-            console.log('⚠️ Типы контейнеров: требуется POL + POD + Drop Off Area');
-            return {};
-        }
-
-        const cacheKey = `sea_containers_with_rates_${this.normalizeName(selectedPOL)}_${this.normalizeName(selectedPOD)}_${this.normalizeName(selectedDropOffArea)}`;
+        const cacheKey = `sea_city_with_rates_for_${this.normalizeName(selectedPOL)}`;
         if (this.cache.has(cacheKey)) {
             return this.cache.get(cacheKey);
         }
 
         const normalizedPOL = this.normalizeName(selectedPOL);
+        
+        const cityWithRates = [...new Set(
+            this.data
+                .filter(item => {
+                    const itemPOL = this.normalizeName(item.pol);
+                    const matchesPOL = itemPOL.includes(normalizedPOL) || normalizedPOL.includes(itemPOL);
+                    
+                    return matchesPOL && (
+                        (item.soc20 && parseFloat(item.soc20) > 0) ||
+                        (item.soc40 && parseFloat(item.soc40) > 0) ||
+                        (item.dc20 && parseFloat(item.dc20) > 0) ||
+                        (item.hc40 && parseFloat(item.hc40) > 0)
+                    );
+                })
+                .map(item => item.city)
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b));
+
+        this.cache.set(cacheKey, cityWithRates);
+        console.log(`🌊 City с ненулевыми ставками для "${selectedPOL}":`, cityWithRates.length, cityWithRates);
+        return cityWithRates;
+    }
+
+    // 3. POD - динамически фильтруется на основе выбранного POL и City и показывает где ставки > 0
+    getPODWithRatesForPOLAndCity(selectedPOL, selectedCity) {
+        if (!selectedPOL) return [];
+
+        const cacheKey = `sea_pod_with_rates_for_${this.normalizeName(selectedPOL)}_${this.normalizeName(selectedCity || '')}`;
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey);
+        }
+
+        const normalizedPOL = this.normalizeName(selectedPOL);
+        const normalizedCity = selectedCity ? this.normalizeName(selectedCity) : null;
+        
+        const podWithRates = [...new Set(
+            this.data
+                .filter(item => {
+                    const itemPOL = this.normalizeName(item.pol);
+                    const matchesPOL = itemPOL.includes(normalizedPOL) || normalizedPOL.includes(itemPOL);
+                    const matchesCity = !normalizedCity || (item.city && this.normalizeName(item.city) === normalizedCity);
+                    
+                    return matchesPOL && matchesCity && (
+                        (item.soc20 && parseFloat(item.soc20) > 0) ||
+                        (item.soc40 && parseFloat(item.soc40) > 0) ||
+                        (item.dc20 && parseFloat(item.dc20) > 0) ||
+                        (item.hc40 && parseFloat(item.hc40) > 0)
+                    );
+                })
+                .map(item => item.pod)
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b));
+
+        this.cache.set(cacheKey, podWithRates);
+        console.log(`🌊 POD с ненулевыми ставками для "${selectedPOL}"${selectedCity ? ` и City "${selectedCity}"` : ''}:`, podWithRates.length, podWithRates);
+        return podWithRates;
+    }
+
+    // Старый метод для обратной совместимости
+    getPODWithRatesForPOL(selectedPOL) {
+        return this.getPODWithRatesForPOLAndCity(selectedPOL, null);
+    }
+
+    // 4. DROP OFF AREA - динамически фильтруется на основе POL, City и POD (полное и частичное совпадение POD)
+    getDropOffAreasWithRates(selectedPOL, selectedCity, selectedPOD) {
+        if (!selectedPOL || !selectedPOD) return [];
+
+        const cacheKey = `sea_dropoff_with_rates_${this.normalizeName(selectedPOL)}_${this.normalizeName(selectedCity || '')}_${this.normalizeName(selectedPOD)}`;
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey);
+        }
+
+        const normalizedPOL = this.normalizeName(selectedPOL);
+        const normalizedCity = selectedCity ? this.normalizeName(selectedCity) : null;
+        const normalizedPOD = this.normalizeName(selectedPOD);
+
+        const dropOffAreasWithRates = [...new Set(
+            this.data
+                .filter(item => {
+                    const itemPOL = this.normalizeName(item.pol);
+                    const itemPOD = this.normalizeName(item.pod);
+                    
+                    // 🔧 ИСПРАВЛЕНИЕ: Частичные совпадения для POL и POD
+                    const matchesPOL = itemPOL.includes(normalizedPOL) || normalizedPOL.includes(itemPOL);
+                    const matchesPOD = itemPOD.includes(normalizedPOD) || normalizedPOD.includes(itemPOD);
+                    const matchesCity = !normalizedCity || (item.city && this.normalizeName(item.city) === normalizedCity);
+                    
+                    return matchesPOL && matchesPOD && matchesCity && (
+                        (item.soc20 && parseFloat(item.soc20) > 0) ||
+                        (item.soc40 && parseFloat(item.soc40) > 0) ||
+                        (item.dc20 && parseFloat(item.dc20) > 0) ||
+                        (item.hc40 && parseFloat(item.hc40) > 0)
+                    );
+                })
+                .map(item => item.dropOffArea)
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b));
+
+        this.cache.set(cacheKey, dropOffAreasWithRates);
+        console.log(`🌊 DROP OFF AREA с ненулевыми ставками для "${selectedPOL}${selectedCity ? ` (${selectedCity})` : ''} → ${selectedPOD}":`, dropOffAreasWithRates.length, dropOffAreasWithRates);
+        return dropOffAreasWithRates;
+    }
+
+    // Старый метод для обратной совместимости
+    getDropOffAreasWithRatesOld(selectedPOL, selectedPOD) {
+        return this.getDropOffAreasWithRates(selectedPOL, null, selectedPOD);
+    }
+
+    // 5. ТИП КОНТЕЙНЕРА - показывается только после выбора POL + City + POD + DROP OFF AREA
+    getAvailableContainersWithRates(selectedPOL, selectedCity, selectedPOD, selectedDropOffArea) {
+        if (!selectedPOL || !selectedPOD || !selectedDropOffArea) {
+            console.log('⚠️ Типы контейнеров: требуется POL + POD + Drop Off Area');
+            return {};
+        }
+
+        const cacheKey = `sea_containers_with_rates_${this.normalizeName(selectedPOL)}_${this.normalizeName(selectedCity || '')}_${this.normalizeName(selectedPOD)}_${this.normalizeName(selectedDropOffArea)}`;
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey);
+        }
+
+        const normalizedPOL = this.normalizeName(selectedPOL);
+        const normalizedCity = selectedCity ? this.normalizeName(selectedCity) : null;
         const normalizedPOD = this.normalizeName(selectedPOD);
         const normalizedDropOffArea = this.normalizeName(selectedDropOffArea);
 
         const matchingItems = this.data.filter(item =>
             this.normalizeName(item.pol) === normalizedPOL &&
+            // Проверка City если указан
+            (!normalizedCity || (item.city && this.normalizeName(item.city) === normalizedCity)) &&
             // Полное ИЛИ частичное совпадение POD
-            (this.normalizeName(item.pod) === normalizedPOD || 
+            (this.normalizeName(item.pod) === normalizedPOD ||
              this.normalizeName(item.pod).includes(normalizedPOD) ||
              normalizedPOD.includes(this.normalizeName(item.pod))) &&
             // Точное совпадение Drop Off Area
@@ -154,24 +202,31 @@ class EnhancedSeaSearchEngine {
         };
 
         this.cache.set(cacheKey, availableContainers);
-        console.log(`📦 Доступные контейнеры для "${selectedPOL} → ${selectedPOD} → ${selectedDropOffArea}":`, availableContainers);
+        console.log(`📦 Доступные контейнеры для "${selectedPOL}${selectedCity ? ` (${selectedCity})` : ''} → ${selectedPOD} → ${selectedDropOffArea}":`, availableContainers);
         return availableContainers;
     }
 
-    // Получить все записи для маршрута с ненулевыми ставками
-    getRatesForRoute(selectedPOL, selectedPOD, selectedDropOffArea, containerType) {
+    // Старый метод для обратной совместимости
+    getAvailableContainersWithRatesOld(selectedPOL, selectedPOD, selectedDropOffArea) {
+        return this.getAvailableContainersWithRates(selectedPOL, null, selectedPOD, selectedDropOffArea);
+    }
+
+    // Получить все записи для маршрута с ненулевыми ставками (с поддержкой City)
+    getRatesForRoute(selectedPOL, selectedCity, selectedPOD, selectedDropOffArea, containerType) {
         if (!selectedPOL || !selectedPOD || !selectedDropOffArea || !containerType) {
             console.log('❌ Не все параметры переданы для поиска ставок');
             return [];
         }
 
         const normalizedPOL = this.normalizeName(selectedPOL);
+        const normalizedCity = selectedCity ? this.normalizeName(selectedCity) : null;
         const normalizedPOD = this.normalizeName(selectedPOD);
         const normalizedDropOffArea = this.normalizeName(selectedDropOffArea);
 
         console.log('🔍 Поиск в базе данных:', {
             normalizedPOL,
-            normalizedPOD, 
+            normalizedCity,
+            normalizedPOD,
             normalizedDropOffArea,
             containerType,
             totalRecords: this.data.length
@@ -179,21 +234,27 @@ class EnhancedSeaSearchEngine {
 
         const results = this.data.filter(item => {
             const matchesPOL = this.normalizeName(item.pol) === normalizedPOL;
-            const matchesPOD = this.normalizeName(item.pod) === normalizedPOD || 
+            const matchesCity = !normalizedCity || (item.city && this.normalizeName(item.city) === normalizedCity);
+            const matchesPOD = this.normalizeName(item.pod) === normalizedPOD ||
                               this.normalizeName(item.pod).includes(normalizedPOD) ||
                               normalizedPOD.includes(this.normalizeName(item.pod));
             const matchesDropOff = this.normalizeName(item.dropOffArea) === normalizedDropOffArea;
             const hasRate = this.hasContainerRate(item, containerType);
 
-            if (matchesPOL && matchesPOD && matchesDropOff && hasRate) {
+            if (matchesPOL && matchesCity && matchesPOD && matchesDropOff && hasRate) {
                 console.log('✅ Найдена подходящая запись:', item);
             }
 
-            return matchesPOL && matchesPOD && matchesDropOff && hasRate;
+            return matchesPOL && matchesCity && matchesPOD && matchesDropOff && hasRate;
         });
 
         console.log(`📊 Итоговые результаты поиска: ${results.length} записей`);
         return results;
+    }
+
+    // Старый метод для обратной совместимости
+    getRatesForRouteOld(selectedPOL, selectedPOD, selectedDropOffArea, containerType) {
+        return this.getRatesForRoute(selectedPOL, null, selectedPOD, selectedDropOffArea, containerType);
     }
 
     hasContainerRate(item, containerType) {
@@ -218,17 +279,39 @@ class EnhancedSeaSearchEngine {
 
 // 🚀 ФУНКЦИЯ ДЛЯ НАСТРОЙКИ ЦЕПНОГО ОБНОВЛЕНИЯ ДЛЯ МОРЯ
 function setupEnhancedSeaChainUpdate(data) {
-    const polInput = document.getElementById('sea-pol');
-    const podInput = document.getElementById('sea-pod');
-    const dropOffAreaInput = document.getElementById('sea-drop-off-area');
-    const containerTypeSelect = document.getElementById('sea-container-type');
-    
+    function resolveElement(primaryId, fallbackIds = []) {
+        const primary = document.getElementById(primaryId);
+        if (primary) return { el: primary, id: primaryId };
+        for (const fallbackId of fallbackIds) {
+            const fallback = document.getElementById(fallbackId);
+            if (fallback) return { el: fallback, id: fallbackId };
+        }
+        return { el: null, id: primaryId };
+    }
+
+    const polResolved = resolveElement('sea-pol', ['pol']);
+    const cityResolved = resolveElement('sea-city', ['city']);
+    const podResolved = resolveElement('sea-pod', ['pod']);
+    const dropOffResolved = resolveElement('sea-drop-off-area', ['drop-off-area']);
+    const containerResolved = resolveElement('sea-container-type', ['container-type']);
+
+    const polInput = polResolved.el;
+    const cityInput = cityResolved.el;
+    const podInput = podResolved.el;
+    const dropOffAreaInput = dropOffResolved.el;
+    const containerTypeSelect = containerResolved.el;
+
+    const hasCityField = Boolean(cityInput);
+
     if (!polInput || !podInput || !dropOffAreaInput || !containerTypeSelect) {
         console.error('❌ Не найдены необходимые элементы DOM для морского модуля');
         return;
     }
+    if (!hasCityField) {
+        console.warn('⚠️ Поле "Город" не найдено. Морская фильтрация будет работать без города.');
+    }
     
-    console.log('🔧 Инициализация улучшенного цепного обновления для моря с каскадной фильтрацией');
+    console.log('🔧 Инициализация улучшенного цепного обновления для моря с каскадной фильтрацией (с полем Город)');
     
     // Инициализируем улучшенный поисковый движок
     const enhancedSeaSearchEngine = new EnhancedSeaSearchEngine(data);
@@ -236,6 +319,7 @@ function setupEnhancedSeaChainUpdate(data) {
     // 🔧 ДОБАВЛЯЕМ ФЛАГИ ДЛЯ УПРАВЛЕНИЯ СОСТОЯНИЕМ
     let isUpdatingInterface = false;
     let currentFocusedElement = null;
+    const isActive = () => window.currentDatabase === 'sea';
     
     // 🔧 ВЫНЕСИТЕ ФУНКЦИЮ setupCustomDropdown ЗДЕСЬ
     function setupCustomDropdown(inputId, values, preserveFocus = false) {
@@ -259,18 +343,21 @@ function setupEnhancedSeaChainUpdate(data) {
     
     // Функция для обновления интерфейса
     function updateInterface(skipFields = []) {
+        if (!isActive()) return;
         if (isUpdatingInterface) return;
         
         isUpdatingInterface = true;
         currentFocusedElement = document.activeElement;
         
         const selectedPOL = polInput.value.trim();
+        const selectedCity = hasCityField ? cityInput.value.trim() : '';
         const selectedPOD = podInput.value.trim();
         const selectedDropOffArea = dropOffAreaInput.value.trim();
         
-        console.log('🔄 Обновление интерфейса моря:', { 
-            POL: selectedPOL, 
-            POD: selectedPOD, 
+        console.log('🔄 Обновление интерфейса моря:', {
+            POL: selectedPOL,
+            City: selectedCity,
+            POD: selectedPOD,
             DropOffArea: selectedDropOffArea,
             skipFields: skipFields
         });
@@ -281,35 +368,46 @@ function setupEnhancedSeaChainUpdate(data) {
             
             // 🔧 ОБНОВЛЯЕМ POL ТОЛЬКО ЕСЛИ НЕ В SKIP FIELDS
             if (!skipFields.includes('pol')) {
-                setupCustomDropdown('sea-pol', availablePOL, currentFocusedElement === polInput);
+                setupCustomDropdown(polResolved.id, availablePOL, currentFocusedElement === polInput);
             }
             
-            // 2. POD - динамически фильтруется на основе выбранного POL
+            // 2. CITY - динамически фильтруется на основе выбранного POL
+            let availableCities = [];
+            if (selectedPOL) {
+                availableCities = enhancedSeaSearchEngine.getCityWithRatesForPOL(selectedPOL);
+            }
+            
+            // 🔧 ОБНОВЛЯЕМ CITY ТОЛЬКО ЕСЛИ НЕ В SKIP FIELDS
+            if (hasCityField && !skipFields.includes('city')) {
+                setupCustomDropdown(cityResolved.id, availableCities, currentFocusedElement === cityInput);
+            }
+            
+            // 3. POD - динамически фильтруется на основе выбранного POL и City
             let availablePOD = [];
             if (selectedPOL) {
-                availablePOD = enhancedSeaSearchEngine.getPODWithRatesForPOL(selectedPOL);
+                availablePOD = enhancedSeaSearchEngine.getPODWithRatesForPOLAndCity(selectedPOL, selectedCity);
             }
             
             // 🔧 ОБНОВЛЯЕМ POD ТОЛЬКО ЕСЛИ НЕ В SKIP FIELDS
             if (!skipFields.includes('pod')) {
-                setupCustomDropdown('sea-pod', availablePOD, currentFocusedElement === podInput);
+                setupCustomDropdown(podResolved.id, availablePOD, currentFocusedElement === podInput);
             }
             
-            // 3. DROP OFF AREA - динамически фильтруется на основе POL и POD
+            // 4. DROP OFF AREA - динамически фильтруется на основе POL, City и POD
             let availableDropOffAreas = [];
             if (selectedPOL && selectedPOD) {
-                availableDropOffAreas = enhancedSeaSearchEngine.getDropOffAreasWithRates(selectedPOL, selectedPOD);
+                availableDropOffAreas = enhancedSeaSearchEngine.getDropOffAreasWithRates(selectedPOL, selectedCity, selectedPOD);
             }
             
             // 🔧 ОБНОВЛЯЕМ DROP OFF AREA ТОЛЬКО ЕСЛИ НЕ В SKIP FIELDS
             if (!skipFields.includes('drop-off-area')) {
-                setupCustomDropdown('sea-drop-off-area', availableDropOffAreas, currentFocusedElement === dropOffAreaInput);
+                setupCustomDropdown(dropOffResolved.id, availableDropOffAreas, currentFocusedElement === dropOffAreaInput);
             }
             
-            // 4. ТИП КОНТЕЙНЕРА - показывается ТОЛЬКО после выбора POL + POD + DROP OFF AREA
+            // 5. ТИП КОНТЕЙНЕРА - показывается ТОЛЬКО после выбора POL + POD + DROP OFF AREA
             if (selectedPOL && selectedPOD && selectedDropOffArea) {
                 const availableContainers = enhancedSeaSearchEngine.getAvailableContainersWithRates(
-                    selectedPOL, selectedPOD, selectedDropOffArea
+                    selectedPOL, selectedCity, selectedPOD, selectedDropOffArea
                 );
                 updateContainerTypeDropdown(containerTypeSelect, availableContainers);
             } else {
@@ -318,7 +416,7 @@ function setupEnhancedSeaChainUpdate(data) {
             }
             
             // Очищаем зависимые поля если значения стали недоступны
-            cleanupDependentFields(selectedPOL, selectedPOD, selectedDropOffArea, availablePOL, availablePOD, availableDropOffAreas);
+            cleanupDependentFields(selectedPOL, selectedCity, selectedPOD, selectedDropOffArea, availablePOL, availableCities, availablePOD, availableDropOffAreas);
             
         } catch (error) {
             console.error('❌ Ошибка при обновлении интерфейса моря:', error);
@@ -395,20 +493,39 @@ function setupEnhancedSeaChainUpdate(data) {
     }
     
     // Функция для очистки зависимых полей
-    function cleanupDependentFields(selectedPOL, selectedPOD, selectedDropOffArea, availablePOL, availablePOD, availableDropOffAreas) {
+    function cleanupDependentFields(selectedPOL, selectedCity, selectedPOD, selectedDropOffArea, availablePOL, availableCities, availablePOD, availableDropOffAreas) {
         let needsUpdate = false;
         
         // 🔧 ИСПРАВЛЕНИЕ: Не очищаем POL при вводе, только при реальном изменении
         // Проверяем POL только если он был выбран из dropdown (полное совпадение)
         if (selectedPOL && selectedPOL.length > 1 && !availablePOL.includes(selectedPOL)) {
             // Проверяем, является ли введенное значение началом какого-то из доступных вариантов
-            const isPartialMatch = availablePOL.some(pol => 
+            const isPartialMatch = availablePOL.some(pol =>
                 pol.toLowerCase().startsWith(selectedPOL.toLowerCase())
             );
             
             if (!isPartialMatch) {
                 console.log(`⚠️ POL "${selectedPOL}" больше не доступен, очищаем цепочку`);
                 polInput.value = '';
+                if (hasCityField) {
+                    cityInput.value = '';
+                }
+                podInput.value = '';
+                dropOffAreaInput.value = '';
+                containerTypeSelect.value = '';
+                needsUpdate = true;
+            }
+        }
+        
+        // Проверяем City только если он был выбран из dropdown
+        if (hasCityField && selectedCity && selectedPOL && selectedCity.length > 1 && !availableCities.includes(selectedCity)) {
+            const isPartialMatch = availableCities.some(city =>
+                city.toLowerCase().startsWith(selectedCity.toLowerCase())
+            );
+            
+            if (!isPartialMatch) {
+                console.log(`⚠️ City "${selectedCity}" больше не доступен для POL "${selectedPOL}", очищаем зависимые поля`);
+                cityInput.value = '';
                 podInput.value = '';
                 dropOffAreaInput.value = '';
                 containerTypeSelect.value = '';
@@ -418,12 +535,12 @@ function setupEnhancedSeaChainUpdate(data) {
         
         // Проверяем POD только если он был выбран из dropdown
         if (selectedPOD && selectedPOL && selectedPOD.length > 1 && !availablePOD.includes(selectedPOD)) {
-            const isPartialMatch = availablePOD.some(pod => 
+            const isPartialMatch = availablePOD.some(pod =>
                 pod.toLowerCase().startsWith(selectedPOD.toLowerCase())
             );
             
             if (!isPartialMatch) {
-                console.log(`⚠️ POD "${selectedPOD}" больше не доступен для POL "${selectedPOL}", очищаем зависимые поля`);
+                console.log(`⚠️ POD "${selectedPOD}" больше не доступен для POL "${selectedPOL}"${selectedCity ? ` и City "${selectedCity}"` : ''}, очищаем зависимые поля`);
                 podInput.value = '';
                 dropOffAreaInput.value = '';
                 containerTypeSelect.value = '';
@@ -433,12 +550,12 @@ function setupEnhancedSeaChainUpdate(data) {
         
         // Проверяем Drop Off Area только если он был выбран из dropdown
         if (selectedDropOffArea && selectedPOL && selectedPOD && selectedDropOffArea.length > 1 && !availableDropOffAreas.includes(selectedDropOffArea)) {
-            const isPartialMatch = availableDropOffAreas.some(area => 
+            const isPartialMatch = availableDropOffAreas.some(area =>
                 area.toLowerCase().startsWith(selectedDropOffArea.toLowerCase())
             );
             
             if (!isPartialMatch) {
-                console.log(`⚠️ Drop Off Area "${selectedDropOffArea}" больше не доступен для "${selectedPOL} → ${selectedPOD}", очищаем контейнер`);
+                console.log(`⚠️ Drop Off Area "${selectedDropOffArea}" больше не доступен для "${selectedPOL}${selectedCity ? ` (${selectedCity})` : ''} → ${selectedPOD}", очищаем контейнер`);
                 dropOffAreaInput.value = '';
                 containerTypeSelect.value = '';
                 needsUpdate = true;
@@ -453,14 +570,19 @@ function setupEnhancedSeaChainUpdate(data) {
     
     // 🔧 УЛУЧШЕННЫЕ ОБРАБОТЧИКИ СОБЫТИЙ
     polInput.addEventListener('input', function() {
+        if (!isActive()) return;
         console.log('📝 Ввод в POL:', this.value);
-        // 🔧 ОБНОВЛЯЕМ ТОЛЬКО POD И ДАЛЬНЕЙШИЕ ПОЛЯ, НЕ ПЕРЕСОЗДАЕМ POL DROPDOWN
+        // 🔧 ОБНОВЛЯЕМ ТОЛЬКО CITY, POD И ДАЛЬНЕЙШИЕ ПОЛЯ, НЕ ПЕРЕСОЗДАЕМ POL DROPDOWN
         updateInterface(['pol']);
     });
     
     polInput.addEventListener('change', function() {
+        if (!isActive()) return;
         console.log('✅ Изменение POL:', this.value);
         // При изменении POL очищаем всю цепочку
+        if (hasCityField) {
+            cityInput.value = '';
+        }
         podInput.value = '';
         dropOffAreaInput.value = '';
         containerTypeSelect.value = '';
@@ -468,54 +590,81 @@ function setupEnhancedSeaChainUpdate(data) {
         updateInterface(['pol']);
     });
     
+    if (hasCityField) {
+        cityInput.addEventListener('input', function() {
+            if (!isActive()) return;
+            console.log('📝 Ввод в City:', this.value);
+            // 🔧 ОБНОВЛЯЕМ ТОЛЬКО POD И ДАЛЬНЕЙШИЕ ПОЛЯ
+            updateInterface(['pol', 'city']);
+        });
+        
+        cityInput.addEventListener('change', function() {
+            if (!isActive()) return;
+            console.log('✅ Изменение City:', this.value);
+            // При изменении City очищаем POD, Drop Off Area и контейнер
+            podInput.value = '';
+            dropOffAreaInput.value = '';
+            containerTypeSelect.value = '';
+            // 🔧 ОБНОВЛЯЕМ ВСЕ ПОЛЯ КРОМЕ POL И CITY
+            updateInterface(['pol', 'city']);
+        });
+    }
+    
     podInput.addEventListener('input', function() {
+        if (!isActive()) return;
         console.log('📝 Ввод в POD:', this.value);
         // 🔧 ОБНОВЛЯЕМ ТОЛЬКО DROP OFF AREA И ДАЛЬНЕЙШИЕ ПОЛЯ
-        updateInterface(['pol', 'pod']);
+        updateInterface(['pol', 'city', 'pod']);
     });
     
     podInput.addEventListener('change', function() {
+        if (!isActive()) return;
         console.log('✅ Изменение POD:', this.value);
         // При изменении POD очищаем Drop Off Area и контейнер
         dropOffAreaInput.value = '';
         containerTypeSelect.value = '';
-        // 🔧 ОБНОВЛЯЕМ ВСЕ ПОЛЯ КРОМЕ POL И POD
-        updateInterface(['pol', 'pod']);
+        // 🔧 ОБНОВЛЯЕМ ВСЕ ПОЛЯ КРОМЕ POL, CITY И POD
+        updateInterface(['pol', 'city', 'pod']);
     });
     
     dropOffAreaInput.addEventListener('input', function() {
+        if (!isActive()) return;
         console.log('📝 Ввод в Drop Off Area:', this.value);
         // 🔧 ОБНОВЛЯЕМ ТОЛЬКО КОНТЕЙНЕР
-        updateInterface(['pol', 'pod', 'drop-off-area']);
+        updateInterface(['pol', 'city', 'pod', 'drop-off-area']);
     });
     
     dropOffAreaInput.addEventListener('change', function() {
+        if (!isActive()) return;
         console.log('✅ Изменение Drop Off Area:', this.value);
         // При изменении Drop Off Area очищаем контейнер
         containerTypeSelect.value = '';
         // 🔧 ОБНОВЛЯЕМ ТОЛЬКО КОНТЕЙНЕР
-        updateInterface(['pol', 'pod', 'drop-off-area']);
+        updateInterface(['pol', 'city', 'pod', 'drop-off-area']);
     });
     
     // Обработчик для контейнера
     containerTypeSelect.addEventListener('change', function() {
+        if (!isActive()) return;
         console.log('✅ Изменение типа контейнера:', this.value);
         
         if (this.value) {
             const selectedPOL = polInput.value.trim();
+            const selectedCity = hasCityField ? cityInput.value.trim() : '';
             const selectedPOD = podInput.value.trim();
             const selectedDropOffArea = dropOffAreaInput.value.trim();
             const selectedContainer = this.value;
             
             console.log('🎯 Поиск ставок для:', {
                 POL: selectedPOL,
+                City: selectedCity,
                 POD: selectedPOD,
                 DropOffArea: selectedDropOffArea,
                 Container: selectedContainer
             });
             
             // Вызов функции поиска ставок
-            const result = searchSeaRates(selectedPOL, selectedPOD, selectedDropOffArea, selectedContainer);
+            const result = searchSeaRates(selectedPOL, selectedCity, selectedPOD, selectedDropOffArea, selectedContainer);
             console.log('📊 Результат поиска:', result);
             
             if (result.success) {
@@ -538,9 +687,9 @@ function setupEnhancedSeaChainUpdate(data) {
     console.log('✅ Морской модуль с каскадной фильтрацией инициализирован');
 }
 
-// 🎯 ФУНКЦИЯ ДЛЯ ПОИСКА СТАВОК ДЛЯ МОРЯ
-function searchSeaRates(pol, pod, dropOffArea, containerType) {
-    console.log('🔍 Поиск ставок с параметрами:', { pol, pod, dropOffArea, containerType });
+// 🎯 ФУНКЦИЯ ДЛЯ ПОИСКА СТАВОК ДЛЯ МОРЯ (с поддержкой города)
+function searchSeaRates(pol, city, pod, dropOffArea, containerType) {
+    console.log('🔍 Поиск ставок с параметрами:', { pol, city, pod, dropOffArea, containerType });
     
     // 🔧 ИСПОЛЬЗУЕМ ГЛОБАЛЬНУЮ БАЗУ ДАННЫХ
     const data = window.database ? window.database.sea : [];
@@ -566,7 +715,7 @@ function searchSeaRates(pol, pod, dropOffArea, containerType) {
                 
                 // Повторяем поиск с загруженными данными
                 const searchEngine = new EnhancedSeaSearchEngine(parsedData);
-                const rates = searchEngine.getRatesForRoute(pol, pod, dropOffArea, containerType);
+                const rates = searchEngine.getRatesForRoute(pol, city, pod, dropOffArea, containerType);
                 
                 if (rates.length === 0) {
                     return { error: 'Ставки не найдены для выбранного маршрута' };
@@ -584,7 +733,7 @@ function searchSeaRates(pol, pod, dropOffArea, containerType) {
     console.log(`📊 Всего записей в базе: ${data.length}`);
     
     const searchEngine = new EnhancedSeaSearchEngine(data);
-    const rates = searchEngine.getRatesForRoute(pol, pod, dropOffArea, containerType);
+    const rates = searchEngine.getRatesForRoute(pol, city, pod, dropOffArea, containerType);
     
     console.log(`📈 Найдено ставок: ${rates.length}`, rates);
     
@@ -635,7 +784,7 @@ function processLink(text) {
     return text;
 }
 
-// 🎯 ФУНКЦИЯ ДЛЯ ОТОБРАЖЕНИЯ СТАВОК МОРЯ
+// 🎯 ФУНКЦИЯ ДЛЯ ОТОБРАЖЕНИЯ СТАВОК МОРЯ (с поддержкой города)
 function displaySeaRates(rates, containerType) {
     console.log('🔄 Отображение ставок:', { ratesCount: rates.length, containerType });
     
@@ -661,10 +810,11 @@ function displaySeaRates(rates, containerType) {
             <thead>
                 <tr>
                     <th>POL</th>
+                    <th>Город</th>
                     <th>POD</th>
                     <th>DROP OFF AREA</th>
                     <th>${getContainerTypeDisplayName(containerType)}</th>
-                    <th>Перевозчик</th>
+                    <th>Линия</th>
                     <th>Агент</th>
                     <th>Дата действия</th>
                     <th>ETD</th>
@@ -683,6 +833,7 @@ function displaySeaRates(rates, containerType) {
         tableHTML += `
             <tr>
                 <td>${rate.pol || '-'}</td>
+                <td>${rate.city || '-'}</td>
                 <td>${rate.pod || '-'}</td>
                 <td>${rate.dropOffArea || '-'}</td>
                 <td>$${rateValue || 0}</td>

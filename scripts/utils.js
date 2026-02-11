@@ -1,5 +1,30 @@
 // 🎯 УНИВЕРСАЛЬНЫЕ УТИЛИТЫ С ИНТЕГРАЦИЕЙ ВСЕХ МОДУЛЕЙ
 
+// Управление уровнем логирования на клиенте:
+// localStorage.setItem('app_debug', 'true') или ?debug=1
+(function configureClientLogging() {
+    try {
+        const debugByQuery = typeof window !== 'undefined' && /(?:\?|&)debug=1(?:&|$)/.test(window.location.search);
+        const debugByStorage = typeof localStorage !== 'undefined' && localStorage.getItem('app_debug') === 'true';
+        window.APP_DEBUG = Boolean(debugByQuery || debugByStorage);
+        if (!window.APP_DEBUG) {
+            console.log = () => {};
+        }
+    } catch (error) {
+        // Не ломаем приложение, если доступ к storage/query ограничен
+    }
+})();
+
+function escapeHtml(value) {
+    const str = value === null || value === undefined ? '' : String(value);
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // Функция для определения типа транспорта по ID поля
 function getTransportTypeByField(inputId) {
     const seaFields = ['pol', 'pod', 'drop-off-area', 'container-type'];
@@ -110,12 +135,25 @@ function setupUniversalDropdown(inputId, options) {
         dropdownContainer.style.display = (filteredOptions.length > 0 || searchTerm.length > 0) ? 'block' : 'none';
     }
     
-    // 🔧 ПОКАЗЫВАЕМ ВСЕ ОПЦИИ ПРИ ФОКУСЕ (если поле пустое)
+    // 🔧 ПОКАЗЫВАЕМ ВСЕ ОПЦИИ ПРИ КЛИКЕ/ФОКУСЕ (очищаем введенное)
+    const showAllOptions = () => {
+        if (options.length === 0) return;
+        showFilteredOptions('');
+    };
+
+    input.addEventListener('mousedown', function() {
+        if (options.length > 0) {
+            if (this.value.trim() !== '') {
+                this.value = '';
+            }
+            showAllOptions();
+        }
+    });
+
     input.addEventListener('focus', function() {
         if (options.length > 0) {
             if (this.value.trim() === '') {
-                // Если поле пустое, показываем все опции
-                showFilteredOptions('');
+                showAllOptions();
             } else {
                 // Если есть текст, показываем отфильтрованные опции
                 showFilteredOptions(this.value);
@@ -199,8 +237,8 @@ function setupUniversalDropdown(inputId, options) {
 }
 
 // Функция для отображения статуса
-function showStatus(message, type = '') {
-    const statusElement = document.getElementById('status');
+function showStatus(message, type = '', elementId = 'status') {
+    const statusElement = document.getElementById(elementId);
     if (!statusElement) {
         console.log('Статус:', message);
         return;
@@ -243,6 +281,9 @@ async function showLastUpdate(databaseType = null, elementId = 'last-update') {
         return;
     }
     
+    // Сбрасываем скрытие элемента (на случай предыдущих вызовов)
+    lastUpdateElement.style.display = '';
+    
     // Используем переданный тип базы или глобальную переменную
     const dbType = databaseType || window.currentDatabase;
     
@@ -252,10 +293,10 @@ async function showLastUpdate(databaseType = null, elementId = 'last-update') {
         return;
     }
     
-    // Для комплексного расчета не загружаем данные из базы
+    // Для комплексного расчета скрываем блок и не загружаем данные
     if (dbType === 'complex') {
-        console.log('🔧 Комплексный расчет - данные не загружаются из базы');
-        lastUpdateElement.textContent = 'Комплексный расчет (данные не сохраняются)';
+        lastUpdateElement.textContent = '';
+        lastUpdateElement.style.display = 'none';
         return;
     }
     
@@ -363,7 +404,7 @@ function parseSeaData(excelData) {
     const headerMap = {
         dateOfValidity: findColumnIndex(headers, ['Date of validity', 'Дата действия']),
         agent: findColumnIndex(headers, ['Agent', 'Агент']),
-        carrier: findColumnIndex(headers, ['Carrier', 'Перевозчик']),
+        carrier: findColumnIndex(headers, ['Carrier', 'Линия']),
         pol: findColumnIndex(headers, ['POL', 'Порт погрузки']),
         pod: findColumnIndex(headers, ['POD', 'Порт выгрузки']),
         city: findColumnIndex(headers, ['City', 'Город']),
@@ -551,7 +592,7 @@ function parseDirectSeaData(excelData) {
     const headerMap = {
         dateOfValidity: findColumnIndex(headers, ['Date of validity', 'Дата действия']),
         agent: findColumnIndex(headers, ['Agent', 'Агент']),
-        carrier: findColumnIndex(headers, ['Carrier', 'Перевозчик']),
+        carrier: findColumnIndex(headers, ['Carrier', 'Линия']),
         pol: findColumnIndex(headers, ['POL', 'Порт погрузки']),
         pod: findColumnIndex(headers, ['POD', 'Порт выгрузки']),
         dc20: findColumnIndex(headers, ['20\'DC', '20DC']),
@@ -851,7 +892,8 @@ window.Utils = {
     checkModulesAvailability,
     getTransportTypeByField,
     convertExcelDate,
-    normalizeAgentAndCarrier
+    normalizeAgentAndCarrier,
+    escapeHtml
 };
 
 console.log('✅ Утилиты загружены с интеграцией всех модулей');

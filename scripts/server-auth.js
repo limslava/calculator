@@ -40,7 +40,8 @@ async function makeAuthRequest(url, options = {}) {
     
     const response = await fetch(url, {
         ...options,
-        headers
+        headers,
+        credentials: options.credentials ?? 'include'
     });
     
     if (response.status === 401) {
@@ -113,11 +114,11 @@ function logoutUser() {
 }
 
 // Функция для создания пользователя (только для администратора)
-async function createUser(email, role) {
+async function createUser(email, role, fullName) {
     try {
         const response = await makeAuthRequest('/api/users', {
             method: 'POST',
-            body: JSON.stringify({ email, role })
+            body: JSON.stringify({ email, role, fullName })
         });
         
         const result = await response.json();
@@ -190,6 +191,73 @@ async function deleteUser(userId) {
         }
     } catch (error) {
         console.error('❌ Ошибка удаления пользователя:', error);
+        return { success: false, error: 'Ошибка соединения с сервером' };
+    }
+}
+
+// Функция для смены роли пользователя
+async function changeUserRole(userId, role) {
+    try {
+        const response = await makeAuthRequest(`/api/users/${userId}/role`, {
+            method: 'PUT',
+            body: JSON.stringify({ role })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            return { success: true, message: result.message, user: result.user };
+        } else {
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        console.error('❌ Ошибка смены роли пользователя:', error);
+        return { success: false, error: 'Ошибка соединения с сервером' };
+    }
+}
+
+// Функция для обновления данных пользователя (email/role)
+async function updateUser(userId, payload = {}) {
+    try {
+        const response = await makeAuthRequest(`/api/users/${userId}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            return { success: true, message: result.message, user: result.user };
+        } else {
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        console.error('❌ Ошибка обновления пользователя:', error);
+        return { success: false, error: 'Ошибка соединения с сервером' };
+    }
+}
+
+// Функция для сброса пароля пользователю (админ)
+async function resetUserPassword(userId) {
+    try {
+        const response = await makeAuthRequest(`/api/users/${userId}/reset-password`, {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            return {
+                success: true,
+                message: result.message,
+                generatedPassword: result.generatedPassword,
+                user: result.user
+            };
+        } else {
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        console.error('❌ Ошибка сброса пароля пользователя:', error);
         return { success: false, error: 'Ошибка соединения с сервером' };
     }
 }
@@ -273,11 +341,8 @@ async function sendLoginCredentials(email, password) {
             const emailConfig = JSON.parse(savedConfig);
             
             // Отправляем запрос на сервер для отправки email
-            const response = await fetch('/api/send-email', {
+            const response = await makeAuthRequest('/api/send-email', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     to: email,
                     subject: subject,
@@ -338,6 +403,9 @@ window.ServerAuth = {
     getUsers,
     toggleUserStatus,
     deleteUser,
+    changeUserRole,
+    updateUser,
+    resetUserPassword,
     changeUserPassword,
     hasPermission,
     sendLoginCredentials,

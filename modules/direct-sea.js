@@ -120,9 +120,23 @@ class EnhancedDirectSeaSearchEngine {
 
 // 🚀 ФУНКЦИЯ ДЛЯ НАСТРОЙКИ ЦЕПНОГО ОБНОВЛЕНИЯ ДЛЯ ПРЯМОГО МОРЯ
 function setupEnhancedDirectSeaChainUpdate(data) {
-    const polInput = document.getElementById('direct-sea-pol');
-    const podInput = document.getElementById('direct-sea-pod');
-    const containerTypeSelect = document.getElementById('direct-sea-container-type');
+    function resolveElement(primaryId, fallbackIds = []) {
+        const primary = document.getElementById(primaryId);
+        if (primary) return { el: primary, id: primaryId };
+        for (const fallbackId of fallbackIds) {
+            const fallback = document.getElementById(fallbackId);
+            if (fallback) return { el: fallback, id: fallbackId };
+        }
+        return { el: null, id: primaryId };
+    }
+
+    const polResolved = resolveElement('direct-sea-pol', ['pol']);
+    const podResolved = resolveElement('direct-sea-pod', ['pod']);
+    const containerResolved = resolveElement('direct-sea-container-type', ['container-type']);
+
+    const polInput = polResolved.el;
+    const podInput = podResolved.el;
+    const containerTypeSelect = containerResolved.el;
     
     if (!polInput || !podInput || !containerTypeSelect) {
         console.error('❌ Не найдены необходимые элементы DOM для прямого моря');
@@ -130,6 +144,7 @@ function setupEnhancedDirectSeaChainUpdate(data) {
     }
     
     console.log('🔧 Инициализация улучшенного цепного обновления для прямого моря с фильтрацией ненулевых ставок и автопоиском');
+    const isActive = () => window.currentDatabase === 'direct_sea';
     
     // 🔧 ПРОВЕРЯЕМ ДАННЫЕ
     if (!data || data.length === 0) {
@@ -167,6 +182,7 @@ function setupEnhancedDirectSeaChainUpdate(data) {
     
     // 🔧 ФУНКЦИЯ ДЛЯ АВТОМАТИЧЕСКОГО ПОИСКА СТАВОК
     function autoSearchRates() {
+        if (!isActive()) return;
         const selectedPOL = polInput.value.trim();
         const selectedPOD = podInput.value.trim();
         const selectedContainerType = containerTypeSelect.value;
@@ -206,6 +222,7 @@ function setupEnhancedDirectSeaChainUpdate(data) {
     
     // Функция для обновления интерфейса
     function updateInterface() {
+        if (!isActive()) return;
         const selectedPOL = polInput.value.trim();
         const selectedPOD = podInput.value.trim();
         
@@ -215,7 +232,7 @@ function setupEnhancedDirectSeaChainUpdate(data) {
         const availablePOL = enhancedDirectSeaSearchEngine.getPOLWithRates();
         console.log('📋 Доступные POL с ненулевыми ставками:', availablePOL);
         if (window.Utils && window.Utils.setupCustomDropdown) {
-            window.Utils.setupCustomDropdown('direct-sea-pol', availablePOL);
+            window.Utils.setupCustomDropdown(polResolved.id, availablePOL);
         } else {
             console.error('❌ Utils.setupCustomDropdown не доступен в прямом море');
         }
@@ -227,7 +244,7 @@ function setupEnhancedDirectSeaChainUpdate(data) {
             console.log(`🎯 Доступные POD с ненулевыми ставками для "${selectedPOL}":`, availablePOD);
         }
         if (window.Utils && window.Utils.setupCustomDropdown) {
-            window.Utils.setupCustomDropdown('direct-sea-pod', availablePOD);
+            window.Utils.setupCustomDropdown(podResolved.id, availablePOD);
         } else {
             console.error('❌ Utils.setupCustomDropdown не доступен в прямом море для POD');
         }
@@ -317,11 +334,13 @@ function setupEnhancedDirectSeaChainUpdate(data) {
     
     // Настраиваем обработчики событий
     polInput.addEventListener('input', function() {
+        if (!isActive()) return;
         console.log('📝 Ввод в POL:', this.value);
         updateInterface();
     });
     
     polInput.addEventListener('change', function() {
+        if (!isActive()) return;
         console.log('✅ Изменение POL:', this.value);
         // При изменении POL очищаем POD и контейнер
         podInput.value = '';
@@ -330,11 +349,13 @@ function setupEnhancedDirectSeaChainUpdate(data) {
     });
     
     podInput.addEventListener('input', function() {
+        if (!isActive()) return;
         console.log('📝 Ввод в POD:', this.value);
         updateInterface();
     });
     
     podInput.addEventListener('change', function() {
+        if (!isActive()) return;
         console.log('✅ Изменение POD:', this.value);
         // При изменении POD очищаем контейнер
         containerTypeSelect.value = '';
@@ -343,6 +364,7 @@ function setupEnhancedDirectSeaChainUpdate(data) {
     
     // Обработчик для контейнера - автоматический поиск при изменении
     containerTypeSelect.addEventListener('change', function() {
+        if (!isActive()) return;
         console.log('✅ Изменение типа контейнера:', this.value);
         
         if (this.value) {
@@ -366,6 +388,7 @@ function setupEnhancedDirectSeaChainUpdate(data) {
         if (e.key === 'Enter') {
             const activeElement = document.activeElement;
             if ([polInput, podInput, containerTypeSelect].includes(activeElement)) {
+                if (!isActive()) return;
                 e.preventDefault();
                 console.log('🔍 Запуск поиска по Enter');
                 autoSearchRates();
@@ -379,9 +402,12 @@ function setupEnhancedDirectSeaChainUpdate(data) {
 
 // 🎯 ФУНКЦИЯ ДЛЯ ПОИСКА СТАВОК ДЛЯ ПРЯМОГО МОРЯ
 function searchDirectSeaRates() {
-    const pol = document.getElementById('direct-sea-pol').value.trim();
-    const pod = document.getElementById('direct-sea-pod').value.trim();
-    const containerType = document.getElementById('direct-sea-container-type').value;
+    const polInput = document.getElementById('direct-sea-pol') || document.getElementById('pol');
+    const podInput = document.getElementById('direct-sea-pod') || document.getElementById('pod');
+    const containerTypeSelect = document.getElementById('direct-sea-container-type') || document.getElementById('container-type');
+    const pol = polInput ? polInput.value.trim() : '';
+    const pod = podInput ? podInput.value.trim() : '';
+    const containerType = containerTypeSelect ? containerTypeSelect.value : '';
     
     if (!pol || !pod || !containerType) {
         showStatus('Пожалуйста, заполните все обязательные поля', 'error');
@@ -419,7 +445,7 @@ function displayDirectSeaRates(rates, containerType) {
                     <th>POL</th>
                     <th>POD</th>
                     <th>${containerType === 'dc_20' ? '20\'DC' : '40\'HC'}</th>
-                    <th>Перевозчик</th>
+                    <th>Линия</th>
                     <th>Агент</th>
                     <th>Дата действия</th>
                     <th>ETD</th>

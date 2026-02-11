@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "echo \"No tests specified\" && exit 0",
+    "test": "npm run test:smoke",
+    "test:smoke": "node scripts/smoke-routes.js",
+    "app:dev": "npm --prefix app run dev",
+    "app:build": "npm --prefix app run build",
+    "check:syntax": "node --check server.js && node --check script.js && node --check scripts/sales-script.js && node --check scripts/purchaser-script.js",
     "db:init": "node scripts/init-database.js",
     "db:reset": "node scripts/init-database.js"
   },

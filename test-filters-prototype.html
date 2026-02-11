@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прототип фильтров без дропдаунов</title>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/tariff-admin.css">
+    <link rel="stylesheet" href="styles/history-uploaded.css">
+    <link rel="stylesheet" href="styles/filters-scrollfix.css">
+    <style>
+        .filters-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .filter-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        
+        .filter-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-title i {
+            color: #0066cc;
+        }
+        
+        /* Чипсы (Tags) */
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+            min-height: 40px;
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            background: #e3f2fd;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #1976d2;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .chip:hover {
+            background: #bbdefb;
+        }
+        
+        .chip-remove {
+            margin-left: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1976d2;
+            cursor: pointer;
+        }
+        
+        .chip-remove:hover {
+            color: #d32f2f;
+        }
+        
+        /* Поле ввода с автодополнением */
+        .autocomplete-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .autocomplete-input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 2px rgba(0,102,204,0.2);
+        }
+        
+        /* Список предложений */
+        .suggestions-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+            position: absolute;
+            z-index: 1000;
+            width: 300px;
+        }
+        
+        .suggestion-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+        
+        .suggestion-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .suggestion-item.selected {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        /* Быстрые фильтры */
+        .quick-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .quick-filter-btn {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-filter-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .quick-filter-btn.active {
+            background: #1976d2;
+            color: white;
+            border-color: #1976d2;
+        }
+        
+        /* Панель активных фильтров */
+        .active-filters-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .active-filter {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .clear-all-btn {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .clear-all-btn:hover {
+            background: #c82333;
+        }
+        
+        /* Результаты */
+        .results-count {
+            font-size: 14px;
+            color: #666;
+            margin: 15px 0;
+            padding: 10px;
+            background: #e8f5e8;
+            border-radius: 4px;
+        }
+        
+        /* Группа фильтров */
+        .filter-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .filter-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-input-group label {
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        /* Иконки */
+        .icon {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="filters-container">
+        <h1>🚢 Фильтры для комплексных ставок (без дропдаунов)</h1>
+        <p>Прототип интерфейса с альтернативными подходами к фильтрации</p>
+        
+        <!-- Панель активных фильтров -->
+        <div class="active-filters-bar">
+            <div class="active-filter">
+                <span>Линия: Maersk</span>
+                <span class="chip-remove" onclick="removeFilter('line', 'Maersk')">×</span>
+            </div>
+            <div class="active-filter">
+                <span>Агент: Ocean Freight</span>
+                <span class="chip-remove" onclick="removeFilter('agent', 'Ocean Freight')">×</span>
+            </div>
+            <div class="active-filter">
+                <span>Терминал ЖД: Москва-Товарная</span>
+                <span class="chip-remove" onclick="removeFilter('terminal', 'Москва-Товарная')">×</span>
+            </div>
+            <button class="clear-all-btn" onclick="clearAllFilters()">Очистить все</button>
+        </div>
+        
+        <!-- Основные фильтры -->
+        <div class="filter-section">
+            <div class="filter-title">
+                <i class="fas fa-ship"></i> Фильтры по морским перевозкам
+            </div>
+            
+            <!-- Линия (перевозчик) -->
+            <div class="filter-input-group">
+                <label>Линия (перевозчик):</label>
+                <div style="position: relative;">
+                    <input type="text" 
+                           class="autocomplete-input" 
+                           id="line-filter" 
+                           placeholder="Начните вводить название линии (Maersk, COSCO, MSC...)"
+                           oninput="showSuggestions('line', this.value)">
+                    <div class="suggestions-list" id="line-suggestions"></div>
+                </div>
+                <div class="chips-container" id="line-chips">
+                    <div class="chip">
+                        Maersk
+                        <span class="chip-remove" onclick="removeChip('line', 'Maersk')">×</span>
+                    </div>
+                    <div class="chip">
+                        COSCO
+                        <span class="chip-remove" onclick="removeChip('line', 'COSCO')">×</span>
+                    </div>
+                </div>
+                
+                <!-- Быстрые фильтры для линий -->
+                <div class="quick-filters">
+                    <div class="quick-filter-btn" onclick="addQuickFilter('line', 'Maersk')">Maersk</div>
+                    <div class="quick-filter-btn" onclick="addQuickFilter('line', 'COSCO')">COSCO</div>
+                    <div class="quick-filter-btn" onclick="addQuickFilter('line', 'MSC')">MSC</div>
+                    <div class="quick-filter-btn" onclick="addQuickFilter('line', 'ONE')">ONE</div>
+                </div>
+            </div>
+            
+            <!-- Агент -->
+            <div class="filter-input-group" style="margin-top: 20px;">
+                <label>Агент:</label>
+                <div style="position: relative;">
+                    <input type="text" 
+                           class="autocomplete-input" 
+                           id="agent-filter" 
+                           placeholder="Начните вводить название агента"
+                           oninput="showSuggestions('agent', this.value)">
+                    <div class="suggestions-list" id="agent-suggestions"></div>
+                </div>
+                <div class="chips-container" id="agent-chips">
+                    <div class="chip">
+                        Ocean Freight Co
+                        <span class="chip-remove" onclick="removeChip('agent', 'Ocean Freight Co')">×</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Фильтры по ЖД перевозкам -->
+        <div class="filter-section">
+            <div class="filter-title">
+                <i class="fas fa-train"></i> Фильтры по железнодорожным перевозкам
+            </div>
+            
+            <!-- Терминал ЖД -->
+            <div class="filter-input-group">
+                <label>Терминал ЖД:</label>
+                <div style="position: relative;">
+                    <input type="text" 
+                           class="autocomplete-input" 
+                           id="terminal-filter" 
+                           placeholder="Начните вводить название терминала"
+                           oninput="showSuggestions('terminal', this.value)">
+                    <div class="suggestions-list" id="terminal-suggestions"></div>
+                </div>
+                <div class="chips-container" id="terminal-chips">
+                    <div class="chip">
+                        Москва-Товарная
+                        <span class="chip-remove" onclick="removeChip('terminal', 'Москва-Товарная')">×</span>
+                    </div>
+                </div>
+                
+                <!-- Быстрые фильтры для терминалов -->
+                <div class="quick-filters">
+                    <div class="quick-filter-btn" onclick="addQuickFilter('terminal', 'Москва-Товарная')">Москва-Товарная</div>
+                    <div class="quick-filter-btn" onclick="addQuickFilter('terminal', 'Санкт-Петербург')">Санкт-Петербург</div>
+                    <div class="quick-filter-btn" onclick="addQuickFilter('terminal', 'Новосибирск')">Новосибирск</div>
+                </div>
+            </div>
+            
+            <!-- Агент ЖД -->
+            <div class="filter-input-group" style="margin-top: 20px;">
+                <label>Агент ЖД:</label>
+                <div style="position: relative;">
+                    <input type="text" 
+                           class="autocomplete-input" 
+                           id="rail-agent-filter" 
+                           placeholder="Начните вводить название агента ЖД"
+                           oninput="showSuggestions('rail-agent', this.value)">
+                    <div class="suggestions-list" id="rail-agent-suggestions"></div>
+                </div>
+                <div class="chips-container" id="rail-agent-chips"></div>
+            </div>
+        </div>
+        
+        <!-- Дополнительные фильтры -->
+        <div class="filter-section">
+            <div class="filter-title">
+                <i class="fas fa-filter"></i> Дополнительные фильтры
+            </div>
+            
+            <div class="filter-group">
+                <!-- Тип перевозки -->
+                <div class="filter-input-group">
+                    <label>Тип перевозки:</label>
+                    <div class="quick-filters">
+                        <div class="quick-filter-btn active" onclick="toggleTransportType('sea')">🚢 Море</div>
+                        <div class="quick-filter-btn" onclick="toggleTransportType('rail')">🚂 ЖД</div>
+                        <div class="quick-filter-btn" onclick="toggleTransportType('complex')">🔗 Комплексные</div>
+                    </div>
+                </div>
+                
+                <!-- Тип контейнера -->
+                <div class="filter-input-group">
+                    <label>Тип контейнера:</label>
+                    <div class="quick-filters">
+                        <div class="quick-filter-btn" onclick="toggleContainerType('20ft')">20'DC</div>
+                        <div class="quick-filter-btn active" onclick="toggleContainerType('40ft')">40'HC</div>
+                    </div>
+                </div>
+                
+                <!-- Ценовой диапазон -->
+                <div class="filter-input-group">
+                    <label>Ценовой диапазон ($):</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="price-min" placeholder="Мин" style="width: 80px; padding: 8px;">
+                        <span>-</span>
+                        <input type="number" id="price-max" placeholder="Макс" style="width: 80px; padding: 8px;">
+                        <button onclick="applyPriceFilter()" style="padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 4px;">Применить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Результаты -->
+        <div class="results-count">
+            📊 Найдено <strong>24</strong> ставок с примененными фильтрами
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 6px;">
+            <h3>📋 Как это работает:</h3>
+            <ul>
+                <li><strong>Чипсы (теги)</strong> - выбранные значения отображаются как кликабельные теги</li>
+                <li><strong>Автодополнение</strong> - при вводе показываются подсказки без дропдаунов</li>
+                <li><strong>Быстрые фильтры</strong> - кнопки для популярных значений</li>
+                <li><strong>Панель активных фильтров</strong> - обзор всех примененных фильтров</li>
+                <li><strong>Множественный выбор</strong> - можно выбрать несколько линий, агентов и т.д.</li>
+            </ul>
+            
+            <h3 style="margin-top: 20px;">🎯 Преимущества этого подхода:</h3>
+            <ul>
+                <li>✅ Без дропдаунов - более современный интерфейс</li>
+                <li>✅ Быстрый доступ к популярным фильтрам</li>
+                <li>✅ Наглядное отображение выбранных параметров</li>
+                <li>✅ Возможность множественного выбора</li>
+                <li>✅ Удобно для мобильных устройств</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Моковые данные для демонстрации
+        const mockData = {
+            lines: ['Maersk', 'COSCO', 'MSC', 'ONE', 'Evergreen', 'HMM', 'Yang Ming', 'ZIM'],
+            agents: ['Ocean Freight Co', 'Global Logistics', 'TransContainer', 'RZD Logistics', 'FESCO', 'UTLC ERA'],
+            terminals: ['Москва-Товарная', 'Санкт-Петербург', 'Новосибирск', 'Екатеринбург', 'Владивосток', 'Хабаровск'],
+            railAgents: ['РЖД Логистика', 'Трансконтейнер', 'СУЭК', 'Газпромтранс', 'УТЛК']
+        };
+
+        // Состояние фильтров
+        const filters = {
+            lines: ['Maersk', 'COSCO'],
+            agents: ['Ocean Freight Co'],
+            terminals: ['Москва-Товарная'],
+            railAgents: [],
+            transportTypes: ['sea'],
+            containerTypes: ['40ft'],
+            priceRange: { min: null, max: null }
+        };
+
+        // Показать предложения для автодополнения
+        function showSuggestions(type, query) {
+            const suggestionsList = document.getElementById(`${type}-suggestions`);
+            if (!suggestionsList) return;
+            
+            query = query.toLowerCase().trim();
+            if (!query) {
+                suggestionsList.style.display = 'none';
+                return;
+            }
+            
+            let suggestions = [];
+            switch(type) {
+                case 'line':
+                    suggestions = mockData.lines.filter(line =>
+                        line.toLowerCase().includes(query)
+                    );
+                    break;
+                case 'agent':
+                    suggestions = mockData.agents.filter(agent =>
+                        agent.toLowerCase().includes(query)
+                    );
+                    break;
+                case 'terminal':
+                    suggestions = mockData.terminals.filter(terminal =>
+                        terminal.toLowerCase().includes(query)
+                    );
+                    break;
+                case 'rail-agent':
+                    suggestions = mockData.railAgents.filter(agent =>
+                        agent.toLowerCase().includes(query)
+                    );
+                    break;
+            }
+            
+            // Очищаем и заполняем список
+            suggestionsList.innerHTML = '';
+            suggestions.forEach(suggestion => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = suggestion;
+                div.onclick = () => addFilter(type, suggestion);
+                suggestionsList.appendChild(div);
+            });
+            
+            suggestionsList.style.display = suggestions.length > 0 ? 'block' : 'none';
+        }
+
+        // Добавить фильтр
+        function addFilter(type, value) {
+            if (!filters[type].includes(value)) {
+                filters[type].push(value);
+                updateChips(type);
+                updateActiveFiltersBar();
+                hideSuggestions(type);
+                clearInput(type);
+            }
+        }
+
+        // Добавить быстрый фильтр
+        function addQuickFilter(type, value) {
+            addFilter(type, value);
+        }
+
+        // Удалить чипс
+        function removeChip(type, value) {
+            filters[type] = filters[type].filter(item => item !== value);
+            updateChips(type);
+            updateActiveFiltersBar();
+        }
+
+        // Удалить фильтр из панели
+        function removeFilter(type, value) {
+            removeChip(type, value);
+        }
+
+        // Очистить все фильтры
+        function clearAllFilters() {
+            Object.keys(filters).forEach(key => {
+                if (Array.isArray(filters[key])) {
+                    filters[key] = [];
+                } else if (typeof filters[key] === 'object') {
+                    filters[key] = { min: null, max: null };
+                }
+            });
+            
+            // Сброс UI
+            ['line', 'agent', 'terminal', 'rail-agent'].forEach(type => {
+                updateChips(type);
+            });
+            
+            updateActiveFiltersBar();
+            resetQuickFilterButtons();
+        }
+
+        // Обновить чипсы
+        function updateChips(type) {
+            const chipsContainer = document.getElementById(`${type}-chips`);
+            if (!chipsContainer) return;
+            
+            chipsContainer.innerHTML = '';
+            filters[type].forEach(value => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.innerHTML = `
+                    ${value}
+                    <span class="chip-remove" onclick="removeChip('${type}', '${value}')">×</span>
+                `;
+                chipsContainer.appendChild(chip);
+            });
+        }
+
+        // Обновить панель активных фильтров
+        function updateActiveFiltersBar() {
+            const bar = document.querySelector('.active-filters-bar');
+            if (!bar) return;
+            
+            // Удаляем все фильтры кроме кнопки "Очистить все"
+            const filtersToShow = bar.querySelectorAll('.active-filter');
+            filtersToShow.forEach(filter => filter.remove());
+            
+            // Добавляем активные фильтры
+            Object.entries(filters).forEach(([type, values]) => {
+                if (Array.isArray(values) && values.length > 0) {
+                    values.forEach(value => {
+                        const filterDiv = document.createElement('div');
+                        filterDiv.className = 'active-filter';
+                        filterDiv.innerHTML = `
+                            <span>${getFilterLabel(type)}: ${value}</span>
+                            <span class="chip-remove" onclick="removeFilter('${type}', '${value}')">×</span>
+                        `;
+                        bar.insertBefore(filterDiv, bar.querySelector('.clear-all-btn'));
+                    });
+                }
+            });
+        }
+
+        // Получить читаемое название фильтра
+        function getFilterLabel(type) {
+            const labels = {
+                'lines': 'Линия',
+                'agents': 'Агент',
+                'terminals': 'Терминал ЖД',
+                'railAgents': 'Агент ЖД',
+                'transportTypes': 'Тип перевозки',
+                'containerTypes': 'Тип контейнера'
+            };
+            return labels[type] || type;
+        }
+
+        // Скрыть предложения
+        function hideSuggestions(type) {
+            const suggestionsList = document.getElementById(`${type}-suggestions`);
+            if (suggestionsList) {
+                suggestionsList.style.display = 'none';
+            }
+        }
+
+        // Очистить поле ввода
+        function clearInput(type) {
+            const input = document.getElementById(`${type}-filter`);
+            if (input) {
+                input.value = '';
+            }
+        }
+
+        // Переключить тип перевозки
+        function toggleTransportType(type) {
+            const buttons = document.querySelectorAll('.quick-filter-btn');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes('🚢') || btn.textContent.includes('🚂') || btn.textContent.includes('🔗')) {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            event.target.classList.add('active');
+            
+            // Обновляем фильтры
+            filters.transportTypes = [type];
+        }
+
+        // Переключить тип контейнера
+        function toggleContainerType(type) {
+            const buttons = document.querySelectorAll('.quick-filter-btn');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes("20'") || btn.textContent.includes("40'")) {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            event.target.classList.add('active');
+            
+            // Обновляем фильтры
+            filters.containerTypes = [type];
+        }
+
+        // Применить ценовой фильтр
+        function applyPriceFilter() {
+            const min = document.getElementById('price-min').value;
+            const max = document.getElementById('price-max').value;
+            
+            filters.priceRange = {
+                min: min ? parseInt(min) : null,
+                max: max ? parseInt(max) : null
+            };
+            
+            // Обновляем UI
+            updateActiveFiltersBar();
+        }
+
+        // Сбросить кнопки быстрых фильтров
+        function resetQuickFilterButtons() {
+            // Сброс кнопок типов перевозки
+            const transportButtons = document.querySelectorAll('.quick-filter-btn');
+            transportButtons.forEach(btn => {
+                if (btn.textContent.includes('🚢')) {
+                    btn.classList.add('active');
+                } else if (btn.textContent.includes('🚂') || btn.textContent.includes('🔗')) {
+                    btn.classList.remove('active');
+                }
+                
+                if (btn.textContent.includes("40'")) {
+                    btn.classList.add('active');
+                } else if (btn.textContent.includes("20'")) {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            // Инициализируем чипсы
+            ['line', 'agent', 'terminal', 'rail-agent'].forEach(type => {
+                updateChips(type);
+            });
+            
+            updateActiveFiltersBar();
+            
+            // Закрытие предложений при клике вне
+            document.addEventListener('click', function(e) {
+                if (!e.target.classList.contains('autocomplete-input')) {
+                    document.querySelectorAll('.suggestions-list').forEach(list => {
+                        list.style.display = 'none';
+                    });
+                }
+            });
+        });

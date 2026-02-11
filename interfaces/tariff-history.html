@@ -1,29 +1,39 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="history-embedded">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>История загрузки тарифов - Администратор</title>
-    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/tariff-admin.css">
+    <link rel="stylesheet" href="../styles/history-uploaded.css">
+    <link rel="stylesheet" href="../styles/filters-scrollfix.css">
+    <link rel="stylesheet" href="../styles/redesign.css">
     <!-- Библиотека для работы с иконками -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
+<body class="history-embedded">
     <div class="container">
-        <header>
-            <h1>История загрузки тарифов</h1>
-            <p class="subtitle">Просмотр истории загрузки данных по морю, ЖД, прямому морю, прямому ЖД</p>
-        </header>
-
         <main>
-            <!-- Фильтры для истории -->
-            <section id="filters" class="section">
-                <div class="section-header">
-                    <h2>Фильтры</h2>
+            <section class="history-shell">
+                <div class="history-topbar">
+                    <div class="history-title">
+                        <div class="history-subtitle">Администрирование</div>
+                        <h2>История загрузок</h2>
+                    </div>
+                    <div class="history-actions">
+                        <button class="history-btn" onclick="refreshHistory()">
+                            <i class="fas fa-sync-alt"></i> Обновить
+                        </button>
+                        <button class="history-btn" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel"></i> Экспорт
+                        </button>
+                    </div>
                 </div>
-                <div class="filters-grid">
+
+                <div id="filters" class="history-filters">
                     <div class="form-group">
-                        <label for="data-type">Тип данных:</label>
+                        <label for="data-type">Тип данных</label>
                         <select id="data-type" class="form-select">
                             <option value="all">Все типы</option>
                             <option value="sea">Морские перевозки</option>
@@ -34,138 +44,68 @@
                             <option value="agent_tariff">Тарифы агентов</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="date-from">Дата с:</label>
+                        <label for="date-from">Дата с</label>
                         <input type="date" id="date-from" class="form-input">
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="date-to">Дата по:</label>
+                        <label for="date-to">Дата по</label>
                         <input type="date" id="date-to" class="form-input">
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="user-filter">Пользователь:</label>
+                        <label for="user-filter">Пользователь</label>
                         <input type="text" id="user-filter" class="form-input" placeholder="Email пользователя">
                     </div>
-                    
-                    <div class="form-group filter-actions">
-                        <button id="apply-filters" class="btn-primary" onclick="applyFilters()">
-                            <i class="fas fa-filter"></i> Применить фильтры
-                        </button>
-                        <button id="reset-filters" class="btn-secondary" onclick="resetFilters()">
-                            <i class="fas fa-redo"></i> Сбросить
-                        </button>
-                    </div>
-                </div>
-            </section>
 
-            <!-- Статистика -->
-            <section id="stats" class="section hidden">
-                <div class="section-header">
-                    <h2>Статистика загрузок</h2>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-ship"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Морские перевозки</h3>
-                            <p class="stat-value" id="sea-count">0</p>
-                            <p class="stat-label">загрузок</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-train"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>ЖД перевозки</h3>
-                            <p class="stat-value" id="rail-count">0</p>
-                            <p class="stat-label">загрузок</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-ship"></i>
-                            <i class="fas fa-arrow-right"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Прямое море</h3>
-                            <p class="stat-value" id="direct-sea-count">0</p>
-                            <p class="stat-label">загрузок</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-train"></i>
-                            <i class="fas fa-arrow-right"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Прямое ЖД</h3>
-                            <p class="stat-value" id="direct-rail-count">0</p>
-                            <p class="stat-label">загрузок</p>
-                        </div>
+                    <div class="history-filter-actions">
+                        <button id="apply-filters" class="history-btn primary" onclick="applyFilters()">
+                            <i class="fas fa-filter"></i> Применить
+                        </button>
+                        <button id="reset-filters" class="history-btn" onclick="resetFilters()">
+                            <i class="fas fa-redo"></i> Сброс
+                        </button>
                     </div>
                 </div>
-            </section>
 
-            <!-- Таблица истории -->
-            <section id="history-table" class="section">
-                <div class="section-header">
-                    <h2>История загрузок</h2>
-                    <div class="header-actions">
-                        <button class="btn-secondary" onclick="refreshHistory()">
-                            <i class="fas fa-sync-alt"></i> Обновить
+                <div id="history-table" class="history-table-card">
+                    <div class="history-table-wrap">
+                        <table id="history-table-content" class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Тип данных</th>
+                                    <th>Пользователь</th>
+                                    <th>Кол-во записей</th>
+                                    <th>Дата загрузки</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <!-- Данные будут загружены динамически -->
+                                <tr>
+                                    <td colspan="6" class="loading-cell">
+                                        <div class="loading-spinner">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <span>Загрузка истории...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="history-pagination">
+                        <button id="prev-page" class="history-btn" disabled onclick="changePage(-1)">
+                            <i class="fas fa-chevron-left"></i> Назад
                         </button>
-                        <button class="btn-secondary" onclick="exportToExcel()">
-                            <i class="fas fa-file-excel"></i> Экспорт в Excel
-                        </button>
-                        <button class="btn-secondary" onclick="goBack()">
-                            <i class="fas fa-arrow-left"></i> Назад
+                        <span id="page-info">Страница 1 из 1</span>
+                        <button id="next-page" class="history-btn" disabled onclick="changePage(1)">
+                            Вперед <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
-                </div>
-                
-                <div class="table-container">
-                    <table id="history-table-content" class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Тип данных</th>
-                                <th>Пользователь</th>
-                                <th>Кол-во записей</th>
-                                <th>Дата загрузки</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-table-body">
-                            <!-- Данные будут загружены динамически -->
-                            <tr>
-                                <td colspan="6" class="loading-cell">
-                                    <div class="loading-spinner">
-                                        <i class="fas fa-spinner fa-spin"></i>
-                                        <span>Загрузка истории...</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="pagination">
-                    <button id="prev-page" class="btn-secondary" disabled onclick="changePage(-1)">
-                        <i class="fas fa-chevron-left"></i> Назад
-                    </button>
-                    <span id="page-info">Страница 1 из 1</span>
-                    <button id="next-page" class="btn-secondary" disabled onclick="changePage(1)">
-                        Вперед <i class="fas fa-chevron-right"></i>
-                    </button>
                 </div>
             </section>
 
