@@ -69,7 +69,13 @@ app.use(helmet({
 app.use(compression());
 
 const appDist = path.join(__dirname, 'app', 'dist');
-app.use('/app', express.static(appDist));
+app.use('/app', express.static(appDist, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  }
+}));
 
 // Redirect root to the new React app (legacy UI remains доступен по /index.html)
 app.get('/', (req, res) => {
@@ -108,7 +114,13 @@ app.use('/api', createUploadHistoryRouter({
 
 app.use(createSystemRouter(__dirname));
 
+app.get('/app/assets/*', (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  next();
+});
+
 app.get('/app/*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   res.sendFile(path.join(appDist, 'index.html'));
 });
 
