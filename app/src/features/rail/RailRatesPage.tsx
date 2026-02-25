@@ -377,6 +377,7 @@ export default function RailRatesPage({ onUnauthorized }: RailRatesPageProps) {
                       <th>Город</th>
                       <th>Терминал ЖД</th>
                       <th>Тыловой терминал</th>
+                      <th>НДС</th>
                       <th>Пункт назначения</th>
                       <th>Тип контейнера</th>
                       <th>Ставка (₽)</th>
@@ -387,7 +388,7 @@ export default function RailRatesPage({ onUnauthorized }: RailRatesPageProps) {
                   <tbody>
                     {showResults && results.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="muted">
+                        <td colSpan={9} className="muted">
                           {loading ? 'Загрузка данных...' : 'Нет данных для выбранных параметров'}
                         </td>
                       </tr>
@@ -404,6 +405,19 @@ export default function RailRatesPage({ onUnauthorized }: RailRatesPageProps) {
                       const formatPlain = (value: unknown) => {
                         if (value === null || value === undefined || value === '') return '—';
                         if (typeof value === 'number') return value.toLocaleString('ru-RU');
+                        return String(value);
+                      };
+                      const formatPercent = (value: unknown) => {
+                        if (value === null || value === undefined || value === '') return '—';
+                        if (typeof value === 'number') {
+                          const normalized = value > 0 && value < 1 ? value * 100 : value;
+                          return `${normalized.toLocaleString('ru-RU')}%`;
+                        }
+                        const parsed = Number(String(value).replace(',', '.'));
+                        if (!Number.isNaN(parsed)) {
+                          const normalized = parsed > 0 && parsed < 1 ? parsed * 100 : parsed;
+                          return `${normalized.toLocaleString('ru-RU')}%`;
+                        }
                         return String(value);
                       };
                       return (
@@ -425,6 +439,7 @@ export default function RailRatesPage({ onUnauthorized }: RailRatesPageProps) {
                             <td>{row.item.city || '-'}</td>
                             <td>{row.item.agent || '-'}</td>
                             <td>{row.item['тыловойТерминал'] ? String(row.item['тыловойТерминал']) : '-'}</td>
+                            <td>{formatPercent(row.item.nds)}</td>
                             <td>{row.item.destination || '-'}</td>
                             <td>{getRailContainerLabel(row.containerType)}</td>
                             <td className="rate">
@@ -434,9 +449,9 @@ export default function RailRatesPage({ onUnauthorized }: RailRatesPageProps) {
                             <td>{row.item.validity || row.item.dateOfValidity || '-'}</td>
                           </tr>
                           <tr className="row-details" style={{ display: isExpanded ? 'table-row' : 'none' }}>
-                            <td colSpan={8}>
-                              Автовывоз: {formatMoney(row.item.autovivoz)} · ПРР: {formatMoney(row.item.prr)} · НДС:{' '}
-                              {formatMoney(row.item.nds)} · ВОХР: {formatMoney(vochrValue)} · Фитинги/ПВ:{' '}
+                            <td colSpan={9}>
+                              Автовывоз: {formatMoney(row.item.autovivoz)} · ПРР: {formatMoney(row.item.prr)} · ВОХР:{' '}
+                              {formatMoney(vochrValue)} · Фитинги/ПВ:{' '}
                               {formatPlain(row.item.fitting)}
                             </td>
                           </tr>

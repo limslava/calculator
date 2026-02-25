@@ -14,6 +14,7 @@ import {
   emptyDatabase,
   formatSummaryRate,
   formatRateValue,
+  getComplexContainerLabel,
   getDisplayAgent,
   getResultFilterValues,
   uniqueSorted
@@ -169,7 +170,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
   const extractDestination = (result: ComplexResult) => {
     if (result.transportType === 'direct_rail') return result.data?.arrivalCity;
     if (result.transportType === 'direct_sea') return result.data?.pod;
-    if (result.transportType === 'sea') return result.data?.pod;
+    if (result.transportType === 'sea') return result.data?.dropOffArea;
     if (result.transportType === 'sea_rail') return result.data?.rail?.destination || result.data?.sea?.dropOffArea;
     return undefined;
   };
@@ -316,6 +317,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
         totalLabel: '—',
         splitLabel: '—',
         bestLabel: '—',
+        bestByContainer: [],
         avgLabel: '—',
         note: 'Выберите фильтр, чтобы увидеть ставки.'
       };
@@ -325,6 +327,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
         totalLabel: '—',
         splitLabel: '—',
         bestLabel: '—',
+        bestByContainer: [],
         avgLabel: '—',
         note: 'Нет ставок по выбранным фильтрам.'
       };
@@ -339,22 +342,43 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
       .map(([label, count]) => `${count} ${label.toLowerCase()}`)
       .join(' · ');
 
-    const sorted = [...filteredResults].sort((a, b) => {
+    const sortByNormalizedRate = (a: typeof filteredResults[number], b: typeof filteredResults[number]) => {
       let rateA = a.rate || 0;
       let rateB = b.rate || 0;
       if (a.currency === '$' && exchangeRate) rateA *= exchangeRate;
       if (b.currency === '$' && exchangeRate) rateB *= exchangeRate;
       return rateA - rateB;
-    });
+    };
+
+    const pickBestLabel = (items: typeof filteredResults) => {
+      if (!items.length) return '—';
+      const sorted = [...items].sort(sortByNormalizedRate);
+      return formatSummaryRate(sorted[0]?.rate, sorted[0]?.currency);
+    };
+
+    const bestByContainer = filters.containerType
+      ? [
+          {
+            label: getComplexContainerLabel(filters.containerType),
+            value: pickBestLabel(filteredResults)
+          }
+        ]
+      : (['dc_20', 'hc_40'] as const).map(containerType => ({
+          label: getComplexContainerLabel(containerType),
+          value: pickBestLabel(filteredResults.filter(item => item.containerType === containerType))
+        }));
+
+    const sorted = [...filteredResults].sort(sortByNormalizedRate);
 
     return {
       totalLabel: `${total} ставок`,
       splitLabel,
       bestLabel: formatSummaryRate(sorted[0]?.rate, sorted[0]?.currency),
+      bestByContainer,
       avgLabel: '—',
       note: 'Выберите строку, чтобы увидеть детали выбранной ставки.'
     };
-  }, [filteredResults, exchangeRate, hasActiveFilters]);
+  }, [filteredResults, exchangeRate, hasActiveFilters, filters.containerType]);
 
   const selectedNote = useMemo(() => {
     if (selectedRow === null || !rows[selectedRow]) {
@@ -586,6 +610,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                         <th>Тип перевозки</th>
                         <th>Тип контейнера</th>
                         <th>Ставка море</th>
+                        <th>POD</th>
                         <th>Агент</th>
                         <th>Перевозчик</th>
                         <th>Ставка ЖД</th>
@@ -596,7 +621,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                     <tbody>
                       {showResults && rows.length === 0 && (
                         <tr>
-                          <td colSpan={8} className="muted">
+                          <td colSpan={9} className="muted">
                             {loading ? 'Загрузка данных...' : 'Нет данных для выбранных параметров'}
                           </td>
                         </tr>
@@ -627,6 +652,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                               </td>
                               <td>{row.containerLabel || '—'}</td>
                               <td>{row.seaRate || '—'}</td>
+                              <td>{row.pod || '—'}</td>
                               <td>{row.agent || '—'}</td>
                               <td>{row.carrier || '—'}</td>
                               <td>{row.railRate || '—'}</td>
@@ -637,7 +663,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                               className="row-details"
                               style={{ display: isExpanded ? 'table-row' : 'none' }}
                             >
-                              <td colSpan={8}>
+                              <td colSpan={9}>
                                 ETD: {row.etd || '—'} · Дата действия: {row.dateOfValidity || '—'} · Станция:{' '}
                                 {row.departureStation || '—'} · Погран переход: {row.borderCrossing || '—'} · Примечание:{' '}
                                 {row.additionalInfo || '—'}
@@ -659,7 +685,18 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
             </div>
             <div className="trd-summary-block">
               <div className="trd-summary-label">Лучшая ставка</div>
-              <div className="trd-summary-value">{summary.bestLabel}</div>
+              {summary.bestByContainer.length ? (
+                <div className="trd-summary-list">
+                  {summary.bestByContainer.map(item => (
+                    <div key={item.label || item.value} className="trd-summary-line">
+                      <span>{item.label || '—'}</span>
+                      <strong>{item.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="trd-summary-value">{summary.bestLabel}</div>
+              )}
             </div>
             <div className="trd-summary-block">
               <div className="trd-summary-label">Средний срок</div>

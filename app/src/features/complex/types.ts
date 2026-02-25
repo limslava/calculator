@@ -144,6 +144,7 @@ export type ComplexRow = {
   containerLabel?: string;
   serviceNote?: string;
   seaRate: string;
+  pod: string;
   agent: string;
   carrier: string;
   etd: string;

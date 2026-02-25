@@ -811,6 +811,29 @@ body:has(.sidebar-show-btn) #sales-interface .trd-title {
   letter-spacing: 0.04em;
 }
 
+.trd-summary-list {
+  display: grid;
+  gap: 6px;
+  font-size: 0.86rem;
+}
+
+.trd-summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.trd-summary-line span {
+  color: #5f5f58;
+  font-weight: 600;
+}
+
+.trd-summary-line strong {
+  color: #1b1b1a;
+  font-weight: 700;
+}
+
 .app-modal {
   position: fixed;
   inset: 0;

@@ -494,6 +494,9 @@ export default function SeaRatesPage({ onUnauthorized }: SeaRatesPageProps) {
                     )}
                     {results.map((row, index) => {
                       const isExpanded = expandedRows.has(index);
+                      const etdValue = row.item.etd || '—';
+                      const etdMatch =
+                        typeof etdValue === 'string' ? etdValue.match(/https?:\/\/[^\s]+/i) : null;
                       return (
                         <Fragment key={`${row.item.pol}-${row.item.pod}-${row.containerType}-${index}`}>
                           <tr
@@ -523,7 +526,14 @@ export default function SeaRatesPage({ onUnauthorized }: SeaRatesPageProps) {
                           <tr className="row-details" style={{ display: isExpanded ? 'table-row' : 'none' }}>
                             <td colSpan={9}>
                               Transit Port: {row.item.transitPort || '—'} · Конвертация: {row.item.conversion || '—'} · ETD:{' '}
-                              {row.item.etd || '—'} · Remarks: {row.item.remarks || '—'}
+                              {etdMatch ? (
+                                <a href={etdMatch[0]} target="_blank" rel="noreferrer">
+                                  {etdMatch[0]}
+                                </a>
+                              ) : (
+                                etdValue
+                              )}{' '}
+                              · Remarks: {row.item.remarks || '—'}
                             </td>
                           </tr>
                         </Fragment>

@@ -330,6 +330,10 @@ export function buildComplexRow(result: ComplexResult, fallbackFrom: string, fal
   const dateOfValidity = safeString(data.sea?.dateOfValidity || data.dateOfValidity || '—');
 
   const borderCrossing = safeString(data.borderCrossing || data.rail?.borderCrossing || data.sea?.borderCrossing || '—');
+  let pod = '—';
+  if (result.transportType === 'direct_sea' || result.transportType === 'sea') {
+    pod = safeString(data.pod || '—');
+  }
   let departureStation = safeString(
     data.rail?.departureStation || data.departureStation || data.rail?.city || data.city || '—'
   );
@@ -387,6 +391,7 @@ export function buildComplexRow(result: ComplexResult, fallbackFrom: string, fal
     typeLabel,
     containerLabel,
     seaRate,
+    pod,
     agent,
     carrier,
     etd,
