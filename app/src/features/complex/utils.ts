@@ -334,6 +334,9 @@ export function buildComplexRow(result: ComplexResult, fallbackFrom: string, fal
   if (result.transportType === 'direct_sea' || result.transportType === 'sea') {
     pod = safeString(data.pod || '—');
   }
+  if (result.transportType === 'sea_rail') {
+    pod = safeString(data.sea?.pod || '—');
+  }
   let departureStation = safeString(
     data.rail?.departureStation || data.departureStation || data.rail?.city || data.city || '—'
   );
