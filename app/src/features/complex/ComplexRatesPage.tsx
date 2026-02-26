@@ -610,6 +610,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                         <th>Тип перевозки</th>
                         <th>Тип контейнера</th>
                         <th>Ставка море</th>
+                        <th>POL/FOB/Город</th>
                         <th>POD</th>
                         <th>Агент</th>
                         <th>Перевозчик</th>
@@ -621,7 +622,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                     <tbody>
                       {showResults && rows.length === 0 && (
                         <tr>
-                          <td colSpan={9} className="muted">
+                          <td colSpan={11} className="muted">
                             {loading ? 'Загрузка данных...' : 'Нет данных для выбранных параметров'}
                           </td>
                         </tr>
@@ -652,6 +653,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                               </td>
                               <td>{row.containerLabel || '—'}</td>
                               <td>{row.seaRate || '—'}</td>
+                              <td>{row.departureLabel || '—'}</td>
                               <td>{row.pod || '—'}</td>
                               <td>{row.agent || '—'}</td>
                               <td>{row.carrier || '—'}</td>
@@ -663,10 +665,12 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                               className="row-details"
                               style={{ display: isExpanded ? 'table-row' : 'none' }}
                             >
-                              <td colSpan={9}>
+                              <td colSpan={11}>
                                 ETD: {row.etd || '—'} · Дата действия: {row.dateOfValidity || '—'} · Станция:{' '}
-                                {row.departureStation || '—'} · Погран переход: {row.borderCrossing || '—'} · Примечание:{' '}
-                                {row.additionalInfo || '—'}
+                                {row.departureStation || '—'} · Погран переход: {row.borderCrossing || '—'} ·{' '}
+                                {row.conversionPercent
+                                  ? `Ставка дана включая конвертацию - ${row.conversionPercent}%`
+                                  : 'Конвертации нет'} · Примечание: {row.additionalInfo || '—'}
                               </td>
                             </tr>
                           </Fragment>

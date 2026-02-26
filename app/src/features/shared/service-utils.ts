@@ -6,6 +6,7 @@ const normalizeServiceValue = (value?: string | null) => {
 export function isSeaServiceIncluded(value?: string | null) {
   const normalized = normalizeServiceValue(value);
   if (!normalized) return false;
+  if (normalized.includes('сквозной сервис')) return false;
   if (normalized.includes('только фрахт')) return true;
   if (normalized === 'нет') return true;
   return false;

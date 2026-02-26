@@ -5,7 +5,7 @@ import { loadDbType, loadExchangeRate } from '../shared/api';
 import { isSeaServiceIncluded } from '../shared/service-utils';
 import {
   getSeaContainerLabel,
-  getSeaRateByContainerType,
+  getSeaRateWithConversion,
   normalizeName
 } from './sea-utils';
 
@@ -86,7 +86,7 @@ export default function SeaRatesPage({ onUnauthorized }: SeaRatesPageProps) {
     }
 
     if (!exclude.containerType && filters.containerType) {
-      const rate = getSeaRateByContainerType(item, filters.containerType);
+      const rate = getSeaRateWithConversion(item, filters.containerType);
       if (!rate || rate <= 0) return false;
     }
 
@@ -143,7 +143,18 @@ export default function SeaRatesPage({ onUnauthorized }: SeaRatesPageProps) {
     };
 
   const availableSeaData = useMemo(
-    () => seaData.filter(item => isSeaServiceIncluded(item.service)),
+    () =>
+      seaData.filter(item => {
+        const service = (item.service || '').toString().toLowerCase();
+        const remarks = (item.remarks || '').toString().toLowerCase();
+        const conversion = (item.conversion || '').toString().toLowerCase();
+        const conversionNotIncluded = (item as any).conversionNotIncluded
+          ? String((item as any).conversionNotIncluded).toLowerCase()
+          : '';
+        const combined = `${service} ${remarks} ${conversion} ${conversionNotIncluded}`;
+        if (combined.includes('сквозной сервис')) return false;
+        return isSeaServiceIncluded(item.service);
+      }),
     [seaData]
   );
 
@@ -211,9 +222,9 @@ export default function SeaRatesPage({ onUnauthorized }: SeaRatesPageProps) {
 
     matches.forEach(item => {
       activeContainerTypes.forEach(containerType => {
-        const rate = getSeaRateByContainerType(item, containerType);
-        if (rate && rate > 0) {
-          expanded.push({ item, containerType, rate });
+        const rateWithConversion = getSeaRateWithConversion(item, containerType);
+        if (rateWithConversion && rateWithConversion > 0) {
+          expanded.push({ item, containerType, rate: rateWithConversion });
         }
       });
     });
@@ -497,6 +508,10 @@ export default function SeaRatesPage({ onUnauthorized }: SeaRatesPageProps) {
                       const etdValue = row.item.etd || '—';
                       const etdMatch =
                         typeof etdValue === 'string' ? etdValue.match(/https?:\/\/[^\s]+/i) : null;
+                      const conversionText = (row.item.conversion || '').toString().trim();
+                      const conversionLine = conversionText
+                        ? `Ставка дана включая конвертацию - ${conversionText}`
+                        : 'Конвертации нет';
                       return (
                         <Fragment key={`${row.item.pol}-${row.item.pod}-${row.containerType}-${index}`}>
                           <tr
@@ -525,7 +540,7 @@ export default function SeaRatesPage({ onUnauthorized }: SeaRatesPageProps) {
                           </tr>
                           <tr className="row-details" style={{ display: isExpanded ? 'table-row' : 'none' }}>
                             <td colSpan={9}>
-                              Transit Port: {row.item.transitPort || '—'} · Конвертация: {row.item.conversion || '—'} · ETD:{' '}
+                              Transit Port: {row.item.transitPort || '—'} · {conversionLine} · ETD:{' '}
                               {etdMatch ? (
                                 <a href={etdMatch[0]} target="_blank" rel="noreferrer">
                                   {etdMatch[0]}

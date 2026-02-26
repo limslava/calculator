@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import MultiSelect from '../../components/MultiSelect';
 import type { DirectSeaRate } from '../complex/types';
 import { loadDbType, loadExchangeRate } from '../shared/api';
-import { getDirectSeaContainerLabel, getDirectSeaRateByContainerType, normalizeName } from './direct-sea-utils';
+import { getDirectSeaContainerLabel, getDirectSeaRateWithConversion, hasDirectSeaRate, normalizeName } from './direct-sea-utils';
 
 const containerOptions = [
   { value: 'dc_20', label: "20'DC" },
@@ -67,7 +67,7 @@ export default function DirectSeaRatesPage({ onUnauthorized }: DirectSeaRatesPag
     if (!exclude.pod && filters.pod && normalizeName(item.pod) !== normalizedPod) return false;
 
     if (!exclude.containerType && filters.containerType) {
-      const rate = getDirectSeaRateByContainerType(item, filters.containerType);
+      const rate = getDirectSeaRateWithConversion(item, filters.containerType);
       if (!rate || rate <= 0) return false;
     }
 
@@ -124,6 +124,7 @@ export default function DirectSeaRatesPage({ onUnauthorized }: DirectSeaRatesPag
     () =>
       buildOptions(
         directSeaData
+          .filter(item => hasDirectSeaRate(item))
           .filter(item => matchesFilters(item, { pol: true }))
           .map(item => item.pol)
       ),
@@ -133,6 +134,7 @@ export default function DirectSeaRatesPage({ onUnauthorized }: DirectSeaRatesPag
     () =>
       buildOptions(
         directSeaData
+          .filter(item => hasDirectSeaRate(item))
           .filter(item => matchesFilters(item, { pod: true }))
           .map(item => item.pod)
       ),
@@ -142,6 +144,7 @@ export default function DirectSeaRatesPage({ onUnauthorized }: DirectSeaRatesPag
     () =>
       buildOptions(
         directSeaData
+          .filter(item => hasDirectSeaRate(item))
           .filter(item => matchesFilters(item, { carrierFilters: true }))
           .map(item => item.carrier)
       ),
@@ -151,6 +154,7 @@ export default function DirectSeaRatesPage({ onUnauthorized }: DirectSeaRatesPag
     () =>
       buildOptions(
         directSeaData
+          .filter(item => hasDirectSeaRate(item))
           .filter(item => matchesFilters(item, { agentFilters: true }))
           .map(item => item.agent)
       ),
@@ -166,9 +170,9 @@ export default function DirectSeaRatesPage({ onUnauthorized }: DirectSeaRatesPag
 
     matches.forEach(item => {
       activeContainerTypes.forEach(containerType => {
-        const rate = getDirectSeaRateByContainerType(item, containerType);
-        if (rate && rate > 0) {
-          expanded.push({ item, containerType, rate });
+        const rateWithConversion = getDirectSeaRateWithConversion(item, containerType);
+        if (rateWithConversion && rateWithConversion > 0) {
+          expanded.push({ item, containerType, rate: rateWithConversion });
         }
       });
     });
@@ -371,6 +375,11 @@ export default function DirectSeaRatesPage({ onUnauthorized }: DirectSeaRatesPag
                     )}
                     {results.map((row, index) => {
                       const isExpanded = expandedRows.has(index);
+                      const conversionRaw = row.item.conversionNotIncluded || row.item.conversion || '';
+                      const conversionText = conversionRaw ? String(conversionRaw).trim() : '';
+                      const conversionLine = conversionText
+                        ? `Ставка дана включая конвертацию - ${conversionText}`
+                        : 'Конвертации нет';
                       return (
                         <Fragment key={`${row.item.pol}-${row.item.pod}-${row.containerType}-${index}`}>
                           <tr
@@ -397,8 +406,7 @@ export default function DirectSeaRatesPage({ onUnauthorized }: DirectSeaRatesPag
                           </tr>
                           <tr className="row-details" style={{ display: isExpanded ? 'table-row' : 'none' }}>
                             <td colSpan={7}>
-                              TS: {row.item.ts || '—'} · Конвертация не ВКЛ:{' '}
-                              {row.item.conversionNotIncluded || row.item.conversion || '—'} · ETD: {row.item.etd || '—'} · Remarks:{' '}
+                              TS: {row.item.ts || '—'} · {conversionLine} · ETD: {row.item.etd || '—'} · Remarks:{' '}
                               {row.item.remarks || '—'}
                             </td>
                           </tr>

@@ -145,6 +145,7 @@ export type ComplexRow = {
   serviceNote?: string;
   seaRate: string;
   pod: string;
+  departureLabel: string;
   agent: string;
   carrier: string;
   etd: string;
@@ -155,6 +156,7 @@ export type ComplexRow = {
   totalRate: string;
   numericTotal: number | null;
   additionalInfo: string;
+  conversionPercent?: number | null;
   from: string;
   to: string;
   rate: number | undefined;

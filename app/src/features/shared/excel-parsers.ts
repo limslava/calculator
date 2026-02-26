@@ -75,7 +75,13 @@ export function parseSeaData(excelData: any[][]): SeaRate[] {
     dropOffArea: findColumnIndex(headers, ['DROP OFF AREA VIA VVO', 'Зона выгрузки']),
     soc20: findColumnIndex(headers, ['SOC 20', "SOC 20'"]),
     soc40: findColumnIndex(headers, ['SOC 40', "SOC 40'"]),
-    conversion: findColumnIndex(headers, ['Конвертация', 'Валюта']),
+    conversion: findColumnIndex(headers, [
+      'Конвертация',
+      'Валюта',
+      'Конвертация не ВКЛ',
+      'Конвертация не вкл',
+      'Конвертация не включена'
+    ]),
     etd: findColumnIndex(headers, ['ETD', 'Дата отгрузки']),
     remarks: findColumnIndex(headers, ['Remarks', 'Примечания']),
     service: findColumnIndex(headers, ['Сервис', 'Service'])
@@ -230,7 +236,14 @@ export function parseDirectRailData(excelData: any[][]): DirectRailRate[] {
     fob40hc: findColumnIndex(headers, ["FOB 40'HC", 'FOB 40HC', 'FOB 40']),
     exwFca40hc: findColumnIndex(headers, ["EXW/FCA 40'HC", 'EXW FCA 40HC', 'EXW/FCA 40']),
     etd: findColumnIndex(headers, ['ETD']),
-    conversion: findColumnIndex(headers, ['Конвертация', 'Currency', 'Conversion']),
+    conversion: findColumnIndex(headers, [
+      'Конвертация',
+      'Currency',
+      'Conversion',
+      'Конвертация не ВКЛ',
+      'Конвертация не вкл',
+      'Конвертация не включена'
+    ]),
     remarks: findColumnIndex(headers, ['Remark', 'Remarks', 'Примечания'])
   };
 

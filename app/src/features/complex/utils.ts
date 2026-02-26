@@ -79,6 +79,25 @@ export function getComplexContainerLabel(containerType?: string) {
   return containerType;
 }
 
+function parseConversionPercent(value?: string | number | null) {
+  if (value === null || value === undefined) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const lowered = raw.toLowerCase();
+  if (lowered === 'нет' || lowered === 'no') return null;
+  const match = lowered.match(/[\d.,]+/);
+  if (!match) return null;
+  const parsed = Number(match[0].replace(',', '.'));
+  if (Number.isNaN(parsed)) return null;
+  if (parsed > 0 && parsed < 1) return parsed * 100;
+  return parsed;
+}
+
+function applyConversionUp(base: number, percent: number | null) {
+  if (!percent || percent <= 0) return base;
+  return Math.ceil(base + (base * percent) / 100);
+}
+
 export function calculateAllRates(params: {
   db: Database;
   departure?: string;
@@ -105,13 +124,19 @@ export function calculateAllRates(params: {
       if (!activeContainerTypes.includes('hc_40')) return;
       const rate = item.fob40hc || 0;
       if (rate <= 0) return;
+      const conversionPercent = parseConversionPercent(item.conversion);
+      const rateWithConversion = applyConversionUp(rate, conversionPercent);
       allResults.push({
         transportType: 'direct_rail',
         transportName: 'Прямое ЖД',
         containerType: 'hc_40',
-        rate,
+        rate: rateWithConversion,
         currency: '$',
-        data: item
+        data: {
+          ...item,
+          rateWithConversion,
+          conversionPercent
+        }
       });
     });
   }
@@ -124,6 +149,7 @@ export function calculateAllRates(params: {
     );
 
     directSeaResults.forEach(item => {
+      const conversionPercent = parseConversionPercent(item.conversionNotIncluded || item.conversion);
       activeContainerTypes.forEach(activeType => {
         let rate = 0;
         if (activeType === 'dc_20') {
@@ -133,13 +159,18 @@ export function calculateAllRates(params: {
         }
 
         if (rate > 0) {
+          const rateWithConversion = applyConversionUp(rate, conversionPercent);
           allResults.push({
             transportType: 'direct_sea',
             transportName: 'Прямое море',
             containerType: activeType,
-            rate,
+            rate: rateWithConversion,
             currency: '$',
-            data: item
+            data: {
+              ...item,
+              rateWithConversion,
+              conversionPercent
+            }
           });
         }
       });
@@ -149,11 +180,14 @@ export function calculateAllRates(params: {
   if (db.sea && db.sea.length > 0) {
     const seaResults = db.sea.filter(item =>
       (!normalizedDeparture || (item.pol && normalizeCityName(item.pol) === normalizedDeparture)) &&
-      (!normalizedDestination || (item.pod && normalizeCityName(item.pod) === normalizedDestination)) &&
+      (!normalizedDestination ||
+        ((item.dropOffArea || item.pod) &&
+          normalizeCityName(item.dropOffArea || item.pod) === normalizedDestination)) &&
       ((item.soc20 || 0) > 0 || (item.soc40 || 0) > 0 || (item.dc20 || 0) > 0 || (item.hc40 || 0) > 0)
     );
 
     seaResults.forEach(item => {
+      const conversionPercent = parseConversionPercent(item.conversion);
       activeContainerTypes.forEach(activeType => {
         let rate = 0;
         if (activeType === 'dc_20') {
@@ -163,13 +197,18 @@ export function calculateAllRates(params: {
         }
 
         if (rate > 0) {
+          const rateWithConversion = applyConversionUp(rate, conversionPercent);
           allResults.push({
             transportType: 'sea',
             transportName: 'Море',
             containerType: activeType,
-            rate,
+            rate: rateWithConversion,
             currency: '$',
-            data: item
+            data: {
+              ...item,
+              rateWithConversion,
+              conversionPercent
+            }
           });
         }
       });
@@ -262,15 +301,17 @@ export function calculateAllRates(params: {
             const terminal = railItem.agent || railItem.city || '';
             const vttRate = getVttRateForTerminal(db, terminal);
             const throughService = seaThroughService && railThroughService;
+            const conversionPercent = parseConversionPercent(seaItem.conversion);
+            const seaRateWithConversion = applyConversionUp(seaRate, conversionPercent);
 
             let totalRateForSorting = 0;
             let currencyForSorting: '$' | 'RUB' = '$';
 
             if (usdToRubRate) {
-              totalRateForSorting = Math.round(seaRate * usdToRubRate) + railRate;
+              totalRateForSorting = Math.ceil(seaRateWithConversion * usdToRubRate) + railRate;
               currencyForSorting = 'RUB';
             } else {
-              totalRateForSorting = seaRate;
+              totalRateForSorting = seaRateWithConversion;
               currencyForSorting = '$';
             }
 
@@ -288,11 +329,13 @@ export function calculateAllRates(params: {
                 sea: seaItem,
                 rail: railItem,
                 seaRate,
+                seaRateWithConversion,
                 railRate,
                 connection: `Море: ${normalizeCityName(seaItem.pol)} → ${normalizeCityName(seaItem.pod)} (${normalizeCityName(seaItem.city)}) → ЖД: ${normalizeCityName(railItem.city)} → ${normalizeCityName(railItem.destination)}`,
                 vttIncluded: isVttTrigger && vttRate > 0,
                 vttRate,
-                throughService
+                throughService,
+                conversionPercent
               }
             });
           }
@@ -330,6 +373,7 @@ export function buildComplexRow(result: ComplexResult, fallbackFrom: string, fal
   const dateOfValidity = safeString(data.sea?.dateOfValidity || data.dateOfValidity || '—');
 
   const borderCrossing = safeString(data.borderCrossing || data.rail?.borderCrossing || data.sea?.borderCrossing || '—');
+  const departureLabel = safeString(fallbackFrom || data.sea?.pol || data.pol || data.fob || data.rail?.city || data.city || '—');
   let pod = '—';
   if (result.transportType === 'direct_sea' || result.transportType === 'sea') {
     pod = safeString(data.pod || '—');
@@ -364,17 +408,17 @@ export function buildComplexRow(result: ComplexResult, fallbackFrom: string, fal
   if (result.transportType === 'direct_rail') {
     seaRate = '—';
     railRate = `$${result.rate}`;
-    numericTotal = usdToRubRate ? Math.round(result.rate * usdToRubRate) : Number(result.rate);
+    numericTotal = usdToRubRate ? Math.ceil(result.rate * usdToRubRate) : Number(result.rate);
     totalRate = usdToRubRate ? `${numericTotal} ₽` : `$${result.rate}`;
   } else if (result.transportType === 'direct_sea') {
     seaRate = `$${result.rate}`;
     railRate = '—';
-    numericTotal = usdToRubRate ? Math.round(result.rate * usdToRubRate) : Number(result.rate);
+    numericTotal = usdToRubRate ? Math.ceil(result.rate * usdToRubRate) : Number(result.rate);
     totalRate = usdToRubRate ? `${numericTotal} ₽` : `$${result.rate}`;
   } else if (result.transportType === 'sea') {
     seaRate = `$${result.rate}`;
     railRate = '—';
-    numericTotal = usdToRubRate ? Math.round(result.rate * usdToRubRate) : Number(result.rate);
+    numericTotal = usdToRubRate ? Math.ceil(result.rate * usdToRubRate) : Number(result.rate);
     totalRate = usdToRubRate ? `${numericTotal} ₽` : `$${result.rate}`;
   } else if (result.transportType === 'rail') {
     seaRate = '—';
@@ -382,7 +426,7 @@ export function buildComplexRow(result: ComplexResult, fallbackFrom: string, fal
     numericTotal = Number(result.rate);
     totalRate = `${result.rate} ₽`;
   } else if (result.transportType === 'sea_rail') {
-    const seaRateUSD = data.seaRate || 0;
+    const seaRateUSD = (data.seaRateWithConversion ?? data.seaRate) || 0;
     const railRateRUB = data.railRate || 0;
     seaRate = `$${seaRateUSD}`;
     railRate = `${railRateRUB} ₽`;
@@ -395,6 +439,7 @@ export function buildComplexRow(result: ComplexResult, fallbackFrom: string, fal
     containerLabel,
     seaRate,
     pod,
+    departureLabel,
     agent,
     carrier,
     etd,
@@ -405,8 +450,9 @@ export function buildComplexRow(result: ComplexResult, fallbackFrom: string, fal
     totalRate,
     numericTotal,
     additionalInfo,
+    conversionPercent: data.conversionPercent ?? null,
     from: fallbackFrom || data.from || data.origin || '—',
-    to: fallbackTo || data.to || data.destination || '—',
+    to: fallbackTo || data.to || data.destination || data.arrivalCity || data.rail?.arrivalCity || '—',
     rate: result?.rate,
     currency: result?.currency,
     raw: result
@@ -520,6 +566,9 @@ export function buildDestinationOptions(db: Database) {
   });
   db.direct_sea.forEach(item => {
     if (item.pod) allDestinations.add(item.pod);
+  });
+  db.sea.forEach(item => {
+    if (item.dropOffArea) allDestinations.add(item.dropOffArea);
   });
   db.rail.forEach(item => {
     if (item.destination) allDestinations.add(item.destination);

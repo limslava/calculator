@@ -51,6 +51,31 @@ export function getDirectRailRate(item: DirectRailRate, containerType: DirectRai
   return Number(item.fob40hc) || 0;
 }
 
+export function getConversionPercent(value?: string | number | null) {
+  if (value === null || value === undefined) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const lowered = raw.toLowerCase();
+  if (lowered === 'нет' || lowered === 'no') return null;
+  const match = lowered.match(/[\d.,]+/);
+  if (!match) return null;
+  const parsed = Number(match[0].replace(',', '.'));
+  if (Number.isNaN(parsed)) return null;
+  if (parsed > 0 && parsed < 1) return parsed * 100;
+  return parsed;
+}
+
+export function getDirectRailRateWithConversion(
+  item: DirectRailRate,
+  containerType: DirectRailContainerType = 'fob40hc'
+) {
+  const base = getDirectRailRate(item, containerType);
+  if (!base || base <= 0) return 0;
+  const percent = getConversionPercent(item.conversion);
+  if (!percent || percent <= 0) return base;
+  return Math.ceil(base + (base * percent) / 100);
+}
+
 export function getDirectRailContainerLabel(containerType: DirectRailContainerType = 'fob40hc') {
   return containerType === 'exwFca40hc' ? "EXW/FCA 40'HC" : "FOB 40'HC";
 }

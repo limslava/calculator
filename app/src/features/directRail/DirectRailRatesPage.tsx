@@ -5,7 +5,8 @@ import { loadDbType, loadExchangeRate } from '../shared/api';
 import {
   getDirectRailAddonInfo,
   getDirectRailContainerLabel,
-  getDirectRailRate,
+  getConversionPercent,
+  getDirectRailRateWithConversion,
   normalizeName,
   type DirectRailContainerType
 } from './direct-rail-utils';
@@ -65,7 +66,7 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
   const normalizedStationFilters = filters.stationFilters.map(value => normalizeName(value));
 
   const hasAnyRate = (item: DirectRailRate) =>
-    containerTypes.some(containerType => getDirectRailRate(item, containerType) > 0);
+    containerTypes.some(containerType => getDirectRailRateWithConversion(item, containerType) > 0);
 
   const matchesFilters = (
     item: DirectRailRate,
@@ -81,7 +82,7 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
 
     if (!exclude.containerType) {
       if (filters.containerType) {
-        const rate = getDirectRailRate(item, filters.containerType);
+        const rate = getDirectRailRateWithConversion(item, filters.containerType);
         if (!rate || rate <= 0) return false;
       } else if (!hasAnyRate(item)) {
         return false;
@@ -192,7 +193,7 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
 
     matches.forEach(item => {
       activeContainerTypes.forEach(containerType => {
-        const rate = getDirectRailRate(item, containerType);
+        const rate = getDirectRailRateWithConversion(item, containerType);
         if (rate && rate > 0) {
           expanded.push({ item, containerType, rate });
         }
@@ -251,6 +252,12 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
       ...results.map(row => {
         const item = row.item;
         const addonInfo = getDirectRailAddonInfo(item);
+        const conversionPercent = getConversionPercent(item.conversion);
+        const applyConversion = (value: number | null) => {
+          if (value === null) return null;
+          if (!conversionPercent || conversionPercent <= 0) return value;
+          return Math.ceil(value + (value * conversionPercent) / 100);
+        };
         const fcaTotal =
           typeof addonInfo.fca === 'number'
             ? (addonInfo.base > 0 ? addonInfo.base + addonInfo.fca : addonInfo.fca)
@@ -259,11 +266,13 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
           typeof addonInfo.exw === 'number'
             ? (addonInfo.base > 0 ? addonInfo.base + addonInfo.exw : addonInfo.exw)
             : null;
+        const fcaWithConversion = applyConversion(fcaTotal);
+        const exwWithConversion = applyConversion(exwTotal);
         const hasSplitRates = fcaTotal !== null || exwTotal !== null;
         const formatUsd = (value: number | null) => (value === null ? '—' : `$${value.toLocaleString('ru-RU')}`);
         const rateLabel =
           row.containerType === 'exwFca40hc' && hasSplitRates
-            ? `FCA: ${formatUsd(fcaTotal)} / EXW: ${formatUsd(exwTotal)}`
+            ? `FCA: ${formatUsd(fcaWithConversion)} / EXW: ${formatUsd(exwWithConversion)}`
             : row.rate
             ? `$${row.rate}`
             : '—';
@@ -445,6 +454,16 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
                     {results.map((row, index) => {
                       const isExpanded = expandedRows.has(index);
                       const addonInfo = getDirectRailAddonInfo(row.item);
+                      const conversionPercent = getConversionPercent(row.item.conversion);
+                      const applyConversion = (value: number | null) => {
+                        if (value === null) return null;
+                        if (!conversionPercent || conversionPercent <= 0) return value;
+                        return Math.ceil(value + (value * conversionPercent) / 100);
+                      };
+                      const conversionText = row.item.conversion ? String(row.item.conversion).trim() : '';
+                      const conversionLine = conversionText
+                        ? `Ставка дана включая конвертацию - ${conversionText}`
+                        : 'Конвертации нет';
                       const fcaTotal =
                         typeof addonInfo.fca === 'number'
                           ? (addonInfo.base > 0 ? addonInfo.base + addonInfo.fca : addonInfo.fca)
@@ -453,6 +472,8 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
                         typeof addonInfo.exw === 'number'
                           ? (addonInfo.base > 0 ? addonInfo.base + addonInfo.exw : addonInfo.exw)
                           : null;
+                      const fcaWithConversion = applyConversion(fcaTotal);
+                      const exwWithConversion = applyConversion(exwTotal);
                       const formatUsd = (value: number | null) =>
                         value === null ? '—' : `$${value.toLocaleString('ru-RU')}`;
                       const hasSplitRates = fcaTotal !== null || exwTotal !== null;
@@ -482,8 +503,8 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
                               {row.containerType === 'exwFca40hc' ? (
                                 hasSplitRates ? (
                                   <>
-                                    <div>FCA: {formatUsd(fcaTotal)}</div>
-                                    <div>EXW: {formatUsd(exwTotal)}</div>
+                                    <div>FCA: {formatUsd(fcaWithConversion)}</div>
+                                    <div>EXW: {formatUsd(exwWithConversion)}</div>
                                   </>
                                 ) : (
                                   row.rate ? `$${row.rate}` : '—'
@@ -496,8 +517,8 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
                           </tr>
                           <tr className="row-details" style={{ display: isExpanded ? 'table-row' : 'none' }}>
                             <td colSpan={8}>
-                              Станция прибытия: {row.item.arrivalStation || '—'} · ETD: {row.item.etd || '—'} · Конвертация:{' '}
-                              {row.item.conversion || '—'} · Remark: {row.item.remarks || '—'}
+                              Станция прибытия: {row.item.arrivalStation || '—'} · ETD: {row.item.etd || '—'} · {conversionLine} · Remark:{' '}
+                              {row.item.remarks || '—'}
                             </td>
                           </tr>
                         </Fragment>

@@ -1202,7 +1202,7 @@ header h1 {
 .margin-table th {
     background: #0072b6 !important;
     color: #fff !important;
-    font-size: 0.74rem !important;
+    font-size: 9px !important;
     padding: 5px 7px !important;
 }
 
@@ -1211,7 +1211,7 @@ header h1 {
 .data-table td,
 .tariff-table td,
 .margin-table td {
-    font-size: 0.76rem !important;
+    font-size: 9px !important;
     padding: 5px 7px !important;
 }
 
@@ -2242,7 +2242,7 @@ header h1 {
 
 #sales-interface .trd-table thead th {
     text-align: left;
-    font-size: 11px;
+    font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: #6e6e6a;
@@ -2295,7 +2295,7 @@ header h1 {
 
 #sales-interface .trd-variant-a thead th {
     text-align: left;
-    font-size: 11px;
+    font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: #6e6e6a;
