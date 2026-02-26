@@ -377,9 +377,7 @@ export default function DirectSeaRatesPage({ onUnauthorized }: DirectSeaRatesPag
                       const isExpanded = expandedRows.has(index);
                       const conversionRaw = row.item.conversionNotIncluded || row.item.conversion || '';
                       const conversionText = conversionRaw ? String(conversionRaw).trim() : '';
-                      const conversionLine = conversionText
-                        ? `Ставка дана включая конвертацию - ${conversionText}`
-                        : 'Конвертации нет';
+                      const conversionLine = 'Ставка дана включая конвертацию';
                       return (
                         <Fragment key={`${row.item.pol}-${row.item.pod}-${row.containerType}-${index}`}>
                           <tr

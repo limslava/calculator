@@ -461,9 +461,7 @@ export default function DirectRailRatesPage({ onUnauthorized }: DirectRailRatesP
                         return Math.ceil(value + (value * conversionPercent) / 100);
                       };
                       const conversionText = row.item.conversion ? String(row.item.conversion).trim() : '';
-                      const conversionLine = conversionText
-                        ? `Ставка дана включая конвертацию - ${conversionText}`
-                        : 'Конвертации нет';
+                      const conversionLine = 'Ставка дана включая конвертацию';
                       const fcaTotal =
                         typeof addonInfo.fca === 'number'
                           ? (addonInfo.base > 0 ? addonInfo.base + addonInfo.fca : addonInfo.fca)

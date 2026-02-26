@@ -509,9 +509,7 @@ export default function SeaRatesPage({ onUnauthorized }: SeaRatesPageProps) {
                       const etdMatch =
                         typeof etdValue === 'string' ? etdValue.match(/https?:\/\/[^\s]+/i) : null;
                       const conversionText = (row.item.conversion || '').toString().trim();
-                      const conversionLine = conversionText
-                        ? `Ставка дана включая конвертацию - ${conversionText}`
-                        : 'Конвертации нет';
+                      const conversionLine = 'Ставка дана включая конвертацию';
                       return (
                         <Fragment key={`${row.item.pol}-${row.item.pod}-${row.containerType}-${index}`}>
                           <tr

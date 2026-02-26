@@ -668,9 +668,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                               <td colSpan={10}>
                                 ETD: {row.etd || '—'} · Дата действия: {row.dateOfValidity || '—'} · Станция:{' '}
                                 {row.departureStation || '—'} · Погран переход: {row.borderCrossing || '—'} ·{' '}
-                                {row.conversionPercent
-                                  ? `Ставка дана включая конвертацию - ${row.conversionPercent}%`
-                                  : 'Конвертации нет'} · Примечание: {row.additionalInfo || '—'}
+                                Ставка дана включая конвертацию · Примечание: {row.additionalInfo || '—'}
                               </td>
                             </tr>
                           </Fragment>
