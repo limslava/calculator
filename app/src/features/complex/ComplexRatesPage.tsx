@@ -622,7 +622,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                     <tbody>
                       {showResults && rows.length === 0 && (
                         <tr>
-                          <td colSpan={11} className="muted">
+                          <td colSpan={10} className="muted">
                             {loading ? 'Загрузка данных...' : 'Нет данных для выбранных параметров'}
                           </td>
                         </tr>
@@ -665,7 +665,7 @@ export default function ComplexRatesPage({ onUnauthorized }: ComplexRatesPagePro
                               className="row-details"
                               style={{ display: isExpanded ? 'table-row' : 'none' }}
                             >
-                              <td colSpan={11}>
+                              <td colSpan={10}>
                                 ETD: {row.etd || '—'} · Дата действия: {row.dateOfValidity || '—'} · Станция:{' '}
                                 {row.departureStation || '—'} · Погран переход: {row.borderCrossing || '—'} ·{' '}
                                 {row.conversionPercent
